@@ -182,7 +182,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             onChange={(e) => setCategory(e.target.value)}
                             className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize"
                         >
-                            <option value="auto">🪄 Auto-Detect Category</option>
+                            <option value="auto">Auto-Detect Category</option>
                             <option value="Breakfast">Breakfast</option>
                             <option value="Lunch">Lunch</option>
                             <option value="Dinner">Dinner</option>

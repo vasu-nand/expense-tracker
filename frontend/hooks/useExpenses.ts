@@ -6,9 +6,12 @@ interface UseExpensesParams {
     limit?: number
     category?: string
     month?: string
+    search?: string
+    sortBy?: string
+    sortOrder?: 'asc' | 'desc'
 }
 
-export function useExpenses({ page = 1, limit = 20, category, month }: UseExpensesParams) {
+export function useExpenses({ page = 1, limit = 20, category, month, search, sortBy = 'day', sortOrder = 'desc' }: UseExpensesParams) {
     const [expenses, setExpenses] = useState<any[]>([])
     const [total, setTotal] = useState(0)
     const [categories, setCategories] = useState<string[]>([])
@@ -22,7 +25,10 @@ export function useExpenses({ page = 1, limit = 20, category, month }: UseExpens
                 page: String(page),
                 limit: String(limit),
                 ...(category && { category }),
-                ...(month && { month })
+                ...(month && { month }),
+                ...(search && { search }),
+                sortBy,
+                sortOrder
             })
 
             const [expensesRes, categoriesRes] = await Promise.all([
@@ -43,7 +49,16 @@ export function useExpenses({ page = 1, limit = 20, category, month }: UseExpens
 
     useEffect(() => {
         fetchData()
-    }, [page, category, month])
+
+        const handleExpenseAdded = () => {
+            fetchData()
+        }
+
+        window.addEventListener('expense-added', handleExpenseAdded)
+        return () => {
+            window.removeEventListener('expense-added', handleExpenseAdded)
+        }
+    }, [page, category, month, search, sortBy, sortOrder])
 
     return { expenses, total, categories, loading, error, refetch: fetchData }
 }

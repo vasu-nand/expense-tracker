@@ -1,6 +1,10 @@
 import Expense, { IExpense } from '../models/Expense';
 import MonthlySummary from '../models/MonthlySummary';
 
+function escapeRegExp(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export class ExpenseService {
     async createExpense(expense: Partial<IExpense>) {
         const newExpense = new Expense(expense);
@@ -20,17 +24,35 @@ export class ExpenseService {
         limit: number = 50,
         category?: string,
         month?: string,
-        day?: number
+        day?: number,
+        search?: string,
+        sortBy: string = 'day',
+        sortOrder: 'asc' | 'desc' = 'desc'
     ) {
         const query: any = {};
         if (category) query.category = category;
         if (month) query.month = month;
         if (day !== undefined) query.day = day;
+        if (search) {
+            const escapedSearch = escapeRegExp(search);
+            query.$or = [
+                { reason: { $regex: escapedSearch, $options: 'i' } },
+                { category: { $regex: escapedSearch, $options: 'i' } }
+            ];
+        }
+
+        const sortQuery: any = {};
+        if (sortBy === 'day' || sortBy === 'date') {
+            sortQuery.month = sortOrder === 'desc' ? -1 : 1;
+            sortQuery.day = sortOrder === 'desc' ? -1 : 1;
+        } else {
+            sortQuery[sortBy] = sortOrder === 'desc' ? -1 : 1;
+        }
 
         const skip = (page - 1) * limit;
         const [expenses, total] = await Promise.all([
             Expense.find(query)
-                .sort({ day: 1 })
+                .sort(sortQuery)
                 .skip(skip)
                 .limit(limit)
                 .lean(),
@@ -115,16 +137,17 @@ export class ExpenseService {
             }
         }
 
-        const summary = new MonthlySummary({
-            month,
-            totalExpense,
-            totalDays,
-            categoryBreakdown,
-            averageDailyExpense,
-            highestExpenseDay
-        });
-
-        await summary.save();
+        const summary = await MonthlySummary.findOneAndUpdate(
+            { month },
+            {
+                totalExpense,
+                totalDays,
+                categoryBreakdown,
+                averageDailyExpense,
+                highestExpenseDay
+            },
+            { upsert: true, new: true }
+        );
         return summary;
     }
 

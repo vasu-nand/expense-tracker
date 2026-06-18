@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
@@ -20,6 +20,72 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
     const [month, setMonth] = useState<string>(defaultMonth)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+
+    const [suggestion, setSuggestion] = useState<any | null>(null)
+
+    // Debounced search for related expense autocomplete suggestion
+    useEffect(() => {
+        if (!isOpen) {
+            setSuggestion(null)
+            return
+        }
+
+        if (reason.trim().length < 2) {
+            setSuggestion(null)
+            return
+        }
+
+        // Avoid searching if suggestion matches what is already typed exactly
+        if (suggestion && suggestion.reason.toLowerCase() === reason.toLowerCase()) {
+            return
+        }
+
+        const debounceTimer = setTimeout(async () => {
+            try {
+                const response = await api.get(`/expenses?limit=5&search=${encodeURIComponent(reason)}`)
+                const matching = response.data.expenses || []
+                
+                // Find first suggestion that contains the typed reason (case-insensitive)
+                const match = matching.find((exp: any) => 
+                    exp.reason.toLowerCase().includes(reason.toLowerCase())
+                )
+                
+                if (match) {
+                    setSuggestion(match)
+                } else {
+                    setSuggestion(null)
+                }
+            } catch (err) {
+                console.error('Autocomplete search error:', err)
+                setSuggestion(null)
+            }
+        }, 200)
+
+        return () => clearTimeout(debounceTimer)
+    }, [reason, isOpen])
+
+    const handleAcceptSuggestion = () => {
+        if (!suggestion) return
+        setReason(suggestion.reason)
+        setAmount(suggestion.amount.toString())
+        
+        // Casing normalization against standard options
+        const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Others']
+        const matchedCat = categoriesList.find(c => c.toLowerCase() === suggestion.category.toLowerCase())
+        setCategory(matchedCat || 'Others')
+        
+        setSuggestion(null)
+    }
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if ((e.key === 'ArrowRight' || e.key === 'Tab') && suggestion) {
+            const input = e.currentTarget
+            if (e.key === 'Tab' || (e.key === 'ArrowRight' && input.selectionStart === reason.length)) {
+                e.preventDefault()
+                handleAcceptSuggestion()
+            }
+        }
+    }
 
     if (!isOpen) return null
 
@@ -142,14 +208,43 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                     {/* Reason */}
                     <div className="flex flex-col space-y-1">
                         <label className="text-xs font-semibold text-muted-foreground">Reason / Description</label>
-                        <input
-                            type="text"
-                            placeholder="e.g. Lunch thali at office"
-                            required
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        />
+                        <div className="relative search-autocomplete-container">
+                            {/* Autocomplete Ghost Text Overlay */}
+                            {suggestion && reason && suggestion.reason.toLowerCase().startsWith(reason.toLowerCase()) && (
+                                <div className="absolute inset-0 flex items-center px-3 py-2 text-sm pointer-events-none font-sans select-none z-0">
+                                    <span className="opacity-0 whitespace-pre">{reason}</span>
+                                    <span 
+                                        onClick={handleAcceptSuggestion}
+                                        className="text-muted-foreground/35 font-normal truncate pointer-events-auto cursor-pointer"
+                                        title="Click to accept suggestion"
+                                    >
+                                        {suggestion.reason.slice(reason.length)}
+                                    </span>
+                                </div>
+                            )}
+                            
+                            {/* Autofill Badge Button */}
+                            {suggestion && reason && (
+                                <button
+                                    type="button"
+                                    onClick={handleAcceptSuggestion}
+                                    className="absolute right-2 top-2 z-30 inline-flex items-center text-[10px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 px-2 py-0.5 rounded cursor-pointer transition-all duration-150"
+                                    title="Click or press Tab/Right Arrow (→) to autofill amount & category"
+                                >
+                                    Autofill: ₹{suggestion.amount} ({suggestion.category})
+                                </button>
+                            )}
+
+                            <input
+                                type="text"
+                                placeholder="e.g. Lunch thali at office"
+                                required
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                className="w-full border border-border rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-2 focus:ring-primary/30 relative z-10"
+                            />
+                        </div>
                     </div>
 
                     {/* Category Select */}
@@ -167,7 +262,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             onChange={(e) => setCategory(e.target.value)}
                             className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize"
                         >
-                            <option value="auto">🪄 Auto-Detect Category</option>
+                            <option value="auto">Auto-Detect Category</option>
                             <option value="Breakfast">Breakfast</option>
                             <option value="Lunch">Lunch</option>
                             <option value="Dinner">Dinner</option>

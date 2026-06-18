@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { api } from '@/services/api'
 import { Trash2, Loader2, ChevronLeft, ChevronRight, Edit2, Lock, X, KeyRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -151,7 +152,12 @@ export function ExpenseTable({
                                         {expense.day}
                                     </td>
                                     <td className="px-6 py-4 text-foreground font-medium">
-                                        {expense.reason}
+                                        <Link 
+                                            href={`/expenses/${expense._id}`} 
+                                            className="hover:underline hover:text-teal-600 transition-colors cursor-pointer"
+                                        >
+                                            {expense.reason}
+                                        </Link>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${getCategoryBadgeStyles(expense.category)}`}>
