@@ -22,6 +22,15 @@ export function useDashboard(month?: string) {
         }
 
         fetchDashboard()
+
+        const handleExpenseAdded = () => {
+            fetchDashboard()
+        }
+
+        window.addEventListener('expense-added', handleExpenseAdded)
+        return () => {
+            window.removeEventListener('expense-added', handleExpenseAdded)
+        }
     }, [month])
 
     return { data, loading, error }

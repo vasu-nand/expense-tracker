@@ -41,8 +41,8 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                     <BarChart data={sortedData} margin={{ top: 20, right: 10, left: 10, bottom: 10 }}>
                         <defs>
                             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
-                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                                <stop offset="0%" stopColor="rgb(45, 212, 191)" stopOpacity={0.9}/>
+                                <stop offset="100%" stopColor="rgb(15, 118, 110)" stopOpacity={0.25}/>
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground))" strokeOpacity={0.1} />
@@ -77,6 +77,8 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                             fill="url(#barGradient)"
                             radius={[6, 6, 0, 0]}
                             maxBarSize={45}
+                            stroke="rgb(13, 148, 136)"
+                            strokeWidth={1}
                         >
                             {sortedData.map((entry, index) => (
                                 <Cell 

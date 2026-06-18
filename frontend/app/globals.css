@@ -4,6 +4,7 @@
 
 @layer base {
     :root {
+        color-scheme: light;
         --background: 168 63% 97%;
         --foreground: 222.2 84% 4.9%;
         --card: 0 0% 100%;
@@ -27,6 +28,7 @@
     }
 
     .dark {
+        color-scheme: dark;
         --background: 0 0% 0%;
         --foreground: 210 40% 98%;
         --card: 222.2 47% 6%;
@@ -100,5 +102,19 @@
     .dark nav {
         background-color: rgba(10, 15, 30, 0.4) !important;
         backdrop-filter: blur(12px) !important;
+    }
+
+    /* Option components and select dark mode legibility overrides */
+    .dark select,
+    .dark select option,
+    .dark option {
+        background-color: #0f172a !important; /* solid slate-900 */
+        color: #f1f5f9 !important; /* solid slate-100 */
+    }
+
+    select option,
+    option {
+        background-color: hsl(var(--card));
+        color: hsl(var(--foreground));
     }
 }

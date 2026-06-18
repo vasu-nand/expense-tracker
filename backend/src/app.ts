@@ -22,6 +22,25 @@ app.use('/api', expenseRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', analyticsRoutes);
 
+app.post('/api/shutdown', async (req, res) => {
+    try {
+        res.json({ message: 'Server is shutting down...' });
+        console.log('Shutdown request received. Stopping server in 1 second...');
+        setTimeout(async () => {
+            try {
+                await mongoose.connection.close();
+                console.log('Mongoose connection closed. Exiting process.');
+            } catch (err) {
+                console.error('Error closing Mongoose connection:', err);
+            } finally {
+                process.exit(0);
+            }
+        }, 1000);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Error handling
 app.use(errorHandler);
 

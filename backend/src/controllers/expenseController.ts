@@ -47,13 +47,19 @@ export const getExpenses = async (req: Request, res: Response) => {
         const category = req.query.category as string;
         const month = req.query.month as string;
         const day = req.query.day ? parseInt(req.query.day as string) : undefined;
+        const search = req.query.search as string;
+        const sortBy = req.query.sortBy as string || 'day';
+        const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
 
         const result = await expenseService.getAllExpenses(
             page, 
             limit, 
             category, 
             month, 
-            isNaN(day as number) ? undefined : day
+            isNaN(day as number) ? undefined : day,
+            search,
+            sortBy,
+            sortOrder
         );
         res.json(result);
     } catch (error: any) {

@@ -85,8 +85,8 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="relative w-full max-w-md rounded-xl border border-border p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200" style={{backgroundColor: 'hsl(var(--card))', backdropFilter: 'none'}}>
                 
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b">
@@ -182,7 +182,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             onChange={(e) => setCategory(e.target.value)}
                             className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize"
                         >
-                            <option value="auto">🪄 Auto-Detect Category</option>
+                            <option value="auto">Auto-Detect Category</option>
                             <option value="Breakfast">Breakfast</option>
                             <option value="Lunch">Lunch</option>
                             <option value="Dinner">Dinner</option>
