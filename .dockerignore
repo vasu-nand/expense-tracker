@@ -1,0 +1,35 @@
+# Dependency directories
+node_modules
+**/node_modules
+backend/node_modules
+frontend/node_modules
+
+# Local build outputs
+.next
+**/.next
+frontend/.next
+backend/dist
+
+# Environment configuration files
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+
+# Source control
+.git
+.gitignore
+
+# Editor/OS configurations
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
