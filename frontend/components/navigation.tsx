@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Table, BarChart3, Moon, Sun, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Upload, Table, BarChart3, Moon, Sun, Menu, X, Download } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 
@@ -13,6 +13,7 @@ const navItems = [
     { href: '/upload', label: 'Upload', icon: Upload },
     { href: '/expenses', label: 'Expenses', icon: Table },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/export', label: 'Export', icon: Download },
 ]
 
 export function Navigation() {

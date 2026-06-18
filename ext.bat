@@ -4,6 +4,35 @@ echo ===================================================
 echo       Expense Dashboard Launcher
 echo ===================================================
 echo.
+echo Verification: Checking if Docker is running...
+docker info >nul 2>&1
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Docker is not running or not installed.
+    echo Please start Docker Desktop and run this launcher again.
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
+echo Checking database container "expense_db"...
+docker ps -a --format "{{.Names}}" | findstr /x "expense_db" >nul
+if errorlevel 1 (
+    echo Database container "expense_db" not found. Installing and starting it...
+    docker-compose up -d database
+) else (
+    echo Database container "expense_db" found. Starting it...
+    docker start expense_db >nul 2>&1
+    docker port expense_db 27017 >nul 2>&1
+    if errorlevel 1 (
+        echo Database container "expense_db" is not exposing port 27017. Recreating it...
+        docker rm -f expense_db >nul
+        docker-compose up -d database
+    )
+)
+echo.
+
 echo Choose startup method:
 echo [1] Local Mode (Frontend: Production via npm start)
 echo [2] Production Container Mode (Docker Compose)
@@ -12,6 +41,15 @@ set /p choice="Enter choice (1 or 2, default is 1): "
 
 if "%choice%"=="2" (
     echo.
+    :: If expense_db exists but wasn't created by compose, remove it to avoid compose name conflicts
+    docker ps -a --format "{{.Names}}" | findstr /x "expense_db" >nul
+    if not errorlevel 1 (
+        docker inspect --format "{{index .Config.Labels \"com.docker.compose.project\"}}" expense_db 2>nul | findstr /r "." >nul
+        if errorlevel 1 (
+            echo Removing non-compose "expense_db" container to avoid Docker Compose conflicts...
+            docker rm -f expense_db >nul
+        )
+    )
     echo Starting via Docker Compose in detached mode...
     docker-compose up -d --build
     echo.
