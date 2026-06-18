@@ -1,11 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { api } from '@/services/api'
-import { Trash2, Loader2, ChevronLeft, ChevronRight, Edit2, Lock, X, KeyRound } from 'lucide-react'
+import { Trash2, Loader2, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { EditExpenseDialog } from './edit-expense-dialog'
 
 interface Expense {
     _id: string;
@@ -24,6 +21,8 @@ interface ExpenseTableProps {
     total: number;
     onPageChange: (page: number) => void;
     onDelete: () => void;
+    onEdit: (expense: Expense) => void;
+    onDeleteRequest: (expense: Expense) => void;
 }
 
 export function ExpenseTable({
@@ -33,49 +32,13 @@ export function ExpenseTable({
     page,
     total,
     onPageChange,
-    onDelete
+    onDelete,
+    onEdit,
+    onDeleteRequest
 }: ExpenseTableProps) {
     const limit = 20;
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
-    // States for Edit / Delete actions
-    const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-    const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
-    const [deletePassword, setDeletePassword] = useState('');
-    const [deleteError, setDeleteError] = useState('');
-    const [deleting, setDeleting] = useState(false);
-
-    const handleDeleteClick = (expense: Expense) => {
-        setDeletingExpense(expense);
-        setDeletePassword('');
-        setDeleteError('');
-    };
-
-    const handleDeleteSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!deletingExpense) return;
-
-        if (!deletePassword.trim()) {
-            setDeleteError('Password is required');
-            return;
-        }
-
-        try {
-            setDeleting(true);
-            setDeleteError('');
-            await api.delete(`/expenses/${deletingExpense._id}`, {
-                headers: {
-                    'x-delete-password': deletePassword
-                }
-            });
-            onDelete();
-            setDeletingExpense(null);
-        } catch (err: any) {
-            setDeleteError(err.response?.data?.error || 'Invalid password or failed deletion');
-        } finally {
-            setDeleting(false);
-        }
-    };
 
     const getCategoryBadgeStyles = (category: string) => {
         const cat = category.toLowerCase();
@@ -173,7 +136,7 @@ export function ExpenseTable({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => setEditingExpense(expense)}
+                                                onClick={() => onEdit(expense)}
                                                 className="text-muted-foreground hover:text-foreground hover:bg-muted"
                                             >
                                                 <Edit2 className="h-4 w-4" />
@@ -182,7 +145,7 @@ export function ExpenseTable({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDeleteClick(expense)}
+                                                onClick={() => onDeleteRequest(expense)}
                                                 className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -235,85 +198,6 @@ export function ExpenseTable({
                 </div>
             )}
 
-            {/* Edit Expense Dialog */}
-            <EditExpenseDialog
-                isOpen={!!editingExpense}
-                onClose={() => setEditingExpense(null)}
-                onSuccess={onDelete}
-                expense={editingExpense}
-            />
-
-            {/* Password Protected Delete Modal */}
-            {deletingExpense && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="relative w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200">
-                        <div className="flex justify-between items-start border-b pb-3">
-                            <div className="flex items-center space-x-2 text-destructive">
-                                <Lock className="h-5 w-5" />
-                                <h3 className="text-lg font-bold">Secure Deletion</h3>
-                            </div>
-                            <button
-                                onClick={() => setDeletingExpense(null)}
-                                className="p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleDeleteSubmit} className="mt-4 space-y-4">
-                            <p className="text-xs text-muted-foreground leading-relaxed">
-                                You are deleting the expense of <span className="font-bold text-foreground">₹{deletingExpense.amount.toFixed(2)}</span> for "<span className="font-bold text-foreground">{deletingExpense.reason}</span>". Enter deletion password to proceed.
-                            </p>
-
-                            {deleteError && (
-                                <div className="p-2 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded font-medium">
-                                    {deleteError}
-                                </div>
-                            )}
-
-                            <div className="flex flex-col space-y-1.5">
-                                <label className="text-xs font-semibold text-muted-foreground">Admin Password</label>
-                                <div className="relative">
-                                    <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        required
-                                        value={deletePassword}
-                                        onChange={(e) => setDeletePassword(e.target.value)}
-                                        className="w-full border border-border rounded-md pl-9 pr-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-destructive/30 text-sm font-mono"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end space-x-2 pt-3 border-t">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setDeletingExpense(null)}
-                                    disabled={deleting}
-                                    className="h-9 text-xs"
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    variant="destructive"
-                                    disabled={deleting}
-                                    className="h-9 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    {deleting ? (
-                                        <>
-                                            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                                            Deleting...
-                                        </>
-                                    ) : 'Confirm Delete'}
-                                </Button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

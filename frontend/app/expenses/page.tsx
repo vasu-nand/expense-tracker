@@ -6,8 +6,10 @@ import { ExpenseTable } from '@/components/expenses/expense-table'
 import { ExpenseFilters } from '@/components/expenses/expense-filters'
 import { useExpenses } from '@/hooks/useExpenses'
 import { AddExpenseDialog } from '@/components/expenses/add-expense-dialog'
-import { Plus, DollarSign, TrendingUp, Sparkles, Receipt } from 'lucide-react'
+import { EditExpenseDialog } from '@/components/expenses/edit-expense-dialog'
+import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { api } from '@/services/api'
 
 export default function ExpensesPage() {
     const searchParams = useSearchParams()
@@ -28,6 +30,13 @@ export default function ExpensesPage() {
     const [sortBy, setSortBy] = useState(urlSortBy)
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(urlSortOrder) // Default to reverse order (desc)
     const [isAddOpen, setIsAddOpen] = useState(false)
+
+    // Dialog state lifted out of ExpenseTable to avoid containing-block issues
+    const [editingExpense, setEditingExpense] = useState<any>(null)
+    const [deletingExpense, setDeletingExpense] = useState<any>(null)
+    const [deletePassword, setDeletePassword] = useState('')
+    const [deleteError, setDeleteError] = useState('')
+    const [deleting, setDeleting] = useState(false)
 
     // Sync search and filters from URL when URL parameters change (e.g. navigation)
     useEffect(() => {
@@ -95,6 +104,30 @@ export default function ExpensesPage() {
             topCategory = cat
         }
     })
+
+    const handleDeleteSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!deletingExpense) return
+
+        if (!deletePassword.trim()) {
+            setDeleteError('Password is required')
+            return
+        }
+
+        try {
+            setDeleting(true)
+            setDeleteError('')
+            await api.delete(`/expenses/${deletingExpense._id}`, {
+                headers: { 'x-delete-password': deletePassword }
+            })
+            refetch()
+            setDeletingExpense(null)
+        } catch (err: any) {
+            setDeleteError(err.response?.data?.error || 'Invalid password or failed deletion')
+        } finally {
+            setDeleting(false)
+        }
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -187,6 +220,12 @@ export default function ExpensesPage() {
                 total={total}
                 onPageChange={setPage}
                 onDelete={refetch}
+                onEdit={(expense) => setEditingExpense(expense)}
+                onDeleteRequest={(expense) => {
+                    setDeletingExpense(expense)
+                    setDeletePassword('')
+                    setDeleteError('')
+                }}
             />
 
             <AddExpenseDialog
@@ -198,6 +237,89 @@ export default function ExpensesPage() {
                 }}
                 defaultMonth={month}
             />
+
+            {/* Edit Expense Dialog - rendered at page root, outside any overflow/filter context */}
+            <EditExpenseDialog
+                isOpen={!!editingExpense}
+                onClose={() => setEditingExpense(null)}
+                onSuccess={() => {
+                    refetch()
+                    setEditingExpense(null)
+                }}
+                expense={editingExpense}
+            />
+
+            {/* Password-Protected Delete Modal - rendered at page root */}
+            {deletingExpense && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="relative w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200" style={{backgroundColor: 'hsl(var(--card))', backdropFilter: 'none'}}>
+                        <div className="flex justify-between items-start border-b pb-3">
+                            <div className="flex items-center space-x-2 text-destructive">
+                                <Lock className="h-5 w-5" />
+                                <h3 className="text-lg font-bold">Secure Deletion</h3>
+                            </div>
+                            <button
+                                onClick={() => setDeletingExpense(null)}
+                                className="p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleDeleteSubmit} className="mt-4 space-y-4">
+                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                You are deleting the expense of <span className="font-bold text-foreground">₹{deletingExpense.amount.toFixed(2)}</span> for "<span className="font-bold text-foreground">{deletingExpense.reason}</span>". Enter deletion password to proceed.
+                            </p>
+
+                            {deleteError && (
+                                <div className="p-2 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded font-medium">
+                                    {deleteError}
+                                </div>
+                            )}
+
+                            <div className="flex flex-col space-y-1.5">
+                                <label className="text-xs font-semibold text-muted-foreground">Admin Password</label>
+                                <div className="relative">
+                                    <KeyRound className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        required
+                                        value={deletePassword}
+                                        onChange={(e) => setDeletePassword(e.target.value)}
+                                        className="w-full border border-border rounded-md pl-9 pr-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-destructive/30 text-sm font-mono"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end space-x-2 pt-3 border-t">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setDeletingExpense(null)}
+                                    disabled={deleting}
+                                    className="h-9 text-xs"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant="destructive"
+                                    disabled={deleting}
+                                    className="h-9 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                    {deleting ? (
+                                        <>
+                                            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : 'Confirm Delete'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

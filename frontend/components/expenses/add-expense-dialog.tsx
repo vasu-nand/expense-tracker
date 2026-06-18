@@ -44,12 +44,12 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
             try {
                 const response = await api.get(`/expenses?limit=5&search=${encodeURIComponent(reason)}`)
                 const matching = response.data.expenses || []
-                
+
                 // Find first suggestion that contains the typed reason (case-insensitive)
-                const match = matching.find((exp: any) => 
+                const match = matching.find((exp: any) =>
                     exp.reason.toLowerCase().includes(reason.toLowerCase())
                 )
-                
+
                 if (match) {
                     setSuggestion(match)
                 } else {
@@ -68,12 +68,12 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
         if (!suggestion) return
         setReason(suggestion.reason)
         setAmount(suggestion.amount.toString())
-        
+
         // Casing normalization against standard options
         const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Others']
         const matchedCat = categoriesList.find(c => c.toLowerCase() === suggestion.category.toLowerCase())
         setCategory(matchedCat || 'Others')
-        
+
         setSuggestion(null)
     }
 
@@ -91,7 +91,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         const parsedAmount = parseFloat(amount)
         if (isNaN(parsedAmount) || parsedAmount <= 0) {
             setError('Please enter a valid amount')
@@ -112,7 +112,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
         try {
             setLoading(true)
             setError('')
-            
+
             await api.post('/expenses', {
                 day: parsedDay,
                 amount: parsedAmount,
@@ -125,7 +125,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
             setAmount('')
             setReason('')
             setCategory('auto')
-            
+
             onSuccess()
             onClose()
         } catch (err: any) {
@@ -136,9 +136,9 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200">
-                
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="relative w-full max-w-md rounded-xl border border-border p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200" style={{backgroundColor: 'hsl(var(--card))', backdropFilter: 'none'}}>
+
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b">
                     <div>
@@ -147,8 +147,8 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                         </h2>
                         <p className="text-xs text-muted-foreground mt-0.5">Enter details for manual transaction logging</p>
                     </div>
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="rounded-full p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <X className="h-4 w-4" />
@@ -213,7 +213,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             {suggestion && reason && suggestion.reason.toLowerCase().startsWith(reason.toLowerCase()) && (
                                 <div className="absolute inset-0 flex items-center px-3 py-2 text-sm pointer-events-none font-sans select-none z-0">
                                     <span className="opacity-0 whitespace-pre">{reason}</span>
-                                    <span 
+                                    <span
                                         onClick={handleAcceptSuggestion}
                                         className="text-muted-foreground/35 font-normal truncate pointer-events-auto cursor-pointer"
                                         title="Click to accept suggestion"
@@ -222,7 +222,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                                     </span>
                                 </div>
                             )}
-                            
+
                             {/* Autofill Badge Button */}
                             {suggestion && reason && (
                                 <button
@@ -277,16 +277,16 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
 
                     {/* Actions */}
                     <div className="flex justify-end space-x-2 pt-4 border-t mt-6">
-                        <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={onClose} 
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
                             disabled={loading}
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             disabled={loading}
                         >
                             {loading ? (
