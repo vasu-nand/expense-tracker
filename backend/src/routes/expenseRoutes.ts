@@ -7,7 +7,8 @@ import {
     deleteExpense,
     getDailySummary,
     createExpense,
-    updateExpense
+    updateExpense,
+    clearAllExpenses
 } from '../controllers/expenseController';
 
 const router = Router();
@@ -17,6 +18,7 @@ router.post('/upload', upload.single('file'), uploadExpenses);
 router.get('/expenses', getExpenses);
 router.get('/expenses/:id', getExpenseById);
 router.delete('/expenses/:id', deleteExpense);
+router.delete('/expenses', clearAllExpenses);
 router.get('/daily-summary', getDailySummary);
 router.post('/expenses', createExpense);
 router.put('/expenses/:id', updateExpense);

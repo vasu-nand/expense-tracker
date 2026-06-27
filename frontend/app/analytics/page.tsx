@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AnalyticsReport } from '@/components/analytics/analytics-report'
+import { SpendingPredictor } from '@/components/analytics/spending-predictor'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api } from '@/services/api'
 
@@ -56,7 +57,7 @@ export default function AnalyticsPage() {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <h1 className="text-3xl font-bold">Analytics</h1>
+                <h1 className="text-3xl font-bold text-custom-gradient">Analytics</h1>
                 <input
                     type="month"
                     value={month}
@@ -66,6 +67,7 @@ export default function AnalyticsPage() {
             </div>
 
             <AnalyticsReport data={analytics} />
+            <SpendingPredictor data={analytics} selectedMonth={month} />
         </div>
     )
 }

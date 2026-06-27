@@ -7,11 +7,13 @@ import { ExpenseFilters } from '@/components/expenses/expense-filters'
 import { useExpenses } from '@/hooks/useExpenses'
 import { AddExpenseDialog } from '@/components/expenses/add-expense-dialog'
 import { EditExpenseDialog } from '@/components/expenses/edit-expense-dialog'
-import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loader2 } from 'lucide-react'
+import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loader2, RotateCw } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 import { Button } from '@/components/ui/button'
 import { api } from '@/services/api'
 
 export default function ExpensesPage() {
+    const { format } = useCurrency()
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -21,6 +23,11 @@ export default function ExpensesPage() {
     const urlMonth = searchParams.get('month') || new Date().toISOString().slice(0, 7)
     const urlSortBy = searchParams.get('sortBy') || 'day'
     const urlSortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
+    const urlLimit = Number(searchParams.get('limit')) || 20
+    const urlMinAmount = searchParams.get('minAmount') || ''
+    const urlMaxAmount = searchParams.get('maxAmount') || ''
+    const urlMinDay = searchParams.get('minDay') || ''
+    const urlMaxDay = searchParams.get('maxDay') || ''
 
     const [page, setPage] = useState(1)
     const [category, setCategory] = useState(urlCategory)
@@ -29,6 +36,11 @@ export default function ExpensesPage() {
     const [debouncedSearch, setDebouncedSearch] = useState(urlSearch)
     const [sortBy, setSortBy] = useState(urlSortBy)
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(urlSortOrder) // Default to reverse order (desc)
+    const [limit, setLimit] = useState(urlLimit)
+    const [minAmount, setMinAmount] = useState(urlMinAmount)
+    const [maxAmount, setMaxAmount] = useState(urlMaxAmount)
+    const [minDay, setMinDay] = useState(urlMinDay)
+    const [maxDay, setMaxDay] = useState(urlMaxDay)
     const [isAddOpen, setIsAddOpen] = useState(false)
 
     // Dialog state lifted out of ExpenseTable to avoid containing-block issues
@@ -46,8 +58,13 @@ export default function ExpensesPage() {
         setMonth(urlMonth)
         setSortBy(urlSortBy)
         setSortOrder(urlSortOrder)
+        setLimit(urlLimit)
+        setMinAmount(urlMinAmount)
+        setMaxAmount(urlMaxAmount)
+        setMinDay(urlMinDay)
+        setMaxDay(urlMaxDay)
         setPage(1)
-    }, [urlSearch, urlCategory, urlMonth, urlSortBy, urlSortOrder])
+    }, [urlSearch, urlCategory, urlMonth, urlSortBy, urlSortOrder, urlLimit, urlMinAmount, urlMaxAmount, urlMinDay, urlMaxDay])
 
     // Debounce search input changes
     useEffect(() => {
@@ -66,24 +83,33 @@ export default function ExpensesPage() {
         if (month) params.set('month', month)
         if (sortBy) params.set('sortBy', sortBy)
         if (sortOrder) params.set('sortOrder', sortOrder)
+        if (limit !== 20) params.set('limit', String(limit))
+        if (minAmount) params.set('minAmount', minAmount)
+        if (maxAmount) params.set('maxAmount', maxAmount)
+        if (minDay) params.set('minDay', minDay)
+        if (maxDay) params.set('maxDay', maxDay)
         
         router.replace(`${pathname}?${params.toString()}`)
-    }, [debouncedSearch, category, month, sortBy, sortOrder, pathname, router])
+    }, [debouncedSearch, category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay, pathname, router])
 
     const { expenses, total, loading, error, categories, refetch } = useExpenses({
         page,
-        limit: 20,
+        limit,
         category: category || undefined,
         month,
         search: debouncedSearch || undefined,
         sortBy,
-        sortOrder
+        sortOrder,
+        minAmount: minAmount ? parseFloat(minAmount) : undefined,
+        maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
+        minDay: minDay ? parseInt(minDay) : undefined,
+        maxDay: maxDay ? parseInt(maxDay) : undefined
     })
 
     // Reset to page 1 when filter parameters change
     useEffect(() => {
         setPage(1)
-    }, [category, month, sortBy, sortOrder])
+    }, [category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay])
 
     // Calculate view insights
     const pageTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
@@ -141,22 +167,36 @@ export default function ExpensesPage() {
                         <Plus className="h-4 w-4" />
                         <span>Add Expense</span>
                     </Button>
-                    <button
+                    {/* Desktop Refresh Button */}
+                    <Button
+                        variant="outline"
                         onClick={() => refetch()}
-                        className="px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors text-sm font-medium"
+                        className="hidden sm:flex items-center space-x-1.5 border-border/80 text-muted-foreground hover:text-foreground"
                     >
-                        Refresh
-                    </button>
+                        <RotateCw className="h-4 w-4" />
+                        <span>Refresh</span>
+                    </Button>
+
+                    {/* Mobile Refresh Icon Button */}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => refetch()}
+                        className="flex sm:hidden border-border/80 text-muted-foreground hover:text-foreground rounded-lg"
+                        title="Refresh"
+                    >
+                        <RotateCw className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
 
             {/* Quick View Insights */}
             {!loading && expenses.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-300">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in duration-300">
                     <div className="p-4 rounded-xl border border-teal-500/10 bg-teal-500/5 dark:bg-teal-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                         <div>
                             <p className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Visible Spend Total</p>
-                            <h3 className="text-xl font-extrabold text-teal-700 dark:text-teal-300 font-mono mt-0.5">₹{pageTotal.toFixed(2)}</h3>
+                            <h3 className="text-xl font-extrabold text-teal-700 dark:text-teal-300 font-mono mt-0.5">{format(pageTotal)}</h3>
                         </div>
                         <div className="p-2 bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 rounded-lg">
                             <DollarSign className="h-5 w-5" />
@@ -165,7 +205,7 @@ export default function ExpensesPage() {
                     <div className="p-4 rounded-xl border border-indigo-500/10 bg-indigo-500/5 dark:bg-indigo-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                         <div>
                             <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Visible Average</p>
-                            <h3 className="text-xl font-extrabold text-indigo-700 dark:text-indigo-300 font-mono mt-0.5">₹{pageAvg.toFixed(2)}</h3>
+                            <h3 className="text-xl font-extrabold text-indigo-700 dark:text-indigo-300 font-mono mt-0.5">{format(pageAvg)}</h3>
                         </div>
                         <div className="p-2 bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
                             <TrendingUp className="h-5 w-5" />
@@ -177,7 +217,7 @@ export default function ExpensesPage() {
                             <h3 className="text-sm font-bold text-purple-800 dark:text-purple-300 mt-1 truncate capitalize" title={topCategory}>
                                 {topCategory}
                             </h3>
-                            <p className="text-xs font-extrabold text-purple-600 dark:text-purple-400 font-mono mt-0.5">₹{topCategoryTotal.toFixed(2)}</p>
+                            <p className="text-xs font-extrabold text-purple-600 dark:text-purple-400 font-mono mt-0.5">{format(topCategoryTotal)}</p>
                         </div>
                         <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg shrink-0">
                             <Receipt className="h-5 w-5" />
@@ -189,7 +229,7 @@ export default function ExpensesPage() {
                             <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300 mt-1 truncate" title={pageMax?.reason}>
                                 {pageMax?.reason}
                             </h3>
-                            <p className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono mt-0.5">₹{pageMax?.amount.toFixed(2)}</p>
+                            <p className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono mt-0.5">{pageMax ? format(pageMax.amount) : ''}</p>
                         </div>
                         <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg shrink-0">
                             <Sparkles className="h-5 w-5" />
@@ -210,6 +250,14 @@ export default function ExpensesPage() {
                 onSortByChange={setSortBy}
                 sortOrder={sortOrder}
                 onSortOrderChange={setSortOrder}
+                minAmount={minAmount}
+                onMinAmountChange={setMinAmount}
+                maxAmount={maxAmount}
+                onMaxAmountChange={setMaxAmount}
+                minDay={minDay}
+                onMinDayChange={setMinDay}
+                maxDay={maxDay}
+                onMaxDayChange={setMaxDay}
             />
 
             <ExpenseTable
@@ -218,7 +266,9 @@ export default function ExpensesPage() {
                 error={error}
                 page={page}
                 total={total}
+                limit={limit}
                 onPageChange={setPage}
+                onLimitChange={setLimit}
                 onDelete={refetch}
                 onEdit={(expense) => setEditingExpense(expense)}
                 onDeleteRequest={(expense) => {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface Expense {
     _id: string;
@@ -22,6 +23,7 @@ interface EditExpenseDialogProps {
 }
 
 export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditExpenseDialogProps) {
+    const { convert, convertToBase, symbol } = useCurrency()
     const [day, setDay] = useState<number>(1)
     const [amount, setAmount] = useState<string>('')
     const [reason, setReason] = useState<string>('')
@@ -33,7 +35,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
     useEffect(() => {
         if (expense) {
             setDay(expense.day)
-            setAmount(expense.amount.toString())
+            setAmount(Number(convert(expense.amount).toFixed(3)).toString())
             setReason(expense.reason)
             setCategory(expense.category)
             setMonth(expense.month)
@@ -46,11 +48,13 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         
-        const parsedAmount = parseFloat(amount)
-        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        const displayAmount = parseFloat(amount)
+        if (isNaN(displayAmount) || displayAmount <= 0) {
             setError('Please enter a valid amount')
             return
         }
+
+        const parsedAmount = convertToBase(displayAmount)
 
         const parsedDay = parseInt(day.toString())
         if (isNaN(parsedDay) || parsedDay < 1 || parsedDay > 31) {
@@ -142,7 +146,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
 
                     {/* Amount */}
                     <div className="flex flex-col space-y-1">
-                        <label className="text-xs font-semibold text-muted-foreground">Amount (₹)</label>
+                        <label className="text-xs font-semibold text-muted-foreground">Amount ({symbol})</label>
                         <input
                             type="number"
                             step="0.01"
@@ -191,6 +195,8 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             <option value="Drinks">Drinks</option>
                             <option value="Transport">Transport</option>
                             <option value="Shopping">Shopping</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Bills">Bills & Utilities</option>
                             <option value="Others">Others</option>
                         </select>
                     </div>

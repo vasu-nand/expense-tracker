@@ -7,7 +7,9 @@
         "dev": "nodemon src/app.ts",
         "build": "tsc",
         "start": "node dist/app.js",
-        "seed": "ts-node src/utils/seed.ts"
+        "seed": "ts-node src/utils/seed.ts",
+        "db:export": "ts-node src/utils/dbSync.ts export",
+        "db:import": "ts-node src/utils/dbSync.ts import"
     },
     "dependencies": {
         "express": "^4.18.2",

@@ -27,12 +27,30 @@ export class ExpenseService {
         day?: number,
         search?: string,
         sortBy: string = 'day',
-        sortOrder: 'asc' | 'desc' = 'desc'
+        sortOrder: 'asc' | 'desc' = 'desc',
+        minAmount?: number,
+        maxAmount?: number,
+        minDay?: number,
+        maxDay?: number
     ) {
         const query: any = {};
         if (category) query.category = category;
         if (month) query.month = month;
-        if (day !== undefined) query.day = day;
+        
+        if (day !== undefined) {
+            query.day = day;
+        } else if (minDay !== undefined || maxDay !== undefined) {
+            query.day = {};
+            if (minDay !== undefined) query.day.$gte = minDay;
+            if (maxDay !== undefined) query.day.$lte = maxDay;
+        }
+
+        if (minAmount !== undefined || maxAmount !== undefined) {
+            query.amount = {};
+            if (minAmount !== undefined) query.amount.$gte = minAmount;
+            if (maxAmount !== undefined) query.amount.$lte = maxAmount;
+        }
+
         if (search) {
             const escapedSearch = escapeRegExp(search);
             query.$or = [
@@ -73,6 +91,13 @@ export class ExpenseService {
 
     async deleteExpense(id: string) {
         return Expense.findByIdAndDelete(id);
+    }
+
+    async clearAllExpenses() {
+        return Promise.all([
+            Expense.deleteMany({}),
+            MonthlySummary.deleteMany({})
+        ]);
     }
 
     async getDailySummary(month: string) {

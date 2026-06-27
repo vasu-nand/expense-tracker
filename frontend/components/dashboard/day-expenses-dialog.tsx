@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Calendar } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface Expense {
     _id: string;
@@ -22,6 +23,7 @@ interface DayExpensesDialogProps {
 }
 
 export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDialogProps) {
+    const { format } = useCurrency()
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -145,7 +147,7 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
                                         </span>
                                     </div>
                                     <div className="font-mono font-bold text-foreground text-sm">
-                                        ₹{expense.amount.toFixed(2)}
+                                        {format(expense.amount)}
                                     </div>
                                 </div>
                             ))}
@@ -160,7 +162,7 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
                             Daily Total
                         </span>
                         <span className="text-lg font-extrabold text-foreground font-mono">
-                            ₹{totalSpend.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {format(totalSpend)}
                         </span>
                     </div>
                     <Button onClick={onClose}>

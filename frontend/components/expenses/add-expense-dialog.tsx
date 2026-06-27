@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface AddExpenseDialogProps {
     isOpen: boolean;
@@ -13,6 +14,7 @@ interface AddExpenseDialogProps {
 }
 
 export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: AddExpenseDialogProps) {
+    const { convert, convertToBase, symbol, format } = useCurrency()
     const [day, setDay] = useState<number>(new Date().getDate())
     const [amount, setAmount] = useState<string>('')
     const [reason, setReason] = useState<string>('')
@@ -67,10 +69,10 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
     const handleAcceptSuggestion = () => {
         if (!suggestion) return
         setReason(suggestion.reason)
-        setAmount(suggestion.amount.toString())
+        setAmount(Number(convert(suggestion.amount).toFixed(3)).toString())
 
         // Casing normalization against standard options
-        const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Others']
+        const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Rent', 'Bills', 'Others']
         const matchedCat = categoriesList.find(c => c.toLowerCase() === suggestion.category.toLowerCase())
         setCategory(matchedCat || 'Others')
 
@@ -92,11 +94,13 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        const parsedAmount = parseFloat(amount)
-        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        const displayAmount = parseFloat(amount)
+        if (isNaN(displayAmount) || displayAmount <= 0) {
             setError('Please enter a valid amount')
             return
         }
+
+        const parsedAmount = convertToBase(displayAmount)
 
         const parsedDay = parseInt(day.toString())
         if (isNaN(parsedDay) || parsedDay < 1 || parsedDay > 31) {
@@ -193,7 +197,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
 
                     {/* Amount */}
                     <div className="flex flex-col space-y-1">
-                        <label className="text-xs font-semibold text-muted-foreground">Amount (₹)</label>
+                        <label className="text-xs font-semibold text-muted-foreground">Amount ({symbol})</label>
                         <input
                             type="number"
                             step="0.01"
@@ -231,7 +235,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                                     className="absolute right-2 top-2 z-30 inline-flex items-center text-[10px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/15 hover:bg-teal-500/25 border border-teal-500/30 px-2 py-0.5 rounded cursor-pointer transition-all duration-150"
                                     title="Click or press Tab/Right Arrow (→) to autofill amount & category"
                                 >
-                                    Autofill: ₹{suggestion.amount} ({suggestion.category})
+                                    Autofill: {format(suggestion.amount)} ({suggestion.category})
                                 </button>
                             )}
 
@@ -271,6 +275,8 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             <option value="Drinks">Drinks</option>
                             <option value="Transport">Transport</option>
                             <option value="Shopping">Shopping</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Bills">Bills & Utilities</option>
                             <option value="Others">Others</option>
                         </select>
                     </div>
