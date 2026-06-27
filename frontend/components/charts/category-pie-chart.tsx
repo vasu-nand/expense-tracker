@@ -1,7 +1,6 @@
-'use client'
-
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface CategoryPieChartProps {
     data: Record<string, number>
@@ -20,10 +19,12 @@ const COLORS = [
 ]
 
 export function CategoryPieChart({ data }: CategoryPieChartProps) {
+    const { convert, symbol, format } = useCurrency()
+
     const chartData = Object.entries(data)
         .map(([name, value]) => ({
             name,
-            value
+            value: convert(value)
         }))
         .sort((a, b) => b.value - a.value);
 
@@ -46,7 +47,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
     return (
         <Card className="border border-border bg-card shadow-md transition-shadow hover:shadow-lg">
             <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                <CardTitle className="text-xl font-bold text-custom-gradient">
                     Category Breakdown
                 </CardTitle>
                 <CardDescription>Distribution of expenses across categories</CardDescription>
@@ -84,7 +85,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
                                     }}
                                     itemStyle={{ color: 'hsl(var(--foreground))' }}
                                     labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                    formatter={(value: number) => [`₹${value.toFixed(2)}`, 'Spend']}
+                                    formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Spend']}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -94,7 +95,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
                                 Total
                             </span>
                             <span className="text-lg font-bold text-foreground mt-0.5">
-                                ₹{Math.round(totalSpend).toLocaleString('en-IN')}
+                                {symbol}{Math.round(totalSpend).toLocaleString()}
                             </span>
                         </div>
                     </div>
@@ -102,7 +103,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
                     {/* Custom Legend / Category List */}
                     <div className="flex-1 w-full space-y-2.5 max-h-[200px] overflow-y-auto pr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/35 transition-colors">
                         {chartData.map((item, index) => {
-                            const percentage = (item.value / totalSpend) * 100;
+                            const percentage = (item.value / (totalSpend || 1)) * 100;
                             const color = COLORS[index % COLORS.length];
                             
                             return (
@@ -118,7 +119,7 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
                                     </div>
                                     <div className="flex items-center space-x-3 text-right font-mono">
                                         <span className="text-muted-foreground">
-                                            ₹{item.value.toFixed(2)}
+                                            {symbol}{item.value.toFixed(2)}
                                         </span>
                                         <span className="font-bold text-primary w-12">
                                             {percentage.toFixed(0)}%

@@ -1,6 +1,5 @@
-'use client'
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface ExpenseHeatmapProps {
     data: Array<{
@@ -12,6 +11,8 @@ interface ExpenseHeatmapProps {
 }
 
 export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps) {
+    const { convert, symbol, format } = useCurrency()
+
     // We want to map day numbers (1-31)
     const dailySpendMap = new Map<number, number>();
     let maxSpend = 0;
@@ -66,7 +67,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
     return (
         <Card className="border border-border bg-card shadow-md hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
-                <CardTitle className="text-xl font-bold bg-gradient-to-r from-teal-500 to-indigo-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl font-bold text-custom-gradient">
                     Monthly Expense Heatmap
                 </CardTitle>
                 <CardDescription>Daily spending intensity graph (Click any day to see details)</CardDescription>
@@ -101,14 +102,14 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                                     >
                                         <span className="text-xs font-bold font-mono">{day}</span>
                                         {total > 0 && (
-                                            <span className="text-[9px] opacity-90 font-mono mt-0.5 font-bold">₹{Math.round(total)}</span>
+                                            <span className="text-[9px] opacity-90 font-mono mt-0.5 font-bold">{symbol}{Math.round(convert(total))}</span>
                                         )}
                                         
                                         {/* Premium Tooltip */}
                                         <div className="absolute bottom-full mb-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-30 transition-all duration-300 transform translate-y-1">
                                             <div className="bg-zinc-950/95 dark:bg-zinc-50/95 text-zinc-50 dark:text-zinc-950 text-[10px] font-bold rounded-lg py-1 px-2.5 shadow-xl border border-zinc-800/10 dark:border-zinc-200/10 whitespace-nowrap flex flex-col items-center font-mono">
                                                 <p className="opacity-75">Day {day}</p>
-                                                <p className="text-teal-400 dark:text-teal-600 font-extrabold text-xs">₹{total.toFixed(2)}</p>
+                                                <p className="text-teal-400 dark:text-teal-600 font-extrabold text-xs">{format(total)}</p>
                                             </div>
                                             <div className="w-1.5 h-1.5 -mt-1 rotate-45 bg-zinc-950/95 dark:bg-zinc-50/95 border-r border-b border-zinc-800/10 dark:border-zinc-200/10"></div>
                                         </div>

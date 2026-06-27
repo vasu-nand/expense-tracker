@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Trash2, Loader2, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface Expense {
     _id: string;
@@ -19,7 +20,9 @@ interface ExpenseTableProps {
     error: string;
     page: number;
     total: number;
+    limit: number;
     onPageChange: (page: number) => void;
+    onLimitChange: (limit: number) => void;
     onDelete: () => void;
     onEdit: (expense: Expense) => void;
     onDeleteRequest: (expense: Expense) => void;
@@ -31,12 +34,14 @@ export function ExpenseTable({
     error,
     page,
     total,
+    limit,
     onPageChange,
+    onLimitChange,
     onDelete,
     onEdit,
     onDeleteRequest
 }: ExpenseTableProps) {
-    const limit = 20;
+    const { format } = useCurrency()
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
 
@@ -128,7 +133,7 @@ export function ExpenseTable({
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right font-mono font-bold text-foreground">
-                                        ₹{expense.amount.toFixed(2)}
+                                        {format(expense.amount)}
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center items-center space-x-1">
@@ -161,14 +166,33 @@ export function ExpenseTable({
 
             {/* Pagination Controls */}
             {total > 0 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t bg-muted/20">
-                    <div className="text-sm text-muted-foreground">
-                        Showing <span className="font-semibold text-foreground">{((page - 1) * limit) + 1}</span> to{' '}
-                        <span className="font-semibold text-foreground">
-                            {Math.min(page * limit, total)}
-                        </span>{' '}
-                        of <span className="font-semibold text-foreground">{total}</span> expenses
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t bg-muted/20">
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="text-xs text-muted-foreground">
+                            Showing <span className="font-semibold text-foreground">{((page - 1) * limit) + 1}</span> to{' '}
+                            <span className="font-semibold text-foreground">
+                                {Math.min(page * limit, total)}
+                            </span>{' '}
+                            of <span className="font-semibold text-foreground">{total}</span> expenses
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground border-l border-border/40 pl-3">
+                            <span>Show</span>
+                            <select
+                                value={limit}
+                                onChange={(e) => onLimitChange(Number(e.target.value))}
+                                className="border border-border rounded px-1.5 py-0.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 text-xs"
+                            >
+                                {[10, 20, 50, 100].map((opt) => (
+                                    <option key={opt} value={opt}>
+                                        {opt}
+                                    </option>
+                                ))}
+                            </select>
+                            <span>per page</span>
+                        </div>
                     </div>
+
                     <div className="flex items-center space-x-2">
                         <Button
                             variant="outline"

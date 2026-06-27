@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Sparkles, AlertTriangle, Lightbulb, PieChart, BarChart3, CalendarDays, Activity } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts'
 
 interface AnalyticsReportProps {
@@ -34,6 +35,7 @@ interface AnalyticsReportProps {
 }
 
 export function AnalyticsReport({ data }: AnalyticsReportProps) {
+    const { convert, symbol, format } = useCurrency()
     const {
         totalExpense,
         averageDailyExpense,
@@ -44,6 +46,12 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
         weeklySpend,
         transactionSizes
     } = data;
+
+    // Convert weekly spend chart data to display currency
+    const convertedWeeklySpend = weeklySpend?.map(item => ({
+        name: item.name,
+        amount: convert(item.amount)
+    }));
 
     // Calculate percentages for category breakdown
     const categoryList = Object.entries(categoryBreakdown)
@@ -76,7 +84,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                             Monthly Total
                         </CardDescription>
                         <CardTitle className="text-3xl font-extrabold text-primary">
-                            ₹{totalExpense.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {format(totalExpense || 0)}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -90,7 +98,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                             Daily Average
                         </CardDescription>
                         <CardTitle className="text-3xl font-extrabold text-primary">
-                            ₹{averageDailyExpense.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {format(averageDailyExpense || 0)}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -167,7 +175,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="font-semibold text-foreground capitalize">{category.name}</span>
                                             <div className="flex space-x-2 text-muted-foreground font-mono">
-                                                <span>₹{category.amount.toFixed(2)}</span>
+                                                <span>{format(category.amount)}</span>
                                                 <span className="text-primary font-bold">({category.percentage.toFixed(1)}%)</span>
                                             </div>
                                         </div>
@@ -194,12 +202,12 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
             {/* Weekly and Weekend/Weekday Insights Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Weekly Spending Bar Chart */}
-                {weeklySpend && (
+                {convertedWeeklySpend && (
                     <Card className="border border-border bg-card shadow-md transition-shadow hover:shadow-lg">
                         <CardHeader>
                             <div className="flex items-center space-x-2">
                                 <BarChart3 className="h-5 w-5 text-primary" />
-                                <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                                <CardTitle className="text-xl font-bold text-custom-gradient">
                                     Weekly Spending Comparison
                                 </CardTitle>
                             </div>
@@ -207,11 +215,11 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                         </CardHeader>
                         <CardContent className="h-64 pt-2">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={weeklySpend} margin={{ top: 10, right: 10, left: 20, bottom: 5 }}>
+                                <BarChart data={convertedWeeklySpend} margin={{ top: 10, right: 10, left: 20, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="weeklyTealGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="rgb(45, 212, 191)" stopOpacity={0.9}/>
-                                            <stop offset="100%" stopColor="rgb(15, 118, 110)" stopOpacity={0.25}/>
+                                            <stop offset="0%" stopColor="var(--btn-gradient-start, rgb(45, 212, 191))" stopOpacity={0.9}/>
+                                            <stop offset="100%" stopColor="var(--btn-gradient-end, rgb(15, 118, 110))" stopOpacity={0.25}/>
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#888888" strokeOpacity={0.15} vertical={false} />
@@ -225,7 +233,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                     <YAxis 
                                         tick={{ fontSize: 11, fill: 'currentColor' }} 
                                         className="text-muted-foreground"
-                                        tickFormatter={(value: number) => `₹${value}`} 
+                                        tickFormatter={(value: number) => `${symbol}${value}`} 
                                         axisLine={false}
                                         tickLine={false}
                                     />
@@ -238,7 +246,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                         }}
                                         itemStyle={{ color: 'hsl(var(--foreground))' }}
                                         labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                        formatter={(value: number) => [`₹${value.toFixed(2)}`, 'Spend']}
+                                        formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Spend']}
                                     />
                                     <Bar 
                                         dataKey="amount" 
@@ -260,7 +268,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                         <CardHeader>
                             <div className="flex items-center space-x-2">
                                 <CalendarDays className="h-5 w-5 text-primary" />
-                                <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                                <CardTitle className="text-xl font-bold text-custom-gradient">
                                     Weekday vs Weekend Dynamics
                                 </CardTitle>
                             </div>
@@ -271,19 +279,19 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                 <div className="p-4 bg-muted/40 rounded-xl border border-border/50 space-y-1">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Workdays (Mon-Fri)</span>
                                     <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
-                                        ₹{weekdayWeekend.weekdayTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                        {format(weekdayWeekend.weekdayTotal)}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        {weekdayWeekend.weekdayCount} txs, avg ₹{weekdayWeekend.weekdayAverage.toFixed(2)}/tx
+                                        {weekdayWeekend.weekdayCount} txs, avg {format(weekdayWeekend.weekdayAverage)}/tx
                                     </p>
                                 </div>
                                 <div className="p-4 bg-muted/40 rounded-xl border border-border/50 space-y-1">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weekends (Sat-Sun)</span>
                                     <div className="text-2xl font-bold text-teal-700 dark:text-teal-300">
-                                        ₹{weekdayWeekend.weekendTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                        {format(weekdayWeekend.weekendTotal)}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        {weekdayWeekend.weekendCount} txs, avg ₹{weekdayWeekend.weekendAverage.toFixed(2)}/tx
+                                        {weekdayWeekend.weekendCount} txs, avg {format(weekdayWeekend.weekendAverage)}/tx
                                     </p>
                                 </div>
                             </div>
@@ -316,7 +324,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                     <CardHeader>
                         <div className="flex items-center space-x-2">
                             <Activity className="h-5 w-5 text-primary" />
-                            <CardTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                            <CardTitle className="text-xl font-bold text-custom-gradient">
                                 Transaction Size Distribution
                             </CardTitle>
                         </div>
@@ -326,7 +334,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="font-semibold text-foreground">Micro / Small Spend (&lt; ₹250)</span>
+                                    <span className="font-semibold text-foreground">Micro / Small Spend (&lt; {format(250)})</span>
                                     <span className="font-mono font-bold text-muted-foreground">{transactionSizes.low} txs</span>
                                 </div>
                                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
@@ -339,7 +347,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="font-semibold text-foreground">Medium Spend (₹250 - ₹1000)</span>
+                                    <span className="font-semibold text-foreground">Medium Spend ({format(250)} - {format(1000)})</span>
                                     <span className="font-mono font-bold text-muted-foreground">{transactionSizes.medium} txs</span>
                                 </div>
                                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
@@ -352,7 +360,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
 
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="font-semibold text-foreground">Large Spend (&gt; ₹1000)</span>
+                                    <span className="font-semibold text-foreground">Large Spend (&gt; {format(1000)})</span>
                                     <span className="font-mono font-bold text-muted-foreground">{transactionSizes.high} txs</span>
                                 </div>
                                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">

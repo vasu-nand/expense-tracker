@@ -118,3 +118,15 @@
         color: hsl(var(--foreground));
     }
 }
+
+@layer utilities {
+    .bg-custom-btn-gradient {
+        background-image: linear-gradient(to right, var(--btn-gradient-start, #14b8a6), var(--btn-gradient-end, #0f766e)) !important;
+    }
+    
+    .text-custom-gradient {
+        background-image: linear-gradient(to right, var(--text-gradient-start, #0f766e), var(--text-gradient-end, #115e59)) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+    }
+}

@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, DollarSign, Tag, Sparkles, Clock, Loader2, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface Expense {
     _id: string;
@@ -18,6 +19,7 @@ interface Expense {
 }
 
 export default function ExpenseDetailPage() {
+    const { format } = useCurrency()
     const { id } = useParams()
     const router = useRouter()
     const [expense, setExpense] = useState<Expense | null>(null)
@@ -115,7 +117,7 @@ export default function ExpenseDetailPage() {
                 {/* Main details card */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="overflow-hidden border-border/80 bg-card/60 backdrop-blur shadow-lg">
-                        <div className="h-1.5 bg-gradient-to-r from-teal-500 via-teal-600 to-indigo-600" />
+                        <div className="h-1.5 bg-custom-btn-gradient" />
                         <CardHeader className="pb-4">
                             <div className="flex justify-between items-start gap-4">
                                 <div>
@@ -129,7 +131,7 @@ export default function ExpenseDetailPage() {
                                 <div className="text-right">
                                     <p className="text-xs text-muted-foreground font-medium uppercase font-mono">Amount</p>
                                     <p className="text-3xl font-black text-teal-600 dark:text-teal-400 font-mono mt-0.5">
-                                        ₹{expense.amount.toFixed(2)}
+                                        {format(expense.amount)}
                                     </p>
                                 </div>
                             </div>
@@ -212,7 +214,7 @@ export default function ExpenseDetailPage() {
                                                         </Link>
                                                     </td>
                                                     <td className="px-6 py-3.5 text-right font-mono font-bold text-foreground">
-                                                        ₹{exp.amount.toFixed(2)}
+                                                        {format(exp.amount)}
                                                     </td>
                                                     <td className="px-6 py-3.5 text-center">
                                                         <Link href={`/expenses/${exp._id}`} className="text-muted-foreground hover:text-foreground">
@@ -243,18 +245,18 @@ export default function ExpenseDetailPage() {
                                     <div className="p-3 bg-muted/30 border rounded-lg">
                                         <p className="text-xs text-muted-foreground">Category Average</p>
                                         <p className="text-lg font-extrabold text-foreground font-mono mt-0.5">
-                                            ₹{avgSimilarSpend.toFixed(2)}
+                                            {format(avgSimilarSpend)}
                                         </p>
                                     </div>
                                     <div className="p-3 bg-muted/30 border rounded-lg">
                                         <p className="text-xs text-muted-foreground">Variance</p>
                                         {isAboveAverage ? (
                                             <p className="text-sm font-semibold text-rose-600 dark:text-rose-400 mt-0.5 flex items-center gap-1.5">
-                                                <TrendingUp className="h-4 w-4 text-rose-500" /> +₹{(expense.amount - avgSimilarSpend).toFixed(2)} above category average
+                                                <TrendingUp className="h-4 w-4 text-rose-500" /> +{format(expense.amount - avgSimilarSpend)} above category average
                                             </p>
                                         ) : (
                                             <p className="text-sm font-semibold text-teal-600 dark:text-teal-400 mt-0.5 flex items-center gap-1.5">
-                                                <TrendingDown className="h-4 w-4 text-teal-500" /> -₹{(avgSimilarSpend - expense.amount).toFixed(2)} below category average
+                                                <TrendingDown className="h-4 w-4 text-teal-500" /> -{format(avgSimilarSpend - expense.amount)} below category average
                                             </p>
                                         )}
                                     </div>

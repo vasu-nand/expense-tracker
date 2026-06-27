@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, Upload, Table, BarChart3, Moon, Sun, Menu, X, Download, Search } from 'lucide-react'
+import { LayoutDashboard, Upload, Table, BarChart3, Moon, Sun, Menu, X, Download, Search, Settings } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { api } from '@/services/api'
+import { useCurrency } from '@/hooks/use-currency'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -15,6 +17,7 @@ const navItems = [
     { href: '/expenses', label: 'Expenses', icon: Table },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/export', label: 'Export', icon: Download },
+    { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export function Navigation() {
@@ -22,6 +25,12 @@ export function Navigation() {
     const router = useRouter()
     const { theme, setTheme } = useTheme()
     const [isOpen, setIsOpen] = useState(false)
+    const [mounted, setMounted] = useState(false)
+    const { format } = useCurrency()
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const [searchQuery, setSearchQuery] = useState('')
     const [suggestions, setSuggestions] = useState<any[]>([])
@@ -84,7 +93,7 @@ export function Navigation() {
             <div className="container mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center space-x-8">
-                        <Link href="/dashboard" className="font-bold text-xl bg-gradient-to-r from-teal-500 to-teal-700 bg-clip-text text-transparent">
+                        <Link href="/dashboard" className="font-bold text-xl text-custom-gradient">
                             ExpenseTracker
                         </Link>
                         {/* Desktop Menu */}
@@ -98,7 +107,7 @@ export function Navigation() {
                                         className={cn(
                                             "flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
                                             pathname === item.href
-                                                ? "bg-gradient-to-r from-teal-400 to-teal-700 text-white shadow-sm"
+                                                ? "bg-custom-btn-gradient text-white shadow-sm"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         )}
                                     >
@@ -146,7 +155,7 @@ export function Navigation() {
                                                     <p className="font-semibold text-foreground truncate">{s.reason}</p>
                                                     <p className="text-[10px] text-muted-foreground font-mono">Day {s.day} • {s.category}</p>
                                                 </div>
-                                                <span className="font-mono font-bold text-teal-600 shrink-0">₹{s.amount.toFixed(2)}</span>
+                                                <span className="font-mono font-bold text-teal-600 shrink-0">{format(s.amount)}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -180,73 +189,132 @@ export function Navigation() {
                     </div>
                 </div>
             </div>
+            {/* Mobile Drawer (Jetpack Compose Material UI Navigation Drawer Style) */}
+            {isOpen && mounted && typeof document !== 'undefined' && createPortal(
+                <>
+                    {/* Backdrop Overlay */}
+                    <div 
+                        onClick={() => setIsOpen(false)}
+                        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm md:hidden animate-in fade-in duration-300"
+                    />
 
-            {/* Mobile Menu Dropdown */}
-            {isOpen && (
-                <div className="md:hidden border-t bg-background px-4 py-3 space-y-2 animate-in slide-in-from-top-2 duration-200 search-container">
-                    {/* Mobile Search */}
-                    <form onSubmit={handleSearchSubmit} className="relative mb-3">
-                        <input
-                            type="text"
-                            placeholder="Search expenses..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value)
-                                setShowSuggestions(true)
-                            }}
-                            onFocus={() => setShowSuggestions(true)}
-                            className="w-full pl-9 pr-4 py-2 bg-muted/50 border border-border/80 focus:border-teal-500 rounded-full text-sm outline-none"
-                        />
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    </form>
-
-                    {/* Mobile Suggestions */}
-                    {showSuggestions && (searchQuery.trim().length > 1) && (
-                        <div className="bg-card border border-border/80 rounded-xl shadow-lg z-50 overflow-hidden text-xs max-h-40 overflow-y-auto mb-3">
-                            {loadingSuggestions ? (
-                                <div className="p-3 text-center text-muted-foreground animate-pulse">Loading suggestions...</div>
-                            ) : suggestions.length === 0 ? (
-                                <div className="p-3 text-center text-muted-foreground italic">No matches found</div>
-                            ) : (
-                                <div className="py-1 divide-y divide-border/40">
-                                    {suggestions.map((s) => (
-                                        <button
-                                            key={s._id}
-                                            onClick={() => handleSuggestionClick(s._id)}
-                                            className="w-full text-left px-4 py-2 hover:bg-muted/70 flex justify-between items-center transition-colors"
-                                        >
-                                            <div className="truncate pr-2">
-                                                <p className="font-semibold text-foreground truncate">{s.reason}</p>
-                                                <p className="text-[10px] text-muted-foreground">Day {s.day} • {s.category}</p>
-                                            </div>
-                                            <span className="font-mono font-bold text-teal-600 shrink-0">₹{s.amount.toFixed(2)}</span>
-                                        </button>
-                                    ))}
+                    {/* Side Drawer Sheet */}
+                    <div className="fixed inset-y-0 left-0 z-[101] w-[80%] max-w-[320px] bg-card border-r border-border/80 shadow-2xl flex flex-col justify-between rounded-r-[24px] md:hidden animate-in slide-in-from-left duration-300 search-container overflow-hidden">
+                        
+                        {/* Drawer Header & Content */}
+                        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6">
+                            {/* App Header & Close Button */}
+                            <div className="flex justify-between items-center pb-2 border-b border-border/40">
+                                <div>
+                                    <h2 className="text-xl font-bold text-custom-gradient tracking-tight">ExpenseTracker</h2>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">Financial Intelligence</p>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsOpen(false)}
+                                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-4.5 w-4.5" />
+                                </Button>
+                            </div>
 
-                    {navItems.map((item) => {
-                        const Icon = item.icon
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                onClick={() => setIsOpen(false)}
-                                className={cn(
-                                    "flex items-center space-x-3 px-3 py-2.5 rounded-md text-base font-medium transition-all duration-200",
-                                    pathname === item.href
-                                        ? "bg-gradient-to-r from-teal-400 to-teal-700 text-white shadow-sm"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            {/* Search bar inside drawer */}
+                            <form onSubmit={handleSearchSubmit} className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search transactions..."
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value)
+                                        setShowSuggestions(true)
+                                    }}
+                                    onFocus={() => setShowSuggestions(true)}
+                                    className="w-full pl-9 pr-4 py-2 bg-muted/60 border border-border/80 focus:border-teal-500 rounded-xl text-xs outline-none"
+                                />
+                                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                                
+                                {/* Mobile Suggestions */}
+                                {showSuggestions && (searchQuery.trim().length > 1) && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/80 rounded-xl shadow-lg z-50 overflow-hidden text-[10px] max-h-40 overflow-y-auto">
+                                        {loadingSuggestions ? (
+                                            <div className="p-2 text-center text-muted-foreground animate-pulse">Loading...</div>
+                                        ) : suggestions.length === 0 ? (
+                                            <div className="p-2 text-center text-muted-foreground italic">No matches</div>
+                                        ) : (
+                                            <div className="py-1 divide-y divide-border/40">
+                                                {suggestions.map((s) => (
+                                                    <button
+                                                        key={s._id}
+                                                        onClick={() => handleSuggestionClick(s._id)}
+                                                        className="w-full text-left px-3 py-2 hover:bg-muted/70 flex justify-between items-center transition-colors"
+                                                    >
+                                                        <div className="truncate pr-1">
+                                                            <p className="font-semibold text-foreground truncate">{s.reason}</p>
+                                                            <p className="text-[9px] text-muted-foreground font-mono">Day {s.day} • {s.category}</p>
+                                                        </div>
+                                                        <span className="font-mono font-bold text-teal-600 shrink-0">{format(s.amount)}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
+                            </form>
+
+                            {/* Nav Items - styled as Jetpack Compose / M3 pills */}
+                            <div className="space-y-1">
+                                {navItems.map((item) => {
+                                    const Icon = item.icon
+                                    const isActive = pathname === item.href
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setIsOpen(false)}
+                                            className={cn(
+                                                "flex items-center space-x-3 px-4 py-3 rounded-full text-sm font-bold transition-all duration-200",
+                                                isActive
+                                                    ? "bg-custom-btn-gradient text-white shadow-md"
+                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            )}
+                                        >
+                                            <Icon className="h-4.5 w-4.5 shrink-0" />
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Drawer Bottom Actions */}
+                        <div className="p-5 border-t border-border/40 bg-muted/20 flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground font-mono font-semibold uppercase">v1.2.0 Stable</span>
+                            
+                            {/* Mobile Theme Toggle in Drawer Footer */}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                className="h-8 rounded-lg flex items-center gap-1 text-xs border-border/60 hover:bg-muted font-bold text-muted-foreground hover:text-foreground"
                             >
-                                <Icon className="h-5 w-5" />
-                                <span>{item.label}</span>
-                            </Link>
-                        )
-                    })}
-                </div>
+                                {theme === 'dark' ? (
+                                    <>
+                                        <Sun className="h-3.5 w-3.5 text-amber-500" />
+                                        <span>Light Mode</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Moon className="h-3.5 w-3.5 text-indigo-400" />
+                                        <span>Dark Mode</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                    </div>
+                </>
+                , document.body
             )}
         </nav>
     )
