@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, DollarSign, Calendar, List } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface DashboardStatsProps {
     data: {
@@ -11,17 +12,19 @@ interface DashboardStatsProps {
 }
 
 export function DashboardStats({ data }: DashboardStatsProps) {
+    const { format } = useCurrency()
+
     const stats = [
         {
             title: 'Total Expense',
-            value: `₹${(data.totalExpense || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            value: format(data.totalExpense || 0),
             icon: DollarSign,
             description: 'Cumulative spending for the month',
             color: 'from-teal-500/10 to-teal-500/5 text-teal-600 dark:text-teal-400 border-teal-500/20'
         },
         {
             title: 'Average Daily',
-            value: `₹${(data.averageDailyExpense || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            value: format(data.averageDailyExpense || 0),
             icon: TrendingUp,
             description: 'Per day average spending rate',
             color: 'from-indigo-500/10 to-indigo-500/5 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'

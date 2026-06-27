@@ -50,6 +50,11 @@ export const getExpenses = async (req: Request, res: Response) => {
         const search = req.query.search as string;
         const sortBy = req.query.sortBy as string || 'day';
         const sortOrder = (req.query.sortOrder as 'asc' | 'desc') || 'desc';
+        
+        const minAmount = req.query.minAmount ? parseFloat(req.query.minAmount as string) : undefined;
+        const maxAmount = req.query.maxAmount ? parseFloat(req.query.maxAmount as string) : undefined;
+        const minDay = req.query.minDay ? parseInt(req.query.minDay as string) : undefined;
+        const maxDay = req.query.maxDay ? parseInt(req.query.maxDay as string) : undefined;
 
         const result = await expenseService.getAllExpenses(
             page, 
@@ -59,7 +64,11 @@ export const getExpenses = async (req: Request, res: Response) => {
             isNaN(day as number) ? undefined : day,
             search,
             sortBy,
-            sortOrder
+            sortOrder,
+            isNaN(minAmount as number) ? undefined : minAmount,
+            isNaN(maxAmount as number) ? undefined : maxAmount,
+            isNaN(minDay as number) ? undefined : minDay,
+            isNaN(maxDay as number) ? undefined : maxDay
         );
         res.json(result);
     } catch (error: any) {
@@ -179,6 +188,28 @@ export const getDailySummary = async (req: Request, res: Response) => {
         const month = req.query.month as string || new Date().toISOString().slice(0, 7);
         const summary = await expenseService.getDailySummary(month);
         res.json(summary);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const clearAllExpenses = async (req: Request, res: Response) => {
+    try {
+        const password = req.headers['x-delete-password'] || req.query.password;
+        
+        if (!password) {
+            return res.status(401).json({ error: 'Unauthorized: Password required' });
+        }
+
+        const hash = crypto.createHash('sha256').update(String(password)).digest('hex');
+        const requiredHash = process.env.DELETE_PASSWORD_HASH || 'af0dce62e992efc95dc1e0985253fd368e54a32c60852cf77cf2c90bc839ecad';
+
+        if (hash !== requiredHash) {
+            return res.status(401).json({ error: 'Unauthorized: Invalid password' });
+        }
+
+        await expenseService.clearAllExpenses();
+        res.json({ message: 'All expenses and summaries deleted successfully' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { FileText, Calendar, Filter, Sparkles, Download, ArrowLeft, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface Transaction {
     _id: string
@@ -38,6 +39,7 @@ interface AnalyticsData {
 }
 
 export default function ExportPage() {
+    const { format: formatCurrency } = useCurrency()
     const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
     const [selectedCategory, setSelectedCategory] = useState('all')
     const [categories, setCategories] = useState<string[]>([])
@@ -139,10 +141,6 @@ export default function ExportPage() {
         }
     }
 
-    const formatCurrency = (val: number) => {
-        return `₹${(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    }
-
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/40">
@@ -201,7 +199,7 @@ export default function ExportPage() {
                     <Button
                         onClick={handleDownloadPDF}
                         disabled={loading || exporting || transactions.length === 0}
-                        className="w-full bg-gradient-to-r from-teal-500 to-teal-700 hover:from-teal-600 hover:to-teal-800 text-white font-bold py-6 shadow-md transition-all duration-300 hover:shadow-teal-500/20 flex items-center justify-center gap-2"
+                        className="w-full bg-custom-btn-gradient text-white font-bold py-6 shadow-md transition-all duration-300 flex items-center justify-center gap-2 hover:opacity-90"
                     >
                         {exporting ? (
                             <>

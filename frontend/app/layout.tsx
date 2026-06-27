@@ -5,6 +5,8 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Navigation } from '@/components/navigation'
 import { ShutdownWatcher } from '@/components/shutdown-watcher'
 import { DesktopFab } from '@/components/desktop-fab'
+import { CurrencyProvider } from '@/hooks/use-currency'
+import { ThemeCustomizerProvider } from '@/components/theme-customizer-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,16 +24,20 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className}>
                 <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                    <div className="min-h-screen bg-background">
-                        <Navigation />
-                        <main className="container mx-auto px-4 py-8">
-                            {children}
-                        </main>
-                        <DesktopFab />
-                        <ShutdownWatcher />
-                    </div>
+                    <ThemeCustomizerProvider>
+                        <CurrencyProvider>
+                            <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+                                <Navigation />
+                                <main className="container mx-auto px-4 py-8">
+                                    {children}
+                                </main>
+                                <DesktopFab />
+                                <ShutdownWatcher />
+                            </div>
+                        </CurrencyProvider>
+                    </ThemeCustomizerProvider>
                 </ThemeProvider>
             </body>
         </html>
     )
-}
+}

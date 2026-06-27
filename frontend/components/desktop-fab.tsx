@@ -12,7 +12,7 @@ export function DesktopFab() {
             {/* FAB for Adding Expense (Mobile & Desktop) */}
             <button
                 onClick={() => setIsAddExpenseOpen(true)}
-                className="fixed bottom-8 right-8 z-45 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-r from-teal-500 via-teal-600 to-indigo-600 hover:from-teal-600 hover:via-teal-700 hover:to-indigo-700 text-white shadow-xl shadow-teal-500/25 hover:shadow-indigo-500/35 hover:scale-110 active:scale-95 transition-all duration-300 border border-teal-400/25 group focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+                className="fixed bottom-8 right-8 z-45 flex items-center justify-center h-14 w-14 rounded-full bg-custom-btn-gradient text-white shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-primary/50 hover:opacity-95"
                 title="Add Expense"
                 aria-label="Add new expense"
             >
