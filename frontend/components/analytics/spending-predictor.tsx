@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Coins, Calendar, TrendingUp, AlertTriangle, CheckCircle2, ShieldAlert, Home, Zap, Receipt } from 'lucide-react'
+import { useCurrency } from '@/hooks/use-currency'
 
 interface SpendingPredictorProps {
     data: {
@@ -15,6 +16,7 @@ interface SpendingPredictorProps {
 }
 
 export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProps) {
+    const { format, convert, convertToBase, symbol } = useCurrency()
     const { totalExpense, averageDailyExpense, categoryBreakdown = {} } = data;
 
     // Parse the selected month (YYYY-MM)
@@ -113,10 +115,10 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
 
     return (
         <Card className="border border-border/60 bg-card/50 backdrop-blur-md shadow-lg overflow-hidden transition-all duration-300 hover:border-border/80">
-            <CardHeader className="border-b border-border/10 bg-gradient-to-r from-teal-500/10 to-indigo-500/10 pb-4">
+            <CardHeader className="border-b border-border/10 bg-gradient-to-r from-primary/10 to-secondary/10 pb-4">
                 <div className="flex items-center space-x-2">
-                    <TrendingUp className="h-5 w-5 text-teal-400" />
-                    <CardTitle className="text-xl font-bold">Interactive Spending Predictor & Fixed Costs Planner</CardTitle>
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl font-bold text-custom-gradient">Interactive Spending Predictor & Fixed Costs Planner</CardTitle>
                 </div>
                 <CardDescription>
                     Plan your expenses for {new Date(year, monthIndex).toLocaleString('default', { month: 'long', year: 'numeric' })}. This tool automatically accounts for fixed costs like Rent and Electricity Bills.
@@ -128,7 +130,7 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Column 1: Variable daily spend */}
                     <div className="space-y-4 border-r border-border/10 pr-0 lg:pr-6">
-                        <h4 className="text-sm font-semibold text-teal-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <h4 className="text-sm font-semibold text-primary flex items-center gap-1.5 uppercase tracking-wider">
                             <Coins className="h-4 w-4" /> Variable Expenses
                         </h4>
                         <div className="space-y-2">
@@ -136,25 +138,25 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                                 Expected Daily Spend for Remaining Days
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-2.5 text-muted-foreground font-semibold">₹</span>
+                                <span className="absolute left-3 top-2.5 text-muted-foreground font-semibold">{symbol}</span>
                                 <input
                                     type="number"
-                                    value={customDaily || ''}
-                                    onChange={(e) => setCustomDaily(Number(e.target.value))}
-                                    className="w-full border rounded-md pl-7 pr-3 py-2 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-teal-500/30 text-foreground font-semibold"
+                                    value={customDaily ? Math.round(convert(customDaily)) : ''}
+                                    onChange={(e) => setCustomDaily(convertToBase(Number(e.target.value)))}
+                                    className="w-full border rounded-md pl-7 pr-3 py-2 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground font-semibold"
                                     placeholder="0"
                                     min="0"
                                 />
                             </div>
                             <p className="text-[10px] text-muted-foreground">
-                                Current variable/daily average is <span className="font-semibold text-foreground">₹{Math.round(averageDailyExpense)}</span>
+                                Current variable/daily average is <span className="font-semibold text-foreground">{format(Math.round(averageDailyExpense))}</span>
                             </p>
                         </div>
                     </div>
 
                     {/* Column 2: Fixed cost inputs */}
                     <div className="space-y-4 border-r border-border/10 pr-0 lg:pr-6">
-                        <h4 className="text-sm font-semibold text-indigo-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <h4 className="text-sm font-semibold text-primary flex items-center gap-1.5 uppercase tracking-wider">
                             <Receipt className="h-4 w-4" /> Fixed Monthly Costs
                         </h4>
                         
@@ -162,11 +164,11 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-xs">
                                 <label className="text-muted-foreground font-medium flex items-center gap-1">
-                                    <Home className="h-3 w-3 text-indigo-400" /> Rent Amount
+                                    <Home className="h-3 w-3 text-primary" /> Rent Amount
                                 </label>
                                 {isRentAlreadyPaid ? (
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/10">
-                                        Paid (₹{rentPaidVal})
+                                        Paid ({format(rentPaidVal)})
                                     </span>
                                 ) : (
                                     <label className="flex items-center gap-1 cursor-pointer select-none">
@@ -181,13 +183,13 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                                 )}
                             </div>
                             <div className="relative">
-                                <span className="absolute left-3 top-2 text-muted-foreground text-xs font-semibold">₹</span>
+                                <span className="absolute left-3 top-2 text-muted-foreground text-xs font-semibold">{symbol}</span>
                                 <input
                                     type="number"
-                                    value={rentAmount || ''}
-                                    onChange={(e) => setRentAmount(Number(e.target.value))}
+                                    value={rentAmount ? Math.round(convert(rentAmount)) : ''}
+                                    onChange={(e) => setRentAmount(convertToBase(Number(e.target.value)))}
                                     disabled={isRentAlreadyPaid}
-                                    className="w-full border rounded-md pl-7 pr-3 py-1.5 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-teal-500/30 text-foreground text-sm font-semibold disabled:opacity-60"
+                                    className="w-full border rounded-md pl-7 pr-3 py-1.5 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground text-sm font-semibold disabled:opacity-60"
                                     placeholder="0"
                                     min="0"
                                 />
@@ -198,11 +200,11 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-xs">
                                 <label className="text-muted-foreground font-medium flex items-center gap-1">
-                                    <Zap className="h-3 w-3 text-amber-400" /> Electricity / Bills
+                                    <Zap className="h-3 w-3 text-amber-500" /> Electricity / Bills
                                 </label>
                                 {isBillsAlreadyPaid ? (
                                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/10">
-                                        Paid (₹{billsPaidVal})
+                                        Paid ({format(billsPaidVal)})
                                     </span>
                                 ) : (
                                     <label className="flex items-center gap-1 cursor-pointer select-none">
@@ -217,13 +219,13 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                                 )}
                             </div>
                             <div className="relative">
-                                <span className="absolute left-3 top-2 text-muted-foreground text-xs font-semibold">₹</span>
+                                <span className="absolute left-3 top-2 text-muted-foreground text-xs font-semibold">{symbol}</span>
                                 <input
                                     type="number"
-                                    value={electricityAmount || ''}
-                                    onChange={(e) => setElectricityAmount(Number(e.target.value))}
+                                    value={electricityAmount ? Math.round(convert(electricityAmount)) : ''}
+                                    onChange={(e) => setElectricityAmount(convertToBase(Number(e.target.value)))}
                                     disabled={isBillsAlreadyPaid}
-                                    className="w-full border rounded-md pl-7 pr-3 py-1.5 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-teal-500/30 text-foreground text-sm font-semibold disabled:opacity-60"
+                                    className="w-full border rounded-md pl-7 pr-3 py-1.5 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground text-sm font-semibold disabled:opacity-60"
                                     placeholder="0"
                                     min="0"
                                 />
@@ -233,7 +235,7 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
 
                     {/* Column 3: Budget Setting */}
                     <div className="space-y-4">
-                        <h4 className="text-sm font-semibold text-rose-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <h4 className="text-sm font-semibold text-rose-500 flex items-center gap-1.5 uppercase tracking-wider">
                             <Calendar className="h-4 w-4" /> Goal & Budget
                         </h4>
                         <div className="space-y-2">
@@ -241,12 +243,12 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                                 Monthly Budget Target
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-2.5 text-muted-foreground font-semibold">₹</span>
+                                <span className="absolute left-3 top-2.5 text-muted-foreground font-semibold">{symbol}</span>
                                 <input
                                     type="number"
-                                    value={budget || ''}
-                                    onChange={(e) => setBudget(Number(e.target.value))}
-                                    className="w-full border rounded-md pl-7 pr-3 py-2 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-teal-500/30 text-foreground font-semibold"
+                                    value={budget ? Math.round(convert(budget)) : ''}
+                                    onChange={(e) => setBudget(convertToBase(Number(e.target.value)))}
+                                    className="w-full border rounded-md pl-7 pr-3 py-2 bg-background/50 border-border/40 focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground font-semibold"
                                     placeholder="0"
                                     min="0"
                                 />
@@ -275,7 +277,7 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                 <div className="space-y-2">
                     <div className="flex justify-between text-xs font-semibold text-muted-foreground">
                         <span>Spending Progress & Projections Visualizer</span>
-                        <span>Max Scale: ₹{Math.round(maxValue).toLocaleString('en-IN')}</span>
+                        <span>Max Scale: {format(Math.round(maxValue), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                     </div>
                     
                     <div className="relative h-6 w-full bg-muted/40 rounded-full overflow-hidden flex border border-border/20 shadow-inner">
@@ -283,10 +285,10 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                         {actualSpent > 0 && (
                             <div 
                                 style={{ width: `${actualPercent}%` }}
-                                className="h-full bg-gradient-to-r from-teal-600 to-teal-500 transition-all duration-300 flex items-center justify-center text-[10px] text-white font-bold"
-                                title={`Actual: ₹${actualSpent}`}
+                                className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-300 flex items-center justify-center text-[10px] text-white font-bold"
+                                title={`Actual: ${format(actualSpent)}`}
                             >
-                                {actualPercent > 12 && `Spent: ₹${Math.round(actualSpent)}`}
+                                {actualPercent > 12 && `Spent: ${format(Math.round(actualSpent), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
                             </div>
                         )}
                         {/* Projected Remaining Variable */}
@@ -294,9 +296,9 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                             <div 
                                 style={{ width: `${projectedVariablePercent}%` }}
                                 className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-300 flex items-center justify-center text-[10px] text-white font-bold border-l border-white/20"
-                                title={`Projected Daily: ₹${projectedRemainingVariable}`}
+                                title={`Projected Daily: ${format(projectedRemainingVariable)}`}
                             >
-                                {projectedVariablePercent > 12 && `Proj. Daily: ₹${Math.round(projectedRemainingVariable)}`}
+                                {projectedVariablePercent > 12 && `Proj. Daily: ${format(Math.round(projectedRemainingVariable), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
                             </div>
                         )}
                         {/* Projected Fixed (Rent / Electricity) */}
@@ -304,9 +306,9 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                             <div 
                                 style={{ width: `${projectedFixedPercent}%` }}
                                 className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-300 flex items-center justify-center text-[10px] text-white font-bold border-l border-white/20"
-                                title={`Projected Bills: ₹${projectedRemainingFixed}`}
+                                title={`Projected Bills: ${format(projectedRemainingFixed)}`}
                             >
-                                {projectedFixedPercent > 12 && `Proj. Fixed: ₹${Math.round(projectedRemainingFixed)}`}
+                                {projectedFixedPercent > 12 && `Proj. Fixed: ${format(Math.round(projectedRemainingFixed), { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
                             </div>
                         )}
 
@@ -315,7 +317,7 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                             <div 
                                 style={{ left: `${budgetPercent}%` }}
                                 className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10"
-                                title={`Budget: ₹${budget}`}
+                                title={`Budget: ${format(budget)}`}
                             >
                                 <span className="absolute -top-4 -translate-x-1/2 text-[9px] text-rose-500 font-extrabold whitespace-nowrap bg-background px-1 rounded border border-rose-500/20">
                                     Budget
@@ -326,24 +328,24 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
 
                     <div className="flex flex-wrap justify-between text-xs text-muted-foreground pt-1 gap-y-2">
                         <div className="flex items-center space-x-1">
-                            <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-                            <span>Actual Spent: <strong className="text-foreground">₹{actualSpent.toLocaleString('en-IN')}</strong></span>
+                            <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                            <span>Actual Spent: <strong className="text-foreground">{format(actualSpent)}</strong></span>
                         </div>
                         {daysRemaining > 0 && (
                             <div className="flex items-center space-x-1">
                                 <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
-                                <span>Projected Variable: <strong className="text-foreground">₹{projectedRemainingVariable.toLocaleString('en-IN')}</strong></span>
+                                <span>Projected Variable: <strong className="text-foreground">{format(projectedRemainingVariable)}</strong></span>
                             </div>
                         )}
                         {projectedRemainingFixed > 0 && (
                             <div className="flex items-center space-x-1">
                                 <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                                <span>Projected Fixed: <strong className="text-foreground">₹{projectedRemainingFixed.toLocaleString('en-IN')}</strong></span>
+                                <span>Projected Fixed: <strong className="text-foreground">{format(projectedRemainingFixed)}</strong></span>
                             </div>
                         )}
                         <div className="flex items-center space-x-1">
                             <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                            <span>Budget Limit: <strong className="text-foreground">₹{budget.toLocaleString('en-IN')}</strong></span>
+                            <span>Budget Limit: <strong className="text-foreground">{format(budget)}</strong></span>
                         </div>
                     </div>
                 </div>
@@ -370,13 +372,13 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                             </h4>
                             <p className="text-xs text-muted-foreground mt-0.5">
                                 {isOverBudget 
-                                    ? `Based on your settings, you will exceed your target budget by ₹${absDiff.toLocaleString('en-IN')}` 
-                                    : `Great! You are projected to finish the month ₹${absDiff.toLocaleString('en-IN')} under budget`
+                                    ? `Based on your settings, you will exceed your target budget by ${format(absDiff)}` 
+                                    : `Great! You are projected to finish the month ${format(absDiff)} under budget`
                                 }
                             </p>
                             {/* Detailed breakdown info */}
                             <p className="text-[10px] text-muted-foreground mt-1">
-                                Breakdown: ₹{actualSpent.toLocaleString('en-IN')} actual + ₹{projectedRemainingVariable.toLocaleString('en-IN')} variable + ₹{projectedRemainingFixed.toLocaleString('en-IN')} fixed.
+                                Breakdown: {format(actualSpent)} actual + {format(projectedRemainingVariable)} variable + {format(projectedRemainingFixed)} fixed.
                             </p>
                         </div>
                     </div>
@@ -384,7 +386,7 @@ export function SpendingPredictor({ data, selectedMonth }: SpendingPredictorProp
                     <div className="text-right w-full md:w-auto">
                         <div className="text-xs text-muted-foreground">Total Projected Spending</div>
                         <div className={`text-2xl font-black ${isOverBudget ? 'text-rose-400' : 'text-emerald-400'}`}>
-                            ₹{totalProjected.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            {format(totalProjected)}
                         </div>
                     </div>
                 </div>

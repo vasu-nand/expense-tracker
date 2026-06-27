@@ -278,7 +278,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-4 bg-muted/40 rounded-xl border border-border/50 space-y-1">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Workdays (Mon-Fri)</span>
-                                    <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                                    <div className="text-2xl font-bold text-primary">
                                         {format(weekdayWeekend.weekdayTotal)}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
@@ -287,7 +287,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                 </div>
                                 <div className="p-4 bg-muted/40 rounded-xl border border-border/50 space-y-1">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Weekends (Sat-Sun)</span>
-                                    <div className="text-2xl font-bold text-teal-700 dark:text-teal-300">
+                                    <div className="text-2xl font-bold text-primary/75">
                                         {format(weekdayWeekend.weekendTotal)}
                                     </div>
                                     <p className="text-xs text-muted-foreground">
@@ -302,13 +302,13 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                     <span>Workdays ({((weekdayWeekend.weekdayTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100).toFixed(0)}%)</span>
                                     <span>Weekends ({((weekdayWeekend.weekendTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100).toFixed(0)}%)</span>
                                 </div>
-                                <div className="h-3 w-full bg-teal-800/20 dark:bg-teal-900/10 rounded-full overflow-hidden flex">
+                                <div className="h-3 w-full bg-primary/10 rounded-full overflow-hidden flex">
                                     <div 
-                                        className="bg-teal-500 h-full transition-all duration-500" 
+                                        className="bg-primary h-full transition-all duration-500" 
                                         style={{ width: `${(weekdayWeekend.weekdayTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100}%` }}
                                     />
                                     <div 
-                                        className="bg-teal-700 h-full transition-all duration-500" 
+                                        className="bg-primary/50 h-full transition-all duration-500" 
                                         style={{ width: `${(weekdayWeekend.weekendTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100}%` }}
                                     />
                                 </div>

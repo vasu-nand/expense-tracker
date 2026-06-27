@@ -7,7 +7,7 @@ import { ExpenseFilters } from '@/components/expenses/expense-filters'
 import { useExpenses } from '@/hooks/useExpenses'
 import { AddExpenseDialog } from '@/components/expenses/add-expense-dialog'
 import { EditExpenseDialog } from '@/components/expenses/edit-expense-dialog'
-import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loader2 } from 'lucide-react'
+import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loader2, RotateCw } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
 import { Button } from '@/components/ui/button'
 import { api } from '@/services/api'
@@ -167,18 +167,32 @@ export default function ExpensesPage() {
                         <Plus className="h-4 w-4" />
                         <span>Add Expense</span>
                     </Button>
-                    <button
+                    {/* Desktop Refresh Button */}
+                    <Button
+                        variant="outline"
                         onClick={() => refetch()}
-                        className="px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors text-sm font-medium"
+                        className="hidden sm:flex items-center space-x-1.5 border-border/80 text-muted-foreground hover:text-foreground"
                     >
-                        Refresh
-                    </button>
+                        <RotateCw className="h-4 w-4" />
+                        <span>Refresh</span>
+                    </Button>
+
+                    {/* Mobile Refresh Icon Button */}
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => refetch()}
+                        className="flex sm:hidden border-border/80 text-muted-foreground hover:text-foreground rounded-lg"
+                        title="Refresh"
+                    >
+                        <RotateCw className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
 
             {/* Quick View Insights */}
             {!loading && expenses.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-300">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in duration-300">
                     <div className="p-4 rounded-xl border border-teal-500/10 bg-teal-500/5 dark:bg-teal-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                         <div>
                             <p className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Visible Spend Total</p>

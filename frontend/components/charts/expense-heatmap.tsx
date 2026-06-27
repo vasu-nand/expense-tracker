@@ -53,15 +53,15 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
         
         const ratio = total / maxSpend;
         if (ratio <= 0.25) {
-            return 'bg-emerald-500/10 dark:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/10';
+            return 'bg-primary/10 text-primary border border-primary/20';
         }
         if (ratio <= 0.5) {
-            return 'bg-emerald-500/30 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 dark:border-emerald-500/20';
+            return 'bg-primary/30 text-primary border border-primary/35';
         }
         if (ratio <= 0.75) {
-            return 'bg-emerald-500/60 dark:bg-emerald-500/45 text-white border border-emerald-500/70';
+            return 'bg-primary/60 text-primary-foreground border border-primary/65';
         }
-        return 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/10 border border-emerald-600/20';
+        return 'bg-custom-btn-gradient text-white shadow-md shadow-primary/15 border border-primary/20';
     };
 
     return (
@@ -98,7 +98,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                                     <div
                                         key={day}
                                         onClick={() => onDayClick && onDayClick(day)}
-                                        className={`relative group flex flex-col items-center justify-center h-12 rounded-lg transition-all duration-300 ease-out hover:scale-110 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 hover:ring-teal-500/30 cursor-pointer ${colorClass}`}
+                                        className={`relative group flex flex-col items-center justify-center h-12 rounded-lg transition-all duration-300 ease-out hover:scale-110 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 hover:ring-primary/30 cursor-pointer ${colorClass}`}
                                     >
                                         <span className="text-xs font-bold font-mono">{day}</span>
                                         {total > 0 && (
@@ -109,7 +109,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                                         <div className="absolute bottom-full mb-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-30 transition-all duration-300 transform translate-y-1">
                                             <div className="bg-zinc-950/95 dark:bg-zinc-50/95 text-zinc-50 dark:text-zinc-950 text-[10px] font-bold rounded-lg py-1 px-2.5 shadow-xl border border-zinc-800/10 dark:border-zinc-200/10 whitespace-nowrap flex flex-col items-center font-mono">
                                                 <p className="opacity-75">Day {day}</p>
-                                                <p className="text-teal-400 dark:text-teal-600 font-extrabold text-xs">{format(total)}</p>
+                                                <p className="text-primary font-extrabold text-xs">{format(total)}</p>
                                             </div>
                                             <div className="w-1.5 h-1.5 -mt-1 rotate-45 bg-zinc-950/95 dark:bg-zinc-50/95 border-r border-b border-zinc-800/10 dark:border-zinc-200/10"></div>
                                         </div>
@@ -123,10 +123,10 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                     <div className="flex items-center justify-end space-x-2 text-[10px] text-muted-foreground pt-3 border-t border-border/40 mt-2 font-medium">
                         <span>Less</span>
                         <div className="w-3.5 h-3.5 rounded-sm bg-muted/30 dark:bg-muted/10 border border-border/40"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500/10 dark:bg-emerald-500/5 border border-emerald-500/20 dark:border-emerald-500/10"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500/30 dark:bg-emerald-500/15 border border-emerald-500/40 dark:border-emerald-500/20"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500/60 dark:bg-emerald-500/40 border border-emerald-500/70"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 border border-emerald-600/20"></div>
+                        <div className="w-3.5 h-3.5 rounded-sm bg-primary/10 border border-primary/20"></div>
+                        <div className="w-3.5 h-3.5 rounded-sm bg-primary/30 border border-primary/35"></div>
+                        <div className="w-3.5 h-3.5 rounded-sm bg-primary/60 border border-primary/65"></div>
+                        <div className="w-3.5 h-3.5 rounded-sm bg-custom-btn-gradient border border-primary/20"></div>
                         <span>More</span>
                     </div>
                 </div>

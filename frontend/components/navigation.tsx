@@ -131,7 +131,7 @@ export function Navigation() {
                                     setShowSuggestions(true)
                                 }}
                                 onFocus={() => setShowSuggestions(true)}
-                                className="w-full pl-9 pr-4 py-1.5 bg-muted/50 border border-border/80 focus:border-teal-500 rounded-full text-xs transition-all duration-200 outline-none focus:ring-2 focus:ring-teal-500/20"
+                                className="w-full pl-9 pr-4 py-1.5 bg-muted/50 border border-border/80 focus:border-primary rounded-full text-xs transition-all duration-200 outline-none focus:ring-2 focus:ring-primary/20"
                             />
                             <Search className="absolute left-3 top-2 h-3.5 w-3.5 text-muted-foreground" />
                         </form>
@@ -155,7 +155,7 @@ export function Navigation() {
                                                     <p className="font-semibold text-foreground truncate">{s.reason}</p>
                                                     <p className="text-[10px] text-muted-foreground font-mono">Day {s.day} • {s.category}</p>
                                                 </div>
-                                                <span className="font-mono font-bold text-teal-600 shrink-0">{format(s.amount)}</span>
+                                                <span className="font-mono font-bold text-primary shrink-0">{format(s.amount)}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -230,7 +230,7 @@ export function Navigation() {
                                         setShowSuggestions(true)
                                     }}
                                     onFocus={() => setShowSuggestions(true)}
-                                    className="w-full pl-9 pr-4 py-2 bg-muted/60 border border-border/80 focus:border-teal-500 rounded-xl text-xs outline-none"
+                                    className="w-full pl-9 pr-4 py-2 bg-muted/60 border border-border/80 focus:border-primary rounded-xl text-xs outline-none"
                                 />
                                 <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                                 
@@ -253,7 +253,7 @@ export function Navigation() {
                                                             <p className="font-semibold text-foreground truncate">{s.reason}</p>
                                                             <p className="text-[9px] text-muted-foreground font-mono">Day {s.day} • {s.category}</p>
                                                         </div>
-                                                        <span className="font-mono font-bold text-teal-600 shrink-0">{format(s.amount)}</span>
+                                                        <span className="font-mono font-bold text-primary shrink-0">{format(s.amount)}</span>
                                                     </button>
                                                 ))}
                                             </div>

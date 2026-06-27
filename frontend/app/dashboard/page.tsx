@@ -9,6 +9,8 @@ import { ExpenseHeatmap } from '@/components/charts/expense-heatmap'
 import { useDashboard } from '@/hooks/useDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DayExpensesDialog } from '@/components/dashboard/day-expenses-dialog'
+import { Calendar } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function DashboardPage() {
     const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -46,14 +48,27 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <input
-                    type="month"
-                    value={month}
-                    onChange={(e) => setMonth(e.target.value)}
-                    className="border rounded-md px-3 py-2 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 w-full sm:w-auto"
-                />
+            <div className="flex items-center justify-between gap-4">
+                <h1 className="text-3xl font-bold text-custom-gradient">Dashboard</h1>
+                
+                <div className="flex items-center space-x-2">
+                    <span className="text-xs font-bold text-muted-foreground bg-card border border-border/80 px-3 py-2 rounded-xl font-mono shadow-sm">
+                        {new Date(month + '-02').toLocaleString('default', { month: 'short', year: 'numeric' })}
+                    </span>
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="relative h-9 w-9 rounded-xl border-border/80 text-muted-foreground hover:text-foreground shadow-sm"
+                    >
+                        <Calendar className="h-4 w-4" />
+                        <input
+                            type="month"
+                            value={month}
+                            onChange={(e) => setMonth(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                        />
+                    </Button>
+                </div>
             </div>
 
             <DashboardStats data={data} />

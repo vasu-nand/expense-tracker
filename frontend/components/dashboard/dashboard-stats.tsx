@@ -46,7 +46,7 @@ export function DashboardStats({ data }: DashboardStatsProps) {
     ]
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
             {stats.map((stat, index) => {
                 const Icon = stat.icon
                 return (
