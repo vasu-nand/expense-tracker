@@ -70,7 +70,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
         setAmount(suggestion.amount.toString())
 
         // Casing normalization against standard options
-        const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Others']
+        const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Rent', 'Bills', 'Others']
         const matchedCat = categoriesList.find(c => c.toLowerCase() === suggestion.category.toLowerCase())
         setCategory(matchedCat || 'Others')
 
@@ -271,6 +271,8 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             <option value="Drinks">Drinks</option>
                             <option value="Transport">Transport</option>
                             <option value="Shopping">Shopping</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Bills">Bills & Utilities</option>
                             <option value="Others">Others</option>
                         </select>
                     </div>

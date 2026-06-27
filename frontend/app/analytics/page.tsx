@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AnalyticsReport } from '@/components/analytics/analytics-report'
+import { SpendingPredictor } from '@/components/analytics/spending-predictor'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api } from '@/services/api'
 
@@ -66,6 +67,7 @@ export default function AnalyticsPage() {
             </div>
 
             <AnalyticsReport data={analytics} />
+            <SpendingPredictor data={analytics} selectedMonth={month} />
         </div>
     )
 }

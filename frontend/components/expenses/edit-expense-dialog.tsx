@@ -191,6 +191,8 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             <option value="Drinks">Drinks</option>
                             <option value="Transport">Transport</option>
                             <option value="Shopping">Shopping</option>
+                            <option value="Rent">Rent</option>
+                            <option value="Bills">Bills & Utilities</option>
                             <option value="Others">Others</option>
                         </select>
                     </div>
