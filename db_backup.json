@@ -949,24 +949,175 @@
       "month": "2026-06",
       "uploadedAt": "2026-06-25T13:39:28.570Z",
       "__v": 0
+    },
+    {
+      "_id": "6a3fdcb542b3d1d41383f942",
+      "day": 25,
+      "amount": 30,
+      "reason": "1 Doodh (20) + 1 Coffee (10)",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T14:22:45.299Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a3fdce742b3d1d41383f954",
+      "day": 26,
+      "amount": 30,
+      "reason": "1 Doodh (20) + 1 Coffee (10)",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T14:23:35.010Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a3fdd0142b3d1d41383f95f",
+      "day": 26,
+      "amount": 20,
+      "reason": "Frooti",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T14:24:01.353Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a3fddb542b3d1d41383fa2a",
+      "day": 26,
+      "amount": 167,
+      "reason": "Zepto (Icecream (34) + Too Yumm (14) + Haldiram Tortilla (30) + 1 Curls (30) + 1 Takatak (20) + 1 Lays (39))",
+      "category": "Groceries",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T14:27:01.976Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a3fdde842b3d1d41383fa5d",
+      "day": 27,
+      "amount": 170,
+      "reason": "Lunch (Rice + Coffee)",
+      "category": "Food",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T14:27:52.176Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a3fde0942b3d1d41383fa90",
+      "day": 27,
+      "amount": 103,
+      "reason": "Rapido (Living - Shiving)",
+      "category": "Transport",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T14:28:25.623Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a40174f6ed02590ee159d37",
+      "day": 27,
+      "amount": 110,
+      "reason": "Dinner",
+      "category": "Dinner",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-27T18:32:47.457Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a40f9ca5486fe34eaf9e483",
+      "day": 28,
+      "amount": 30,
+      "reason": "1 Doodh (20) + 1 Coffee (10)",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-28T10:39:06.251Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a414d655486fe34eaf9e4b1",
+      "day": 28,
+      "amount": 30,
+      "reason": "1 Doodh (20) + 1 Coffee (10)",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-28T16:35:49.052Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a414d935486fe34eaf9e4c0",
+      "day": 28,
+      "amount": 120,
+      "reason": "Haircut",
+      "category": "Others",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-28T16:36:35.031Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a414db55486fe34eaf9e4cf",
+      "day": 28,
+      "amount": 40,
+      "reason": "Samose",
+      "category": "Food",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-28T16:37:09.043Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a4166975486fe34eaf9e4db",
+      "day": 28,
+      "amount": 30,
+      "reason": "1 Doodh (20) + 1 Coffee (10)",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-28T18:23:19.072Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a41f7535486fe34eaf9e4f7",
+      "day": 29,
+      "amount": 70,
+      "reason": "Breakfast (3 doodh (20) + Coffee (10))",
+      "category": "Breakfast",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-29T04:40:51.679Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a427ae85486fe34eaf9e53f",
+      "day": 29,
+      "amount": 93,
+      "reason": "Shikhar - Subway",
+      "category": "Food",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-29T14:02:16.996Z",
+      "__v": 0
+    },
+    {
+      "_id": "6a42a5f8c08d0b2d82eebe00",
+      "day": 29,
+      "amount": 30,
+      "reason": "1 Doodh (20) + 1 Coffee (10)",
+      "category": "Drinks",
+      "month": "2026-06",
+      "uploadedAt": "2026-06-29T17:06:00.567Z",
+      "__v": 0
     }
   ],
   "summaries": [
     {
       "_id": "6a33752892023904bf76b0ae",
       "month": "2026-06",
-      "totalExpense": 12075,
-      "totalDays": 25,
+      "totalExpense": 13148,
+      "totalDays": 29,
       "categoryBreakdown": {
-        "Breakfast": 1732,
+        "Breakfast": 1802,
         "Lunch": 4778,
-        "Drinks": 400,
-        "Others": 2201,
-        "Food": 1228,
-        "Dinner": 1310,
-        "Groceries": 426
+        "Drinks": 600,
+        "Others": 2321,
+        "Food": 1531,
+        "Dinner": 1420,
+        "Groceries": 593,
+        "Transport": 103
       },
-      "averageDailyExpense": 483,
+      "averageDailyExpense": 453.37931034482756,
       "highestExpenseDay": 8,
       "createdAt": "2026-06-18T04:33:44.534Z",
       "__v": 0

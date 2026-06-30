@@ -13,6 +13,7 @@ interface UseExpensesParams {
     maxAmount?: number
     minDay?: number
     maxDay?: number
+    type?: string
 }
 
 export function useExpenses({ 
@@ -26,7 +27,8 @@ export function useExpenses({
     minAmount,
     maxAmount,
     minDay,
-    maxDay
+    maxDay,
+    type
 }: UseExpensesParams) {
     const [expenses, setExpenses] = useState<any[]>([])
     const [total, setTotal] = useState(0)
@@ -48,12 +50,13 @@ export function useExpenses({
                 ...(minAmount !== undefined && { minAmount: String(minAmount) }),
                 ...(maxAmount !== undefined && { maxAmount: String(maxAmount) }),
                 ...(minDay !== undefined && { minDay: String(minDay) }),
-                ...(maxDay !== undefined && { maxDay: String(maxDay) })
+                ...(maxDay !== undefined && { maxDay: String(maxDay) }),
+                ...(type && { type })
             })
 
             const [expensesRes, categoriesRes] = await Promise.all([
                 api.get(`/expenses?${params}`),
-                api.get(`/categories?month=${month || ''}`)
+                api.get(`/categories/active?month=${month || ''}`)
             ])
 
             setExpenses(expensesRes.data.expenses)
@@ -78,7 +81,7 @@ export function useExpenses({
         return () => {
             window.removeEventListener('expense-added', handleExpenseAdded)
         }
-    }, [page, limit, category, month, search, sortBy, sortOrder, minAmount, maxAmount, minDay, maxDay])
+    }, [page, limit, category, month, search, sortBy, sortOrder, minAmount, maxAmount, minDay, maxDay, type])
 
     return { expenses, total, categories, loading, error, refetch: fetchData }
 }

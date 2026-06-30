@@ -3,8 +3,10 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IMonthlySummary extends Document {
     month: string;
     totalExpense: number;
+    totalIncome: number;
     totalDays: number;
     categoryBreakdown: Map<string, number>;
+    incomeCategoryBreakdown: Map<string, number>;
     averageDailyExpense: number;
     highestExpenseDay: number;
     createdAt: Date;
@@ -20,11 +22,21 @@ const MonthlySummarySchema: Schema = new Schema({
         type: Number,
         required: true
     },
+    totalIncome: {
+        type: Number,
+        required: true,
+        default: 0
+    },
     totalDays: {
         type: Number,
         required: true
     },
     categoryBreakdown: {
+        type: Map,
+        of: Number,
+        default: {}
+    },
+    incomeCategoryBreakdown: {
         type: Map,
         of: Number,
         default: {}

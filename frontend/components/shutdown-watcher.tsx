@@ -12,7 +12,7 @@ export function ShutdownWatcher() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            const key = e.key.toLowerCase()
+            const key = (e.key || '').toLowerCase()
             const isCtrl = e.ctrlKey
             const isAlt = e.altKey
             const isShift = e.shiftKey

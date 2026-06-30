@@ -1,7 +1,8 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
+import { api } from '@/services/api'
 
 export interface CustomTheme {
     name: string
@@ -260,11 +261,121 @@ export const predefinedThemes: CustomTheme[] = [
     }
 ]
 
+export const predefinedCategoryPalettes: { name: string; colors: Record<string, string> }[] = [
+    {
+        name: 'Teal Harmony Palette',
+        colors: {
+            Breakfast: '#fbbf24', // Amber
+            Lunch: '#f97316', // Orange
+            Dinner: '#6366f1', // Indigo
+            Groceries: '#14b8a6', // Teal
+            Food: '#f43f5e', // Rose
+            Drinks: '#0ea5e9', // Sky
+            Transport: '#10b981', // Emerald
+            Shopping: '#a855f7', // Purple
+            Rent: '#ec4899', // Pink
+            Bills: '#ef4444', // Red
+            Salary: '#10b981', // Emerald
+            Freelance: '#06b6d4', // Cyan
+            Investments: '#3b82f6', // Blue
+            Gifts: '#ec4899', // Pink
+            Others: '#71717a' // Zinc
+        }
+    },
+    {
+        name: 'Midnight Neon Palette',
+        colors: {
+            Breakfast: '#fb7185', // Rose-400
+            Lunch: '#f43f5e', // Rose-500
+            Dinner: '#c084fc', // Purple-400
+            Groceries: '#2dd4bf', // Teal-400
+            Food: '#f472b6', // Pink-400
+            Drinks: '#38bdf8', // Sky-400
+            Transport: '#34d399', // Emerald-400
+            Shopping: '#a78bfa', // Violet-400
+            Rent: '#f472b6', // Pink-400
+            Bills: '#fb7185', // Rose-400
+            Salary: '#34d399', // Emerald-400
+            Freelance: '#2dd4bf', // Teal-400
+            Investments: '#38bdf8', // Sky-400
+            Gifts: '#f472b6', // Pink-400
+            Others: '#94a3b8' // Slate-400
+        }
+    },
+    {
+        name: 'Warm Autumn Palette',
+        colors: {
+            Breakfast: '#fbbf24', // Amber-400
+            Lunch: '#f97316', // Orange-500
+            Dinner: '#c2410c', // Orange-700
+            Groceries: '#854d0e', // Yellow-800
+            Food: '#9a3412', // Orange-800
+            Drinks: '#b45309', // Amber-700
+            Transport: '#15803d', // Green-700
+            Shopping: '#6b21a8', // Purple-800
+            Rent: '#be185d', // Pink-700
+            Bills: '#991b1b', // Red-800
+            Salary: '#15803d', // Green-700
+            Freelance: '#0d9488', // Teal-700
+            Investments: '#1d4ed8', // Blue-700
+            Gifts: '#be185d', // Pink-700
+            Others: '#52525b' // Zinc-600
+        }
+    },
+    {
+        name: 'Ocean Calm Palette',
+        colors: {
+            Breakfast: '#7dd3fc', // Sky-300
+            Lunch: '#0284c7', // Sky-600
+            Dinner: '#1e3a8a', // Blue-900
+            Groceries: '#0f766e', // Teal-700
+            Food: '#0369a1', // Sky-700
+            Drinks: '#0284c7', // Sky-600
+            Transport: '#0f766e', // Teal-700
+            Shopping: '#1e293b', // Slate-800
+            Rent: '#0f172a', // Slate-900
+            Bills: '#3b82f6', // Blue-500
+            Salary: '#059669', // Emerald-600
+            Freelance: '#0d9488', // Teal-700
+            Investments: '#2563eb', // Blue-600
+            Gifts: '#db2777', // Pink-600
+            Others: '#64748b' // Slate-500
+        }
+    }
+]
+
+const defaultCategoryKeywords: Record<string, string[]> = {
+    Breakfast: ['breakfast', 'doodh', 'milk', 'coffee', 'eggs', 'omlet', 'bread', 'butter', 'jam'],
+    Lunch: ['lunch', 'thali', 'meal', 'curry', 'roti', 'rice'],
+    Dinner: ['dinner', 'night', 'supper'],
+    Groceries: ['blinkit', 'grocery', 'vegetable', 'fruits', 'groceries', 'provision', 'milk delivery', 'tiffin'],
+    Food: ['paratha', 'sweet', 'chutney', 'snack', 'samosa', 'pizza', 'burger', 'sandwich', 'cake', 'biscuit'],
+    Drinks: ['juice', 'frooti', 'nimbu pani', 'lemon', 'soda', 'water', 'cold drink', 'milkshake', 'smoothie'],
+    Transport: ['auto', 'taxi', 'bus', 'train', 'petrol', 'diesel', 'uber', 'ola', 'rickshaw', 'rapido'],
+    Shopping: ['shopping', 'clothes', 'shoes', 'electronics', 'amazon', 'flipkart'],
+    Rent: ['rent', 'room rent', 'house rent', 'flat rent', 'hostel rent', 'hostel fee', 'pg rent'],
+    Bills: ['electricity', 'power bill', 'light bill', 'bill', 'recharge', 'wifi', 'internet', 'broadband', 'water bill', 'maintenance'],
+    Salary: ['salary', 'paycheck', 'payout', 'wage', 'stipend', 'income'],
+    Freelance: ['freelance', 'client', 'gig', 'consulting', 'upwork', 'fiverr'],
+    Investments: ['investment', 'dividend', 'interest', 'stock', 'mutual fund', 'crypto'],
+    Gifts: ['gift', 'cashback', 'reward', 'refund', 'birthday'],
+    Others: []
+}
+
 interface ThemeCustomizerContextType {
     theme: CustomTheme
     setTheme: (theme: CustomTheme) => void
     resetTheme: () => void
     updateThemeColor: (key: keyof Omit<CustomTheme, 'name'>, value: string) => void
+    updateDarkThemeColor: (key: string, value: string) => void
+    categoryColors: Record<string, string>
+    updateCategoryColor: (category: string, color: string) => void
+    setCategoryColors: (colors: Record<string, string>) => void
+    categoryKeywords: Record<string, string[]>
+    updateCategoryKeywords: (category: string, keywords: string[]) => void
+    addCustomCategory: (category: string, color: string, keywords: string[]) => void
+    deleteCustomCategory: (category: string, deletePassword?: string) => Promise<boolean>
+    resetCategorySettings: () => Promise<void>
 }
 
 const ThemeCustomizerContext = createContext<ThemeCustomizerContextType | undefined>(undefined)
@@ -304,21 +415,104 @@ function hexToHsl(hex: string) {
 }
 
 export function ThemeCustomizerProvider({ children }: { children: React.ReactNode }) {
-    const { resolvedTheme } = useTheme()
+    const { theme: mode, setTheme: setMode, resolvedTheme } = useTheme()
     const [customTheme, setCustomThemeState] = useState<CustomTheme>(predefinedThemes[0])
+    const [categoryColors, setCategoryColorsState] = useState<Record<string, string>>(predefinedCategoryPalettes[0].colors)
+    const [categoryKeywords, setCategoryKeywordsState] = useState<Record<string, string[]>>(defaultCategoryKeywords)
     const [mounted, setMounted] = useState(false)
+    const isInitialLoad = useRef(true)
+
+    const syncCategoriesWithBackend = async () => {
+        try {
+            const response = await api.get('/categories')
+            if (response.data && response.data.categories) {
+                const colors: Record<string, string> = {}
+                const keywords: Record<string, string[]> = {}
+                for (const cat of response.data.categories) {
+                    colors[cat.name] = cat.color
+                    keywords[cat.name] = cat.keywords || []
+                }
+                setCategoryColorsState(colors)
+                setCategoryKeywordsState(keywords)
+                localStorage.setItem('custom-category-colors', JSON.stringify(colors))
+                localStorage.setItem('custom-category-keywords', JSON.stringify(keywords))
+            }
+        } catch (error) {
+            console.error('Failed to sync categories with backend database:', error)
+        }
+    }
 
     useEffect(() => {
-        const stored = localStorage.getItem('custom-theme-config')
-        if (stored) {
+        const init = async () => {
+            const stored = localStorage.getItem('custom-theme-config')
+            if (stored) {
+                try {
+                    setCustomThemeState(JSON.parse(stored))
+                } catch (e) {
+                    console.error('Error parsing stored custom theme:', e)
+                }
+            }
+            
+            const storedColors = localStorage.getItem('custom-category-colors')
+            if (storedColors) {
+                try {
+                    setCategoryColorsState(JSON.parse(storedColors))
+                } catch (e) {
+                    console.error('Error parsing stored category colors:', e)
+                }
+            }
+
+            const storedKeywords = localStorage.getItem('custom-category-keywords')
+            if (storedKeywords) {
+                try {
+                    setCategoryKeywordsState(JSON.parse(storedKeywords))
+                } catch (e) {
+                    console.error('Error parsing stored category keywords:', e)
+                }
+            }
+
+            await syncCategoriesWithBackend()
+
             try {
-                setCustomThemeState(JSON.parse(stored))
-            } catch (e) {
-                console.error('Error parsing stored custom theme:', e)
+                const response = await api.get('/settings')
+                if (response.data && response.data.settings) {
+                    const { themeMode, themeConfig } = response.data.settings
+                    if (themeConfig) {
+                        setCustomThemeState(themeConfig)
+                        localStorage.setItem('custom-theme-config', JSON.stringify(themeConfig))
+                    }
+                    if (themeMode) {
+                        setMode(themeMode)
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load settings from database:', error)
+            } finally {
+                isInitialLoad.current = false
+                setMounted(true)
             }
         }
-        setMounted(true)
+
+        init()
     }, [])
+
+    useEffect(() => {
+        if (!mounted || isInitialLoad.current) return
+
+        const delayDebounceFn = setTimeout(async () => {
+            try {
+                await api.put('/settings', {
+                    themeMode: mode,
+                    themeConfig: customTheme
+                })
+                console.log('Settings successfully saved to database.')
+            } catch (error) {
+                console.error('Failed to save settings to database:', error)
+            }
+        }, 1000)
+
+        return () => clearTimeout(delayDebounceFn)
+    }, [customTheme, mode, mounted])
 
     const applyTheme = (theme: CustomTheme, isDark: boolean) => {
         if (typeof window === 'undefined') return
@@ -445,11 +639,139 @@ export function ThemeCustomizerProvider({ children }: { children: React.ReactNod
         setTheme(updated)
     }
 
+    const updateDarkThemeColor = (key: string, value: string) => {
+        const currentDark = customTheme.dark || {
+            background: '#090d16',
+            card: '#111726',
+            foreground: '#f8fafc',
+            border: '#1e293b',
+            primary: '#94a3b8',
+            btnGradientStart: '#94a3b8',
+            btnGradientEnd: '#475569',
+            textGradientStart: '#94a3b8',
+            textGradientEnd: '#475569'
+        }
+        const updated = {
+            ...customTheme,
+            name: 'Custom',
+            dark: {
+                ...currentDark,
+                [key]: value
+            }
+        }
+        setTheme(updated)
+    }
+
+    const setCategoryColors = async (colors: Record<string, string>) => {
+        // Merge theme color changes with current custom category colors to prevent them disappearing
+        const updated = {
+            ...categoryColors,
+            ...colors
+        }
+        setCategoryColorsState(updated)
+        localStorage.setItem('custom-category-colors', JSON.stringify(updated))
+        try {
+            for (const [name, color] of Object.entries(colors)) {
+                await api.put(`/categories/${encodeURIComponent(name)}`, { color })
+            }
+            await syncCategoriesWithBackend()
+        } catch (e) {
+            console.error('Error syncing colors to backend:', e)
+        }
+    }
+
+    const updateCategoryColor = async (category: string, color: string) => {
+        const updated = {
+            ...categoryColors,
+            [category]: color
+        }
+        setCategoryColorsState(updated)
+        localStorage.setItem('custom-category-colors', JSON.stringify(updated))
+        try {
+            await api.put(`/categories/${encodeURIComponent(category)}`, { color })
+            await syncCategoriesWithBackend()
+        } catch (e) {
+            console.error('Error updating category color on backend:', e)
+        }
+    }
+
+    const updateCategoryKeywords = async (category: string, keywords: string[]) => {
+        const updated = {
+            ...categoryKeywords,
+            [category]: keywords
+        }
+        setCategoryKeywordsState(updated)
+        localStorage.setItem('custom-category-keywords', JSON.stringify(updated))
+        try {
+            await api.put(`/categories/${encodeURIComponent(category)}`, { keywords })
+            await syncCategoriesWithBackend()
+        } catch (e) {
+            console.error('Error updating category keywords on backend:', e)
+        }
+    }
+
+    const addCustomCategory = async (category: string, color: string, keywords: string[]) => {
+        const name = category.trim()
+        if (!name) return
+        try {
+            await api.post('/categories', { name, color, keywords })
+            const updatedColors = { ...categoryColors, [name]: color }
+            const updatedKeywords = { ...categoryKeywords, [name]: keywords }
+            setCategoryColorsState(updatedColors)
+            setCategoryKeywordsState(updatedKeywords)
+            localStorage.setItem('custom-category-colors', JSON.stringify(updatedColors))
+            localStorage.setItem('custom-category-keywords', JSON.stringify(updatedKeywords))
+            await syncCategoriesWithBackend()
+        } catch (e: any) {
+            console.error('Error creating custom category on backend:', e)
+            throw new Error(e.response?.data?.error || 'Failed to create category')
+        }
+    }
+
+    const deleteCustomCategory = async (category: string, deletePassword?: string) => {
+        try {
+            await api.delete(`/categories/${encodeURIComponent(category)}`, {
+                headers: { 'x-delete-password': deletePassword || '' }
+            })
+            const updatedColors = { ...categoryColors }
+            delete updatedColors[category]
+            const updatedKeywords = { ...categoryKeywords }
+            delete updatedKeywords[category]
+            setCategoryColorsState(updatedColors)
+            setCategoryKeywordsState(updatedKeywords)
+            localStorage.setItem('custom-category-colors', JSON.stringify(updatedColors))
+            localStorage.setItem('custom-category-keywords', JSON.stringify(updatedKeywords))
+            await syncCategoriesWithBackend()
+            return true
+        } catch (e: any) {
+            console.error('Error deleting category from backend:', e)
+            throw new Error(e.response?.data?.error || 'Failed to delete category')
+        }
+    }
+
+    const resetCategorySettings = async () => {
+        try {
+            await api.post('/categories/reset')
+            await syncCategoriesWithBackend()
+        } catch (e) {
+            console.error('Error resetting categories to default on backend:', e)
+        }
+    }
+
     const value = {
         theme: customTheme,
         setTheme,
         resetTheme,
-        updateThemeColor
+        updateThemeColor,
+        updateDarkThemeColor,
+        categoryColors,
+        updateCategoryColor,
+        setCategoryColors,
+        categoryKeywords,
+        updateCategoryKeywords,
+        addCustomCategory,
+        deleteCustomCategory,
+        resetCategorySettings
     }
 
     return (

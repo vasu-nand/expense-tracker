@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useCurrency } from '@/hooks/use-currency'
+import { cn } from '@/lib/utils'
 
 interface ExpenseHeatmapProps {
     data: Array<{
         day: number;
-        total: number;
+        expense?: number;
+        income?: number;
+        total?: number;
     }>;
     month?: string;
     onDayClick?: (day: number) => void;
@@ -12,19 +16,37 @@ interface ExpenseHeatmapProps {
 
 export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps) {
     const { convert, symbol, format } = useCurrency()
+    const [activeTab, setActiveTab] = useState<'expense' | 'income' | 'net'>('expense')
 
-    // We want to map day numbers (1-31)
-    const dailySpendMap = new Map<number, number>();
-    let maxSpend = 0;
+    // Find max expense, max income, max net, min net
+    let maxExpense = 0;
+    let maxIncome = 0;
+    let maxNet = 0;
+    let minNet = 0;
+
+    const dailyExpenseMap = new Map<number, number>();
+    const dailyIncomeMap = new Map<number, number>();
+    const dailyNetMap = new Map<number, number>();
 
     if (data && data.length > 0) {
         data.forEach(item => {
-            dailySpendMap.set(item.day, item.total);
-            if (item.total > maxSpend) {
-                maxSpend = item.total;
-            }
+            const exp = item.expense !== undefined ? item.expense : item.total || 0;
+            const inc = item.income || 0;
+            const net = inc - exp;
+
+            dailyExpenseMap.set(item.day, exp);
+            dailyIncomeMap.set(item.day, inc);
+            dailyNetMap.set(item.day, net);
+
+            if (exp > maxExpense) maxExpense = exp;
+            if (inc > maxIncome) maxIncome = inc;
+            if (net > maxNet) maxNet = net;
+            if (net < minNet) minNet = net;
         });
     }
+
+    const currentMap = activeTab === 'expense' ? dailyExpenseMap : activeTab === 'income' ? dailyIncomeMap : dailyNetMap;
+    const currentMax = activeTab === 'expense' ? maxExpense : activeTab === 'income' ? maxIncome : Math.max(Math.abs(maxNet), Math.abs(minNet));
 
     // Generate days of the actual selected month (1 to 28-31)
     const getDaysCount = () => {
@@ -45,32 +67,90 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
     const firstDayWeekday = new Date(year, monthNum - 1, 1).getDay();
     const spacers = Array.from({ length: firstDayWeekday }, (_, i) => i);
 
-    // Color scaling function based on total spending relative to max spending
-    const getHeatmapColorClass = (total: number) => {
-        if (!total || total === 0) {
+    // Color scaling function based on selected view
+    const getHeatmapColorClass = (val: number) => {
+        if (!val || val === 0) {
             return 'bg-muted/30 dark:bg-muted/10 text-muted-foreground border border-transparent hover:bg-muted/40 dark:hover:bg-muted/20';
         }
         
-        const ratio = total / maxSpend;
-        if (ratio <= 0.25) {
-            return 'bg-primary/10 text-primary border border-primary/20';
+        if (activeTab === 'expense' || activeTab === 'income') {
+            const ratio = val / (currentMax || 1);
+            if (ratio <= 0.25) return 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15';
+            if (ratio <= 0.5) return 'bg-primary/35 text-primary border border-primary/40 hover:bg-primary/45';
+            if (ratio <= 0.75) return 'bg-primary/65 text-primary-foreground border border-primary/70 hover:bg-primary/75';
+            return 'bg-primary text-primary-foreground shadow-md border border-primary/20 hover:bg-primary/90';
+        } else {
+            // Net balance: shown together -> keep green (emerald) and red (rose)
+            if (val > 0) {
+                const ratio = val / (currentMax || 1);
+                if (ratio <= 0.5) return 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/25 hover:bg-emerald-500/20';
+                return 'bg-emerald-500/50 text-emerald-950 dark:text-emerald-50 border border-emerald-500/60 hover:bg-emerald-500/55';
+            } else {
+                const ratio = Math.abs(val) / (currentMax || 1);
+                if (ratio <= 0.5) return 'bg-rose-500/15 text-rose-600 border border-rose-500/25 hover:bg-rose-500/20';
+                return 'bg-rose-500/50 text-rose-950 dark:text-rose-50 border border-rose-500/60 hover:bg-rose-500/55';
+            }
         }
-        if (ratio <= 0.5) {
-            return 'bg-primary/30 text-primary border border-primary/35';
+    };
+
+    const getFormattedValue = (val: number) => {
+        if (activeTab === 'net') {
+            return `${val >= 0 ? '+' : '-'}${symbol}${Math.round(convert(Math.abs(val)))}`;
         }
-        if (ratio <= 0.75) {
-            return 'bg-primary/60 text-primary-foreground border border-primary/65';
-        }
-        return 'bg-custom-btn-gradient text-white shadow-md shadow-primary/15 border border-primary/20';
+        return `${symbol}${Math.round(convert(val))}`;
     };
 
     return (
         <Card className="border border-border bg-card shadow-md hover:shadow-lg transition-all duration-300">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-xl font-bold text-custom-gradient">
-                    Monthly Expense Heatmap
-                </CardTitle>
-                <CardDescription>Daily spending intensity graph (Click any day to see details)</CardDescription>
+            <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <CardTitle className="text-xl font-bold text-custom-gradient">
+                        {activeTab === 'expense' ? 'Monthly Expense Heatmap' : activeTab === 'income' ? 'Monthly Income Heatmap' : 'Monthly Cash Flow Heatmap'}
+                    </CardTitle>
+                    <CardDescription>
+                        {activeTab === 'expense' 
+                            ? 'Daily spending intensity graph' 
+                            : activeTab === 'income' 
+                            ? 'Daily earnings intensity graph' 
+                            : 'Daily net surplus or deficit visual grid'} (Click any day to see details)
+                    </CardDescription>
+                </div>
+                {/* Toggle tab switch */}
+                <div className="flex p-0.5 bg-muted/65 border rounded-lg self-start sm:self-center shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('expense')}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                            activeTab === 'expense'
+                                ? 'bg-card text-primary shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        Spending
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('income')}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                            activeTab === 'income'
+                                ? 'bg-card text-primary shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        Income
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('net')}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                            activeTab === 'net'
+                                ? 'bg-card text-primary shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                        Net Flow
+                    </button>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col space-y-4">
@@ -91,7 +171,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
 
                             {/* Day squares */}
                             {days.map(day => {
-                                const total = dailySpendMap.get(day) || 0;
+                                const total = currentMap.get(day) || 0;
                                 const colorClass = getHeatmapColorClass(total);
                                 
                                 return (
@@ -101,15 +181,17 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                                         className={`relative group flex flex-col items-center justify-center h-12 rounded-lg transition-all duration-300 ease-out hover:scale-110 hover:-translate-y-0.5 hover:shadow-md hover:ring-2 hover:ring-primary/30 cursor-pointer ${colorClass}`}
                                     >
                                         <span className="text-xs font-bold font-mono">{day}</span>
-                                        {total > 0 && (
-                                            <span className="text-[9px] opacity-90 font-mono mt-0.5 font-bold">{symbol}{Math.round(convert(total))}</span>
+                                        {total !== 0 && (
+                                            <span className="text-[9px] opacity-90 font-mono mt-0.5 font-bold">{getFormattedValue(total)}</span>
                                         )}
                                         
                                         {/* Premium Tooltip */}
                                         <div className="absolute bottom-full mb-2.5 hidden group-hover:flex flex-col items-center pointer-events-none z-30 transition-all duration-300 transform translate-y-1">
                                             <div className="bg-zinc-950/95 dark:bg-zinc-50/95 text-zinc-50 dark:text-zinc-950 text-[10px] font-bold rounded-lg py-1 px-2.5 shadow-xl border border-zinc-800/10 dark:border-zinc-200/10 whitespace-nowrap flex flex-col items-center font-mono">
                                                 <p className="opacity-75">Day {day}</p>
-                                                <p className="text-primary font-extrabold text-xs">{format(total)}</p>
+                                                <p className="text-primary font-extrabold text-xs">
+                                                    {activeTab === 'net' ? (total >= 0 ? '+' : '-') : ''}{format(Math.abs(total))}
+                                                </p>
                                             </div>
                                             <div className="w-1.5 h-1.5 -mt-1 rotate-45 bg-zinc-950/95 dark:bg-zinc-50/95 border-r border-b border-zinc-800/10 dark:border-zinc-200/10"></div>
                                         </div>
@@ -120,15 +202,27 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                     </div>
 
                     {/* Heatmap Legend */}
-                    <div className="flex items-center justify-end space-x-2 text-[10px] text-muted-foreground pt-3 border-t border-border/40 mt-2 font-medium">
-                        <span>Less</span>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-muted/30 dark:bg-muted/10 border border-border/40"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-primary/10 border border-primary/20"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-primary/30 border border-primary/35"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-primary/60 border border-primary/65"></div>
-                        <div className="w-3.5 h-3.5 rounded-sm bg-custom-btn-gradient border border-primary/20"></div>
-                        <span>More</span>
-                    </div>
+                    {activeTab === 'net' ? (
+                        <div className="flex items-center justify-end space-x-2 text-[10px] text-muted-foreground pt-3 border-t border-border/40 mt-2 font-medium">
+                            <span>Deficit (Net Spent)</span>
+                            <div className="w-3.5 h-3.5 rounded-sm bg-rose-500/50 border border-rose-500/60"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm bg-rose-500/15 border border-rose-500/25"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm bg-muted/30 dark:bg-muted/10 border border-border/40"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500/15 border border-emerald-500/25"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500/50 border border-emerald-500/60"></div>
+                            <span>Surplus (Net Saved)</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-end space-x-2 text-[10px] text-muted-foreground pt-3 border-t border-border/40 mt-2 font-medium">
+                            <span>Less</span>
+                            <div className="w-3.5 h-3.5 rounded-sm bg-muted/30 dark:bg-muted/10 border border-border/40"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary/10 border-primary/20"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary/35 border-primary/40"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary/65 border-primary/70"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary border-primary/20"></div>
+                            <span>More</span>
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>

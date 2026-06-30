@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useThemeCustomizer, predefinedThemes, CustomTheme } from '@/components/theme-customizer-provider'
+import { useThemeCustomizer, predefinedThemes, CustomTheme, predefinedCategoryPalettes } from '@/components/theme-customizer-provider'
 import { useCurrency, CurrencyType } from '@/hooks/use-currency'
 import { FileUpload } from '@/components/upload/file-upload'
 import { api } from '@/services/api'
@@ -27,7 +27,9 @@ import {
     Monitor,
     AlertOctagon,
     AlertTriangle,
-    Trash2
+    Trash2,
+    Tag,
+    Plus
 } from 'lucide-react'
 
 // PDF generation interfaces
@@ -63,10 +65,56 @@ interface AnalyticsData {
 
 export default function SettingsPage() {
     const { theme: mode, setTheme: setMode } = useTheme()
-    const [activeTab, setActiveTab] = useState<'appearance' | 'currency' | 'data'>('appearance')
+    const [activeTab, setActiveTab] = useState<'appearance' | 'currency' | 'data' | 'categories'>('appearance')
+    const [designerMode, setDesignerMode] = useState<'light' | 'dark'>('light')
     
+    // Add Category Form States
+    const [newCategoryName, setNewCategoryName] = useState('')
+    const [newCategoryColor, setNewCategoryColor] = useState('#6366f1')
+    const [newCategoryKeywords, setNewCategoryKeywords] = useState('')
+    const [catFormError, setCatFormError] = useState('')
+    const [catFormSuccess, setCatFormSuccess] = useState('')
+
     // Theme Customizer Context
-    const { theme: currentTheme, setTheme, updateThemeColor, resetTheme } = useThemeCustomizer()
+    const { 
+        theme: currentTheme, 
+        setTheme, 
+        updateThemeColor, 
+        updateDarkThemeColor, 
+        resetTheme,
+        categoryColors,
+        updateCategoryColor,
+        setCategoryColors,
+        categoryKeywords,
+        updateCategoryKeywords,
+        addCustomCategory,
+        deleteCustomCategory,
+        resetCategorySettings
+    } = useThemeCustomizer()
+
+    const defaultDarkTheme = {
+        background: '#090d16',
+        card: '#111726',
+        foreground: '#f8fafc',
+        border: '#1e293b',
+        primary: '#94a3b8',
+        btnGradientStart: '#94a3b8',
+        btnGradientEnd: '#475569',
+        textGradientStart: '#94a3b8',
+        textGradientEnd: '#475569'
+    }
+
+    const activeConfig = designerMode === 'light' 
+        ? currentTheme 
+        : (currentTheme.dark || defaultDarkTheme)
+
+    const handleThemeColorChange = (key: string, val: string) => {
+        if (designerMode === 'light') {
+            updateThemeColor(key as any, val)
+        } else {
+            updateDarkThemeColor(key, val)
+        }
+    }
     
     // Currency Context
     const { currency, setCurrency, format, symbol: currencySymbol } = useCurrency()
@@ -121,7 +169,7 @@ export default function SettingsPage() {
             setExportError('')
             
             // Get category list first
-            const categoriesRes = await api.get(`/categories?month=${exportMonth}`)
+            const categoriesRes = await api.get(`/categories/active?month=${exportMonth}`)
             setCategories(categoriesRes.data)
             
             // Fetch matching expenses
@@ -195,6 +243,45 @@ export default function SettingsPage() {
         }
     }
 
+    const handleAddCategorySubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setCatFormError('')
+        setCatFormSuccess('')
+
+        const name = newCategoryName.trim()
+        if (!name) {
+            setCatFormError('Category name is required')
+            return
+        }
+
+        const formattedName = name.charAt(0).toUpperCase() + name.slice(1)
+
+        if (categoryColors[formattedName]) {
+            setCatFormError(`Category "${formattedName}" already exists`)
+            return
+        }
+
+        const keywordsList = newCategoryKeywords
+            .split(',')
+            .map((k) => k.trim().toLowerCase())
+            .filter(Boolean)
+
+        if (keywordsList.length === 0) {
+            keywordsList.push(formattedName.toLowerCase())
+        }
+
+        try {
+            await addCustomCategory(formattedName, newCategoryColor, keywordsList)
+            setNewCategoryName('')
+            setNewCategoryColor('#6366f1')
+            setNewCategoryKeywords('')
+            setCatFormSuccess(`Successfully registered "${formattedName}" category!`)
+            setTimeout(() => setCatFormSuccess(''), 3000)
+        } catch (err: any) {
+            setCatFormError(err.message || 'Failed to register category')
+        }
+    }
+
     // Partition transactions for PDF layout (max 15 per page)
     const TRANSACTIONS_PER_PAGE = 15
     const chunkedTransactions = []
@@ -208,7 +295,7 @@ export default function SettingsPage() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">
             {/* Page Header */}
             <div className="pb-4 border-b border-border/40">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Settings</h1>
+                <h1 className="text-3xl font-bold text-custom-gradient">Settings</h1>
                 <p className="text-sm text-muted-foreground mt-1 font-medium">Configure currencies, custom backgrounds, gradients, themes, and manage statement imports/exports.</p>
             </div>
 
@@ -246,6 +333,17 @@ export default function SettingsPage() {
                     }`}
                 >
                     <Database className="h-4 w-4" /> Data Management
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveTab('categories')}
+                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
+                        activeTab === 'categories'
+                            ? 'border-primary text-primary font-bold bg-accent/30'
+                            : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
+                    }`}
+                >
+                    <Tag className="h-4 w-4" /> Category Settings
                 </button>
             </div>
 
@@ -354,21 +452,47 @@ export default function SettingsPage() {
                                 <CardDescription>Customize colors and gradients as you wish. These choices auto-generate custom dark themes when toggled.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
+                                {/* Tab switch for Light vs Dark design settings */}
+                                <div className="flex border-b border-border/40 gap-1 pb-px">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDesignerMode('light')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${
+                                            designerMode === 'light'
+                                                ? 'border-primary text-primary font-bold bg-accent/30'
+                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
+                                        }`}
+                                    >
+                                        <Sun className="h-4 w-4 text-amber-500" /> Light Theme Customizer
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDesignerMode('dark')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${
+                                            designerMode === 'dark'
+                                                ? 'border-primary text-primary font-bold bg-accent/30'
+                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
+                                        }`}
+                                    >
+                                        <Moon className="h-4 w-4 text-indigo-500" /> Dark Theme Customizer
+                                    </button>
+                                </div>
+
                                 {/* Color Pickers Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-muted-foreground uppercase">Background Color</label>
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.background}
-                                                onChange={(e) => updateThemeColor('background', e.target.value)}
+                                                value={activeConfig.background}
+                                                onChange={(e) => handleThemeColorChange('background', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.background}
-                                                onChange={(e) => updateThemeColor('background', e.target.value)}
+                                                value={activeConfig.background}
+                                                onChange={(e) => handleThemeColorChange('background', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -379,14 +503,14 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.card}
-                                                onChange={(e) => updateThemeColor('card', e.target.value)}
+                                                value={activeConfig.card}
+                                                onChange={(e) => handleThemeColorChange('card', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.card}
-                                                onChange={(e) => updateThemeColor('card', e.target.value)}
+                                                value={activeConfig.card}
+                                                onChange={(e) => handleThemeColorChange('card', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -397,14 +521,14 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.primary}
-                                                onChange={(e) => updateThemeColor('primary', e.target.value)}
+                                                value={activeConfig.primary}
+                                                onChange={(e) => handleThemeColorChange('primary', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.primary}
-                                                onChange={(e) => updateThemeColor('primary', e.target.value)}
+                                                value={activeConfig.primary}
+                                                onChange={(e) => handleThemeColorChange('primary', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -415,14 +539,14 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.border}
-                                                onChange={(e) => updateThemeColor('border', e.target.value)}
+                                                value={activeConfig.border}
+                                                onChange={(e) => handleThemeColorChange('border', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.border}
-                                                onChange={(e) => updateThemeColor('border', e.target.value)}
+                                                value={activeConfig.border}
+                                                onChange={(e) => handleThemeColorChange('border', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -440,21 +564,21 @@ export default function SettingsPage() {
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.btnGradientStart}
-                                                    onChange={(e) => updateThemeColor('btnGradientStart', e.target.value)}
+                                                    value={activeConfig.btnGradientStart}
+                                                    onChange={(e) => handleThemeColorChange('btnGradientStart', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient Start"
                                                 />
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.btnGradientEnd}
-                                                    onChange={(e) => updateThemeColor('btnGradientEnd', e.target.value)}
+                                                    value={activeConfig.btnGradientEnd}
+                                                    onChange={(e) => handleThemeColorChange('btnGradientEnd', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient End"
                                                 />
                                                 <div 
                                                     className="flex-1 h-8 rounded-md border border-black/10 flex items-center justify-center text-[10px] text-white font-bold"
-                                                    style={{ backgroundImage: `linear-gradient(to right, ${currentTheme.btnGradientStart}, ${currentTheme.btnGradientEnd})` }}
+                                                    style={{ backgroundImage: `linear-gradient(to right, ${activeConfig.btnGradientStart}, ${activeConfig.btnGradientEnd})` }}
                                                 >
                                                     Button Preview
                                                 </div>
@@ -467,21 +591,21 @@ export default function SettingsPage() {
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.textGradientStart}
-                                                    onChange={(e) => updateThemeColor('textGradientStart', e.target.value)}
+                                                    value={activeConfig.textGradientStart}
+                                                    onChange={(e) => handleThemeColorChange('textGradientStart', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient Start"
                                                 />
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.textGradientEnd}
-                                                    onChange={(e) => updateThemeColor('textGradientEnd', e.target.value)}
+                                                    value={activeConfig.textGradientEnd}
+                                                    onChange={(e) => handleThemeColorChange('textGradientEnd', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient End"
                                                 />
                                                 <div className="flex-1 h-8 flex items-center justify-center font-black text-xs">
                                                     <span 
-                                                        style={{ backgroundImage: `linear-gradient(to right, ${currentTheme.textGradientStart}, ${currentTheme.textGradientEnd})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                                                        style={{ backgroundImage: `linear-gradient(to right, ${activeConfig.textGradientStart}, ${activeConfig.textGradientEnd})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                                     >
                                                         Text Preview
                                                     </span>
@@ -966,6 +1090,238 @@ export default function SettingsPage() {
                                         <Trash2 className="h-4 w-4" /> Reset Database & Transactions
                                     </Button>
                                 )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                {/* TAB: CATEGORY SETTINGS */}
+                {activeTab === 'categories' && (
+                    <div className="space-y-6 animate-in fade-in duration-300">
+                        {/* Predefined Palettes Card */}
+                        <Card className="bg-card/50 backdrop-blur border-border/80 shadow-md">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-custom-gradient shrink-0" />
+                                    Predefined Category Color Palettes
+                                </CardTitle>
+                                <CardDescription>Quickly switch between curated category color schemes styled to match our design themes.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {predefinedCategoryPalettes.map((palette) => {
+                                        // Check if active colors match this palette
+                                        const isActive = Object.keys(palette.colors).every(
+                                            (k) => categoryColors[k] === palette.colors[k]
+                                        )
+                                        return (
+                                            <button
+                                                key={palette.name}
+                                                type="button"
+                                                onClick={() => setCategoryColors(palette.colors)}
+                                                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all duration-300 ${
+                                                    isActive
+                                                        ? 'border-primary bg-accent shadow-sm scale-[1.01]'
+                                                        : 'border-border/80 bg-background/55 hover:bg-muted/50'
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between w-full mb-3">
+                                                    <span className="text-xs font-bold text-foreground">{palette.name}</span>
+                                                    {isActive && <Check className="h-4 w-4 text-primary" />}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {Object.values(palette.colors).map((c, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className="w-3.5 h-3.5 rounded-full border border-black/10 flex-shrink-0"
+                                                            style={{ backgroundColor: c }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Add Custom Category Card */}
+                        <Card className="bg-card/50 backdrop-blur border-border/80 shadow-md">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <Plus className="h-5 w-5 text-custom-gradient shrink-0" />
+                                    Add Custom Category
+                                </CardTitle>
+                                <CardDescription>Introduce a new transaction category with custom color schemes and auto-detection keywords.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <form onSubmit={handleAddCategorySubmit} className="space-y-4">
+                                    {catFormError && (
+                                        <div className="p-3 text-xs bg-destructive/10 border border-destructive/20 text-destructive rounded-md font-semibold">
+                                            {catFormError}
+                                        </div>
+                                    )}
+                                    {catFormSuccess && (
+                                        <div className="p-3 text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-md font-semibold">
+                                            {catFormSuccess}
+                                        </div>
+                                    )}
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="flex flex-col space-y-1.5">
+                                            <label className="text-xs font-semibold text-muted-foreground">Category Name</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Health"
+                                                required
+                                                value={newCategoryName}
+                                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                                className="border border-border/80 rounded-xl px-3 py-2 bg-background/55 text-foreground text-xs focus:ring-2 focus:ring-primary/20 outline-none"
+                                            />
+                                        </div>
+
+                                        <div className="flex flex-col space-y-1.5">
+                                            <label className="text-xs font-semibold text-muted-foreground">Category Color</label>
+                                            <div className="flex items-center gap-3">
+                                                <input
+                                                    type="color"
+                                                    value={newCategoryColor}
+                                                    onChange={(e) => setNewCategoryColor(e.target.value)}
+                                                    className="w-9 h-9 border border-border/60 rounded cursor-pointer shrink-0"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={newCategoryColor}
+                                                    onChange={(e) => setNewCategoryColor(e.target.value)}
+                                                    className="w-full border border-border/80 rounded-xl px-3 py-2 bg-background/55 text-foreground font-mono text-xs focus:ring-2 focus:ring-primary/20 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col space-y-1.5">
+                                            <label className="text-xs font-semibold text-muted-foreground">Auto-Detect Keywords (comma-separated)</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. doctor, medicine, hospital"
+                                                value={newCategoryKeywords}
+                                                onChange={(e) => setNewCategoryKeywords(e.target.value)}
+                                                className="border border-border/80 rounded-xl px-3 py-2 bg-background/55 text-foreground text-xs focus:ring-2 focus:ring-primary/20 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end pt-2">
+                                        <Button type="submit" className="bg-custom-btn-gradient text-white flex items-center gap-2">
+                                            <Plus className="h-4 w-4" /> Create Category
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CardContent>
+                        </Card>
+
+                        {/* Custom Category Color Editor Card */}
+                        <Card className="bg-card/50 backdrop-blur border-border/80 shadow-md">
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                    <Palette className="h-5 w-5 text-custom-gradient shrink-0" />
+                                    Custom Category Designer
+                                </CardTitle>
+                                <CardDescription>Customize colors and manually edit keywords for each category. Changes apply in real time.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                    {Object.keys(categoryColors).map((catName) => {
+                                        const currentColor = categoryColors[catName]
+                                        const isPredefined = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Rent', 'Bills', 'Salary', 'Freelance', 'Investments', 'Gifts', 'Others'].includes(catName)
+                                        return (
+                                            <div key={catName} className="p-4 rounded-xl border border-border/60 bg-background/40 space-y-3.5 shadow-sm hover:border-border transition-colors flex flex-col justify-between">
+                                                <div className="space-y-3.5">
+                                                    <div className="flex justify-between items-center gap-2 min-w-0">
+                                                        <span className="text-xs font-black text-foreground capitalize truncate">{catName}</span>
+                                                        <span 
+                                                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold capitalize border flex-shrink-0"
+                                                            style={{
+                                                                backgroundColor: `${currentColor}12`,
+                                                                color: currentColor,
+                                                                borderColor: `${currentColor}25`
+                                                            }}
+                                                        >
+                                                            Preview
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {/* Color Picker */}
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={currentColor}
+                                                            onChange={(e) => updateCategoryColor(catName, e.target.value)}
+                                                            className="w-8 h-8 border border-border/60 rounded cursor-pointer shrink-0"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={currentColor}
+                                                            onChange={(e) => updateCategoryColor(catName, e.target.value)}
+                                                            className="w-full px-2.5 py-1.5 border rounded-md text-[10px] font-mono bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/20"
+                                                        />
+                                                    </div>
+
+                                                    {/* Keyword Editor */}
+                                                    <div className="space-y-1">
+                                                        <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Auto-detect Keywords</label>
+                                                        <input
+                                                            type="text"
+                                                            value={(categoryKeywords[catName] || []).join(', ')}
+                                                            onChange={(e) => updateCategoryKeywords(catName, e.target.value.split(',').map(s => s.trim()))}
+                                                            className="w-full px-2.5 py-1.5 border rounded-md text-[10px] bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25"
+                                                            placeholder="comma-separated keywords"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Delete Helper for custom categories */}
+                                                {!isPredefined && (
+                                                    <div className="pt-2 flex justify-end border-t border-border/20 mt-2">
+                                                         <button
+                                                             type="button"
+                                                             onClick={async () => {
+                                                                 const password = prompt(`Enter admin delete password to delete "${catName}" category:`)
+                                                                 if (password === null) return
+                                                                 if (!password.trim()) {
+                                                                     alert('Password is required')
+                                                                     return
+                                                                 }
+                                                                 try {
+                                                                     await deleteCustomCategory(catName, password)
+                                                                     alert(`Successfully deleted "${catName}" category`)
+                                                                 } catch (err: any) {
+                                                                     alert(err.message)
+                                                                 }
+                                                             }}
+                                                             className="text-[10px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 transition-colors"
+                                                         >
+                                                             <Trash2 className="h-3.5 w-3.5" /> Delete Category
+                                                         </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+
+                                <div className="flex justify-end gap-3 border-t border-border/40 pt-4 mt-6">
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={async () => {
+                                            if (confirm('Are you sure you want to reset all categories back to default settings?')) {
+                                                await resetCategorySettings()
+                                            }
+                                        }} 
+                                        className="flex items-center gap-2"
+                                    >
+                                        <RefreshCw className="h-4 w-4" /> Reset Default Colors & Keywords
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
