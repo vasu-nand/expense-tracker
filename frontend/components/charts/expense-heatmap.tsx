@@ -73,20 +73,14 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
             return 'bg-muted/30 dark:bg-muted/10 text-muted-foreground border border-transparent hover:bg-muted/40 dark:hover:bg-muted/20';
         }
         
-        if (activeTab === 'expense') {
+        if (activeTab === 'expense' || activeTab === 'income') {
             const ratio = val / (currentMax || 1);
-            if (ratio <= 0.25) return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500/15';
-            if (ratio <= 0.5) return 'bg-rose-500/35 text-rose-700 dark:text-rose-300 border border-rose-500/40 hover:bg-rose-500/40';
-            if (ratio <= 0.75) return 'bg-rose-500/65 text-white border border-rose-500/70 hover:bg-rose-500/70';
-            return 'bg-rose-600 text-white shadow-md border border-rose-700/20 hover:bg-rose-600/90';
-        } else if (activeTab === 'income') {
-            const ratio = val / (currentMax || 1);
-            if (ratio <= 0.25) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15';
-            if (ratio <= 0.5) return 'bg-emerald-500/35 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/40';
-            if (ratio <= 0.75) return 'bg-emerald-500/65 text-white border border-emerald-500/70 hover:bg-emerald-500/70';
-            return 'bg-emerald-600 text-white shadow-md border border-emerald-700/20 hover:bg-emerald-600/90';
+            if (ratio <= 0.25) return 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15';
+            if (ratio <= 0.5) return 'bg-primary/35 text-primary border border-primary/40 hover:bg-primary/45';
+            if (ratio <= 0.75) return 'bg-primary/65 text-primary-foreground border border-primary/70 hover:bg-primary/75';
+            return 'bg-primary text-primary-foreground shadow-md border border-primary/20 hover:bg-primary/90';
         } else {
-            // Net balance
+            // Net balance: shown together -> keep green (emerald) and red (rose)
             if (val > 0) {
                 const ratio = val / (currentMax || 1);
                 if (ratio <= 0.5) return 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/25 hover:bg-emerald-500/20';
@@ -128,7 +122,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                         onClick={() => setActiveTab('expense')}
                         className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                             activeTab === 'expense'
-                                ? 'bg-card text-rose-500 shadow-sm'
+                                ? 'bg-card text-primary shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -139,7 +133,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                         onClick={() => setActiveTab('income')}
                         className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                             activeTab === 'income'
-                                ? 'bg-card text-emerald-500 shadow-sm'
+                                ? 'bg-card text-primary shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -150,7 +144,7 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                         onClick={() => setActiveTab('net')}
                         className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                             activeTab === 'net'
-                                ? 'bg-card text-sky-500 shadow-sm'
+                                ? 'bg-card text-primary shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -222,10 +216,10 @@ export function ExpenseHeatmap({ data, month, onDayClick }: ExpenseHeatmapProps)
                         <div className="flex items-center justify-end space-x-2 text-[10px] text-muted-foreground pt-3 border-t border-border/40 mt-2 font-medium">
                             <span>Less</span>
                             <div className="w-3.5 h-3.5 rounded-sm bg-muted/30 dark:bg-muted/10 border border-border/40"></div>
-                            <div className={cn("w-3.5 h-3.5 rounded-sm border", activeTab === 'expense' ? "bg-rose-500/10 border-rose-500/20" : "bg-emerald-500/10 border-emerald-500/20")}></div>
-                            <div className={cn("w-3.5 h-3.5 rounded-sm border", activeTab === 'expense' ? "bg-rose-500/35 border-rose-500/40" : "bg-emerald-500/35 border-emerald-500/40")}></div>
-                            <div className={cn("w-3.5 h-3.5 rounded-sm border", activeTab === 'expense' ? "bg-rose-500/65 border-rose-500/70" : "bg-emerald-500/65 border-emerald-500/70")}></div>
-                            <div className={cn("w-3.5 h-3.5 rounded-sm border", activeTab === 'expense' ? "bg-rose-600 border-rose-700/20" : "bg-emerald-600 border-emerald-700/20")}></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary/10 border-primary/20"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary/35 border-primary/40"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary/65 border-primary/70"></div>
+                            <div className="w-3.5 h-3.5 rounded-sm border bg-primary border-primary/20"></div>
                             <span>More</span>
                         </div>
                     )}
