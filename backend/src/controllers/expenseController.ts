@@ -55,6 +55,9 @@ export const getExpenses = async (req: Request, res: Response) => {
         const maxAmount = req.query.maxAmount ? parseFloat(req.query.maxAmount as string) : undefined;
         const minDay = req.query.minDay ? parseInt(req.query.minDay as string) : undefined;
         const maxDay = req.query.maxDay ? parseInt(req.query.maxDay as string) : undefined;
+        const type = req.query.type as string;
+        const startMonth = req.query.startMonth as string | undefined;
+        const endMonth = req.query.endMonth as string | undefined;
 
         const result = await expenseService.getAllExpenses(
             page, 
@@ -68,7 +71,10 @@ export const getExpenses = async (req: Request, res: Response) => {
             isNaN(minAmount as number) ? undefined : minAmount,
             isNaN(maxAmount as number) ? undefined : maxAmount,
             isNaN(minDay as number) ? undefined : minDay,
-            isNaN(maxDay as number) ? undefined : maxDay
+            isNaN(maxDay as number) ? undefined : maxDay,
+            type,
+            startMonth,
+            endMonth
         );
         res.json(result);
     } catch (error: any) {
@@ -119,7 +125,7 @@ export const deleteExpense = async (req: Request, res: Response) => {
 
 export const createExpense = async (req: Request, res: Response) => {
     try {
-        const { day, amount, reason, month } = req.body;
+        const { day, amount, reason, month, type } = req.body;
         let { category } = req.body;
 
         if (!day || !amount || !reason || !month) {
@@ -135,7 +141,8 @@ export const createExpense = async (req: Request, res: Response) => {
             amount,
             reason,
             category,
-            month
+            month,
+            type: type || 'expense'
         });
 
         await expenseService.generateMonthlySummary(month);
@@ -149,7 +156,7 @@ export const createExpense = async (req: Request, res: Response) => {
 export const updateExpense = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { day, amount, reason, month } = req.body;
+        const { day, amount, reason, month, type } = req.body;
         let { category } = req.body;
 
         const existing = await expenseService.getExpenseById(id);
@@ -167,6 +174,7 @@ export const updateExpense = async (req: Request, res: Response) => {
         if (reason !== undefined) updates.reason = reason;
         if (category !== undefined) updates.category = category;
         if (month !== undefined) updates.month = month;
+        if (type !== undefined) updates.type = type;
 
         const expense = await expenseService.updateExpense(id, updates);
 

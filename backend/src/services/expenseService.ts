@@ -31,11 +31,23 @@ export class ExpenseService {
         minAmount?: number,
         maxAmount?: number,
         minDay?: number,
-        maxDay?: number
+        maxDay?: number,
+        type?: string,
+        startMonth?: string,
+        endMonth?: string
     ) {
         const query: any = {};
-        if (category) query.category = category;
+        if (category) {
+            const cats = category.split(',').map(c => c.trim()).filter(Boolean);
+            query.category = cats.length === 1 ? cats[0] : { $in: cats };
+        }
         if (month) query.month = month;
+        else if (startMonth || endMonth) {
+            query.month = {};
+            if (startMonth) query.month.$gte = startMonth;
+            if (endMonth) query.month.$lte = endMonth;
+        }
+        if (type) query.type = type;
         
         if (day !== undefined) {
             query.day = day;
@@ -103,23 +115,30 @@ export class ExpenseService {
     async getDailySummary(month: string) {
         const expenses = await Expense.find({ month });
 
-        const dailyMap = new Map<number, { day: number; totalExpense: number; entries: any[] }>();
+        const dailyMap = new Map<number, { day: number; totalExpense: number; totalIncome: number; entries: any[] }>();
 
         for (const expense of expenses) {
             if (!dailyMap.has(expense.day)) {
                 dailyMap.set(expense.day, {
                     day: expense.day,
                     totalExpense: 0,
+                    totalIncome: 0,
                     entries: []
                 });
             }
 
             const daily = dailyMap.get(expense.day)!;
-            daily.totalExpense += expense.amount;
+            const expType = expense.type || 'expense';
+            if (expType === 'income') {
+                daily.totalIncome += expense.amount;
+            } else {
+                daily.totalExpense += expense.amount;
+            }
             daily.entries.push({
                 amount: expense.amount,
                 reason: expense.reason,
-                category: expense.category
+                category: expense.category,
+                type: expType
             });
         }
 
@@ -127,23 +146,34 @@ export class ExpenseService {
     }
 
     async generateMonthlySummary(month: string) {
-        const expenses = await Expense.find({ month });
+        const transactions = await Expense.find({ month });
 
-        if (expenses.length === 0) {
+        if (transactions.length === 0) {
             await MonthlySummary.deleteOne({ month });
             return null;
         }
 
-        const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
-        const uniqueDays = new Set(expenses.map(e => e.day));
-        const totalDays = uniqueDays.size;
-        const averageDailyExpense = totalExpense / totalDays;
+        const expenses = transactions.filter(t => t.type !== 'income');
+        const incomes = transactions.filter(t => t.type === 'income');
 
-        // Category breakdown
+        const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+        const totalIncome = incomes.reduce((sum, e) => sum + e.amount, 0);
+        const uniqueDays = new Set(transactions.map(e => e.day));
+        const totalDays = uniqueDays.size;
+        const averageDailyExpense = totalDays > 0 ? totalExpense / totalDays : 0;
+
+        // Category breakdown for expenses
         const categoryBreakdown = new Map<string, number>();
         for (const expense of expenses) {
             const current = categoryBreakdown.get(expense.category) || 0;
             categoryBreakdown.set(expense.category, current + expense.amount);
+        }
+
+        // Category breakdown for incomes
+        const incomeCategoryBreakdown = new Map<string, number>();
+        for (const income of incomes) {
+            const current = incomeCategoryBreakdown.get(income.category) || 0;
+            incomeCategoryBreakdown.set(income.category, current + income.amount);
         }
 
         // Find highest expense day
@@ -166,8 +196,10 @@ export class ExpenseService {
             { month },
             {
                 totalExpense,
+                totalIncome,
                 totalDays,
                 categoryBreakdown,
+                incomeCategoryBreakdown,
                 averageDailyExpense,
                 highestExpenseDay
             },
@@ -177,21 +209,34 @@ export class ExpenseService {
     }
 
     async getDashboardData(month: string) {
-        const expenses = await Expense.find({ month });
+        const transactions = await Expense.find({ month });
 
-        if (expenses.length === 0) {
+        if (transactions.length === 0) {
             return {
                 totalExpense: 0,
+                totalIncome: 0,
+                netSavings: 0,
                 averageDailyExpense: 0,
                 highestExpenseDay: 0,
-                totalEntries: 0
+                totalEntries: 0,
+                categoryBreakdown: {},
+                incomeCategoryBreakdown: {},
+                dailyTrend: [],
+                topSpendingDays: []
             };
         }
 
-        const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
-        const uniqueDays = new Set(expenses.map(e => e.day));
-        const averageDailyExpense = totalExpense / uniqueDays.size;
+        const expenses = transactions.filter(t => t.type !== 'income');
+        const incomes = transactions.filter(t => t.type === 'income');
 
+        const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+        const totalIncome = incomes.reduce((sum, e) => sum + e.amount, 0);
+        const netSavings = totalIncome - totalExpense;
+
+        const uniqueDays = new Set(expenses.map(e => e.day));
+        const averageDailyExpense = uniqueDays.size > 0 ? totalExpense / uniqueDays.size : 0;
+
+        // Highest expense day
         const dailyTotals = new Map<number, number>();
         for (const expense of expenses) {
             const current = dailyTotals.get(expense.day) || 0;
@@ -213,22 +258,45 @@ export class ExpenseService {
             categoryBreakdown[expense.category] = (categoryBreakdown[expense.category] || 0) + expense.amount;
         }
 
-        // Daily trend data
-        const dailyTrend = Array.from(dailyTotals.entries())
-            .sort((a, b) => a[0] - b[0])
-            .map(([day, total]) => ({ day, total }));
+        // Income Category breakdown
+        const incomeCategoryBreakdown: Record<string, number> = {};
+        for (const income of incomes) {
+            incomeCategoryBreakdown[income.category] = (incomeCategoryBreakdown[income.category] || 0) + income.amount;
+        }
+
+        // Daily trend data: combine both income and expense per day
+        const allDays = new Set(transactions.map(t => t.day));
+        const dailyTrendMap = new Map<number, { day: number; expense: number; income: number }>();
+        for (const day of allDays) {
+            dailyTrendMap.set(day, { day, expense: 0, income: 0 });
+        }
+
+        for (const transaction of transactions) {
+            const item = dailyTrendMap.get(transaction.day)!;
+            if (transaction.type === 'income') {
+                item.income += transaction.amount;
+            } else {
+                item.expense += transaction.amount;
+            }
+        }
+
+        const dailyTrend = Array.from(dailyTrendMap.values()).sort((a, b) => a.day - b.day);
 
         // Top spending days
-        const topSpendingDays = [...dailyTrend]
+        const topSpendingDays = Array.from(dailyTotals.entries())
+            .map(([day, total]) => ({ day, total }))
             .sort((a, b) => b.total - a.total)
             .slice(0, 10);
 
         return {
             totalExpense,
+            totalIncome,
+            netSavings,
             averageDailyExpense,
             highestExpenseDay,
-            totalEntries: expenses.length,
+            totalEntries: transactions.length,
             categoryBreakdown,
+            incomeCategoryBreakdown,
             dailyTrend,
             topSpendingDays
         };

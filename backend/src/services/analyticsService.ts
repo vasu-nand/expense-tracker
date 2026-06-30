@@ -1,33 +1,38 @@
 import { IExpense } from '../models/Expense';
 
 export class AnalyticsService {
-    generateInsights(expenses: IExpense[]): string[] {
-        if (expenses.length === 0) {
-            return ['No expenses recorded for this month. Upload a file to see insights.'];
+    generateInsights(transactions: IExpense[]): string[] {
+        if (transactions.length === 0) {
+            return ['No transactions recorded for this month. Upload a file or add a transaction to see insights.'];
         }
 
         const insights: string[] = [];
-        const days = new Set(expenses.map(e => e.day)).size;
-        const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-        const average = total / days;
+        const expenses = transactions.filter(t => t.type !== 'income');
+        const incomes = transactions.filter(t => t.type === 'income');
 
-        // Most frequent category
+        const activeDays = new Set(transactions.map(e => e.day)).size;
+        const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+        const totalIncome = incomes.reduce((sum, e) => sum + e.amount, 0);
+        const netSavings = totalIncome - totalExpenses;
+
+        // Daily averages
+        const avgExpense = activeDays > 0 ? totalExpenses / activeDays : 0;
+        const avgIncome = activeDays > 0 ? totalIncome / activeDays : 0;
+
+        // Expenses categories metrics
         const categoryCount = new Map<string, number>();
         const categorySpend = new Map<string, number>();
         for (const expense of expenses) {
-            const currentCount = categoryCount.get(expense.category) || 0;
-            categoryCount.set(expense.category, currentCount + 1);
-
-            const currentSpend = categorySpend.get(expense.category) || 0;
-            categorySpend.set(expense.category, currentSpend + expense.amount);
+            categoryCount.set(expense.category, (categoryCount.get(expense.category) || 0) + 1);
+            categorySpend.set(expense.category, (categorySpend.get(expense.category) || 0) + expense.amount);
         }
 
-        let mostFrequentCategory = 'None';
-        let maxCount = 0;
+        let mostFrequentExpenseCategory = 'None';
+        let maxExpenseCount = 0;
         for (const [category, count] of categoryCount) {
-            if (count > maxCount) {
-                maxCount = count;
-                mostFrequentCategory = category;
+            if (count > maxExpenseCount) {
+                maxExpenseCount = count;
+                mostFrequentExpenseCategory = category;
             }
         }
 
@@ -40,27 +45,67 @@ export class AnalyticsService {
             }
         }
 
+        // Income categories metrics
+        const incomeCategoryCount = new Map<string, number>();
+        const incomeCategoryTotal = new Map<string, number>();
+        for (const income of incomes) {
+            incomeCategoryCount.set(income.category, (incomeCategoryCount.get(income.category) || 0) + 1);
+            incomeCategoryTotal.set(income.category, (incomeCategoryTotal.get(income.category) || 0) + income.amount);
+        }
+
+        let mostFrequentIncomeCategory = 'None';
+        let maxIncomeCount = 0;
+        for (const [category, count] of incomeCategoryCount) {
+            if (count > maxIncomeCount) {
+                maxIncomeCount = count;
+                mostFrequentIncomeCategory = category;
+            }
+        }
+
+        let highestIncomeCategory = 'None';
+        let maxIncomeSpend = 0;
+        for (const [category, val] of incomeCategoryTotal) {
+            if (val > maxIncomeSpend) {
+                maxIncomeSpend = val;
+                highestIncomeCategory = category;
+            }
+        }
+
         // Find highest spending day
-        const dailyTotals = new Map<number, number>();
+        const dailyExpenseTotals = new Map<number, number>();
         for (const expense of expenses) {
-            const current = dailyTotals.get(expense.day) || 0;
-            dailyTotals.set(expense.day, current + expense.amount);
+            dailyExpenseTotals.set(expense.day, (dailyExpenseTotals.get(expense.day) || 0) + expense.amount);
         }
 
         let highestSpendingDay = 0;
-        let highestAmount = 0;
-        for (const [day, amount] of dailyTotals) {
-            if (amount > highestAmount) {
-                highestAmount = amount;
+        let highestExpenseAmount = 0;
+        for (const [day, amount] of dailyExpenseTotals) {
+            if (amount > highestExpenseAmount) {
+                highestExpenseAmount = amount;
                 highestSpendingDay = day;
             }
         }
 
-        // Trend analysis
-        const sortedDays = Array.from(dailyTotals.keys()).sort((a, b) => a - b);
+        // Find highest income day
+        const dailyIncomeTotals = new Map<number, number>();
+        for (const income of incomes) {
+            dailyIncomeTotals.set(income.day, (dailyIncomeTotals.get(income.day) || 0) + income.amount);
+        }
+
+        let highestIncomeDay = 0;
+        let highestIncomeAmount = 0;
+        for (const [day, amount] of dailyIncomeTotals) {
+            if (amount > highestIncomeAmount) {
+                highestIncomeAmount = amount;
+                highestIncomeDay = day;
+            }
+        }
+
+        // Trend analysis (expenses)
+        const sortedDays = Array.from(dailyExpenseTotals.keys()).sort((a, b) => a - b);
         const trendData = sortedDays.map(day => ({
             day,
-            amount: dailyTotals.get(day) || 0
+            amount: dailyExpenseTotals.get(day) || 0
         }));
 
         let trend = 'stable';
@@ -73,41 +118,79 @@ export class AnalyticsService {
             else if (secondHalf < firstHalf * 0.9) trend = 'decreasing';
         }
 
-        insights.push(`Your average daily expense is ₹${average.toFixed(2)} across ${days} active days.`);
-        insights.push(`The category with the most transactions is "${mostFrequentCategory}" (${maxCount} times).`);
-        insights.push(`The category with the highest total spend is "${highestSpendCategory}" (₹${maxSpend.toFixed(2)}).`);
-        insights.push(`Your highest single-day spend was on Day ${highestSpendingDay}, totaling ₹${highestAmount.toFixed(2)}.`);
+        // Generate dynamic visual insights list
+        insights.push(`Daily Average Rate: ₹${avgExpense.toFixed(2)} spending vs ₹${avgIncome.toFixed(2)} income.`);
         
-        if (trend === 'increasing') {
-            insights.push(`Caution: Your spending trend is increasing in the second half of the month compared to the first.`);
-        } else if (trend === 'decreasing') {
-            insights.push(`Suggest: Your spending trend is decreasing in the second half of the month. Keep up the good work!`);
-        } else {
-            insights.push(`Your spending pattern has been relatively stable throughout the month.`);
+        if (totalIncome > 0) {
+            insights.push(`Income stats: Top source is "${highestIncomeCategory}" (₹${maxIncomeSpend.toFixed(2)} total).`);
+            if (highestIncomeDay > 0) {
+                insights.push(`Highest single-day income: Day ${highestIncomeDay} (₹${highestIncomeAmount.toFixed(2)}).`);
+            }
+        }
+
+        if (totalExpenses > 0) {
+            insights.push(`Spending stats: Highest total category is "${highestSpendCategory}" (₹${maxSpend.toFixed(2)}).`);
+            if (highestSpendingDay > 0) {
+                insights.push(`Highest single-day spend: Day ${highestSpendingDay} (₹${highestExpenseAmount.toFixed(2)}).`);
+            }
+        }
+
+        // Savings insight
+        if (totalIncome > 0) {
+            if (netSavings >= 0) {
+                const savingsRate = (netSavings / totalIncome) * 100;
+                insights.push(`Savings Rate: You saved ₹${netSavings.toFixed(2)} this month (${savingsRate.toFixed(0)}% of your income).`);
+            } else {
+                insights.push(`Alert: Your net balance is negative by -₹${Math.abs(netSavings).toFixed(2)} (spent more than earned).`);
+            }
+        }
+
+        if (totalExpenses > 0) {
+            if (trend === 'increasing') {
+                insights.push(`Caution: Spending trend is increasing in the second half of the month.`);
+            } else if (trend === 'decreasing') {
+                insights.push(`Success: Spending trend is decreasing in the second half of the month. Keep it up!`);
+            }
         }
 
         return insights;
     }
 
-    getWeekdayWeekendBreakdown(expenses: IExpense[], month: string) {
+    getWeekdayWeekendBreakdown(transactions: IExpense[], month: string) {
         let weekdayTotal = 0;
         let weekendTotal = 0;
         let weekdayCount = 0;
         let weekendCount = 0;
 
+        let weekdayIncomeTotal = 0;
+        let weekendIncomeTotal = 0;
+        let weekdayIncomeCount = 0;
+        let weekendIncomeCount = 0;
+
         const [year, monthNum] = month.split('-').map(Number);
 
-        for (const expense of expenses) {
-            const date = new Date(year, monthNum - 1, expense.day);
+        for (const transaction of transactions) {
+            const date = new Date(year, monthNum - 1, transaction.day);
             const dayOfWeek = date.getDay(); // 0 is Sunday, 6 is Saturday
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isIncome = transaction.type === 'income';
 
-            if (isWeekend) {
-                weekendTotal += expense.amount;
-                weekendCount++;
+            if (isIncome) {
+                if (isWeekend) {
+                    weekendIncomeTotal += transaction.amount;
+                    weekendIncomeCount++;
+                } else {
+                    weekdayIncomeTotal += transaction.amount;
+                    weekdayIncomeCount++;
+                }
             } else {
-                weekdayTotal += expense.amount;
-                weekdayCount++;
+                if (isWeekend) {
+                    weekendTotal += transaction.amount;
+                    weekendCount++;
+                } else {
+                    weekdayTotal += transaction.amount;
+                    weekdayCount++;
+                }
             }
         }
 
@@ -117,42 +200,66 @@ export class AnalyticsService {
             weekdayCount,
             weekendCount,
             weekdayAverage: weekdayCount > 0 ? weekdayTotal / weekdayCount : 0,
-            weekendAverage: weekendCount > 0 ? weekendTotal / weekendCount : 0
+            weekendAverage: weekendCount > 0 ? weekendTotal / weekendCount : 0,
+            weekdayIncomeTotal,
+            weekendIncomeTotal,
+            weekdayIncomeCount,
+            weekendIncomeCount,
+            weekdayIncomeAverage: weekdayIncomeCount > 0 ? weekdayIncomeTotal / weekdayIncomeCount : 0,
+            weekendIncomeAverage: weekendIncomeCount > 0 ? weekendIncomeTotal / weekendIncomeCount : 0
         };
     }
 
-    getWeeklySpend(expenses: IExpense[]) {
-        let week1 = 0;
-        let week2 = 0;
-        let week3 = 0;
-        let week4 = 0;
+    getWeeklySpend(transactions: IExpense[]) {
+        let week1Exp = 0, week1Inc = 0;
+        let week2Exp = 0, week2Inc = 0;
+        let week3Exp = 0, week3Inc = 0;
+        let week4Exp = 0, week4Inc = 0;
 
-        for (const expense of expenses) {
-            if (expense.day <= 7) week1 += expense.amount;
-            else if (expense.day <= 14) week2 += expense.amount;
-            else if (expense.day <= 21) week3 += expense.amount;
-            else week4 += expense.amount;
+        for (const transaction of transactions) {
+            const isIncome = transaction.type === 'income';
+            if (transaction.day <= 7) {
+                if (isIncome) week1Inc += transaction.amount; else week1Exp += transaction.amount;
+            } else if (transaction.day <= 14) {
+                if (isIncome) week2Inc += transaction.amount; else week2Exp += transaction.amount;
+            } else if (transaction.day <= 21) {
+                if (isIncome) week3Inc += transaction.amount; else week3Exp += transaction.amount;
+            } else {
+                if (isIncome) week4Inc += transaction.amount; else week4Exp += transaction.amount;
+            }
         }
 
         return [
-            { name: 'Week 1', amount: week1 },
-            { name: 'Week 2', amount: week2 },
-            { name: 'Week 3', amount: week3 },
-            { name: 'Week 4+', amount: week4 }
+            { name: 'Week 1', amount: week1Exp, income: week1Inc },
+            { name: 'Week 2', amount: week2Exp, income: week2Inc },
+            { name: 'Week 3', amount: week3Exp, income: week3Inc },
+            { name: 'Week 4+', amount: week4Exp, income: week4Inc }
         ];
     }
 
-    getTransactionSizeBreakdown(expenses: IExpense[]) {
-        let low = 0;
-        let medium = 0;
-        let high = 0;
+    getTransactionSizeBreakdown(transactions: IExpense[]) {
+        let lowExpense = 0, mediumExpense = 0, highExpense = 0;
+        let lowIncome = 0, mediumIncome = 0, highIncome = 0;
 
-        for (const expense of expenses) {
-            if (expense.amount < 250) low++;
-            else if (expense.amount <= 1000) medium++;
-            else high++;
+        for (const transaction of transactions) {
+            const isIncome = transaction.type === 'income';
+            if (isIncome) {
+                if (transaction.amount < 250) lowIncome++;
+                else if (transaction.amount <= 1000) mediumIncome++;
+                else highIncome++;
+            } else {
+                if (transaction.amount < 250) lowExpense++;
+                else if (transaction.amount <= 1000) mediumExpense++;
+                else highExpense++;
+            }
         }
 
-        return { low, medium, high };
+        return {
+            low: lowExpense,
+            medium: mediumExpense,
+            high: highExpense,
+            expense: { low: lowExpense, medium: mediumExpense, high: highExpense },
+            income: { low: lowIncome, medium: mediumIncome, high: highIncome }
+        };
     }
 }

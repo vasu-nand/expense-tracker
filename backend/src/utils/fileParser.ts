@@ -9,6 +9,7 @@ interface ParsedExpense {
     reason: string;
     category: string;
     month: string;
+    type?: 'expense' | 'income';
 }
 
 export const parseExcelFile = (buffer: Buffer, month: string): ParsedExpense[] => {
@@ -42,8 +43,9 @@ const parseExpenses = (data: any[], month: string): ParsedExpense[] => {
 
     // Try to map columns automatically
     const dayCol = headers.find(h => h.toLowerCase().includes('day') || h.toLowerCase().includes('date'));
-    const expenseCol = headers.find(h => h.toLowerCase().includes('expense') || h.toLowerCase().includes('amount'));
+    const expenseCol = headers.find(h => h.toLowerCase().includes('expense') || h.toLowerCase().includes('amount') || h.toLowerCase().includes('income'));
     const reasonCol = headers.find(h => h.toLowerCase().includes('reason') || h.toLowerCase().includes('description') || h.toLowerCase().includes('item'));
+    const typeCol = headers.find(h => h.toLowerCase().includes('type'));
 
     if (!dayCol || !expenseCol || !reasonCol) {
         throw new Error('Could not find required columns: Day, Expense, Reason');
@@ -53,6 +55,8 @@ const parseExpenses = (data: any[], month: string): ParsedExpense[] => {
         const day = parseInt(row[dayCol]);
         const amount = parseFloat(row[expenseCol]);
         const reason = String(row[reasonCol] || '');
+        const rawType = typeCol ? String(row[typeCol] || '').trim().toLowerCase() : 'expense';
+        const type: 'expense' | 'income' = (rawType === 'income' || rawType === 'earnings') ? 'income' : 'expense';
 
         if (isNaN(day) || isNaN(amount) || !reason) continue;
 
@@ -61,7 +65,8 @@ const parseExpenses = (data: any[], month: string): ParsedExpense[] => {
             amount,
             reason,
             category: detectCategory(reason),
-            month
+            month,
+            type
         });
     }
 

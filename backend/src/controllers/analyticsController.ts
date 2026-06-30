@@ -23,10 +23,12 @@ export const getAnalytics = async (req: Request, res: Response) => {
 
         // Get category breakdown
         const categoryBreakdown = Object.fromEntries(summary.categoryBreakdown);
+        const incomeCategoryBreakdown = summary.incomeCategoryBreakdown ? Object.fromEntries(summary.incomeCategoryBreakdown) : {};
 
         const result = {
             ...summary.toObject(),
             categoryBreakdown,
+            incomeCategoryBreakdown,
             insights,
             weekdayWeekend,
             weeklySpend,

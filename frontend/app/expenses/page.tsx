@@ -28,10 +28,12 @@ export default function ExpensesPage() {
     const urlMaxAmount = searchParams.get('maxAmount') || ''
     const urlMinDay = searchParams.get('minDay') || ''
     const urlMaxDay = searchParams.get('maxDay') || ''
+    const urlType = searchParams.get('type') || ''
 
     const [page, setPage] = useState(1)
     const [category, setCategory] = useState(urlCategory)
     const [month, setMonth] = useState(urlMonth)
+    const [type, setType] = useState(urlType)
     const [search, setSearch] = useState(urlSearch)
     const [debouncedSearch, setDebouncedSearch] = useState(urlSearch)
     const [sortBy, setSortBy] = useState(urlSortBy)
@@ -63,8 +65,9 @@ export default function ExpensesPage() {
         setMaxAmount(urlMaxAmount)
         setMinDay(urlMinDay)
         setMaxDay(urlMaxDay)
+        setType(urlType)
         setPage(1)
-    }, [urlSearch, urlCategory, urlMonth, urlSortBy, urlSortOrder, urlLimit, urlMinAmount, urlMaxAmount, urlMinDay, urlMaxDay])
+    }, [urlSearch, urlCategory, urlMonth, urlSortBy, urlSortOrder, urlLimit, urlMinAmount, urlMaxAmount, urlMinDay, urlMaxDay, urlType])
 
     // Debounce search input changes
     useEffect(() => {
@@ -88,9 +91,10 @@ export default function ExpensesPage() {
         if (maxAmount) params.set('maxAmount', maxAmount)
         if (minDay) params.set('minDay', minDay)
         if (maxDay) params.set('maxDay', maxDay)
+        if (type) params.set('type', type)
         
         router.replace(`${pathname}?${params.toString()}`)
-    }, [debouncedSearch, category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay, pathname, router])
+    }, [debouncedSearch, category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay, type, pathname, router])
 
     const { expenses, total, loading, error, categories, refetch } = useExpenses({
         page,
@@ -103,24 +107,37 @@ export default function ExpensesPage() {
         minAmount: minAmount ? parseFloat(minAmount) : undefined,
         maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
         minDay: minDay ? parseInt(minDay) : undefined,
-        maxDay: maxDay ? parseInt(maxDay) : undefined
+        maxDay: maxDay ? parseInt(maxDay) : undefined,
+        type: type || undefined
     })
 
     // Reset to page 1 when filter parameters change
     useEffect(() => {
         setPage(1)
-    }, [category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay])
+    }, [category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay, type])
 
     // Calculate view insights
-    const pageTotal = expenses.reduce((sum, e) => sum + e.amount, 0)
-    const pageAvg = expenses.length > 0 ? pageTotal / expenses.length : 0
-    const pageMax = expenses.length > 0 
-        ? [...expenses].sort((a, b) => b.amount - a.amount)[0] 
+    const pageExpensesTotal = expenses.filter(e => e.type !== 'income').reduce((sum, e) => sum + e.amount, 0)
+    const pageIncomesTotal = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0)
+    const pageNet = pageIncomesTotal - pageExpensesTotal
+    const pageTotal = pageExpensesTotal
+
+    const expensesCount = expenses.filter(e => e.type !== 'income').length
+    const pageAvg = expensesCount > 0 ? pageExpensesTotal / expensesCount : 0
+    const pageMax = expenses.filter(e => e.type !== 'income').length > 0 
+        ? [...expenses.filter(e => e.type !== 'income')].sort((a, b) => b.amount - a.amount)[0] 
+        : null
+
+    const pageIncomeMax = expenses.filter(e => e.type === 'income').length > 0 
+        ? [...expenses.filter(e => e.type === 'income')].sort((a, b) => b.amount - a.amount)[0] 
         : null
 
     const categoryTotals: Record<string, number> = {}
     expenses.forEach(e => {
-        categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount
+        const matchesType = !type || e.type === type || (type === 'expense' && (!e.type || e.type === 'expense'));
+        if (matchesType) {
+            categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount
+        }
     })
     let topCategory = 'None'
     let topCategoryTotal = 0
@@ -158,7 +175,7 @@ export default function ExpensesPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Expenses</h1>
+                <h1 className="text-3xl font-bold text-custom-gradient">Expenses</h1>
                 <div className="flex space-x-2">
                     <Button
                         onClick={() => setIsAddOpen(true)}
@@ -193,19 +210,37 @@ export default function ExpensesPage() {
             {/* Quick View Insights */}
             {!loading && expenses.length > 0 && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-in fade-in duration-300">
-                    <div className="p-4 rounded-xl border border-teal-500/10 bg-teal-500/5 dark:bg-teal-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
+                    <div className={`p-4 rounded-xl border flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm ${
+                        type === 'income'
+                            ? 'border-emerald-500/10 bg-emerald-500/5 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-400'
+                            : type === 'expense'
+                            ? 'border-rose-500/10 bg-rose-500/5 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400'
+                            : pageNet >= 0
+                            ? 'border-emerald-500/10 bg-emerald-500/5 dark:bg-emerald-950/10 text-emerald-600 dark:text-emerald-400'
+                            : 'border-rose-500/10 bg-rose-500/5 dark:bg-rose-950/10 text-rose-600 dark:text-rose-400'
+                    }`}>
                         <div>
-                            <p className="text-[10px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Visible Spend Total</p>
-                            <h3 className="text-xl font-extrabold text-teal-700 dark:text-teal-300 font-mono mt-0.5">{format(pageTotal)}</h3>
+                            <p className="text-[10px] font-bold uppercase tracking-wider opacity-85">
+                                {type === 'income' ? 'Visible Income Total' : type === 'expense' ? 'Visible Spend Total' : 'Net Flow Balance'}
+                            </p>
+                            <h3 className="text-xl font-extrabold font-mono mt-0.5">
+                                {type === 'income' ? format(pageIncomesTotal) : type === 'expense' ? format(pageExpensesTotal) : `${pageNet >= 0 ? '+' : ''}${format(pageNet)}`}
+                            </h3>
                         </div>
-                        <div className="p-2 bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 rounded-lg">
+                        <div className="p-2 rounded-lg bg-current/10 text-current">
                             <DollarSign className="h-5 w-5" />
                         </div>
                     </div>
                     <div className="p-4 rounded-xl border border-indigo-500/10 bg-indigo-500/5 dark:bg-indigo-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                         <div>
-                            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Visible Average</p>
-                            <h3 className="text-xl font-extrabold text-indigo-700 dark:text-indigo-300 font-mono mt-0.5">{format(pageAvg)}</h3>
+                            <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                {type === 'income' ? 'Avg Income Entry' : 'Avg Spend Entry'}
+                            </p>
+                            <h3 className="text-xl font-extrabold text-indigo-700 dark:text-indigo-300 font-mono mt-0.5">
+                                {type === 'income' 
+                                    ? format(expenses.filter(e => e.type === 'income').length > 0 ? pageIncomesTotal / expenses.filter(e => e.type === 'income').length : 0)
+                                    : format(pageAvg)}
+                            </h3>
                         </div>
                         <div className="p-2 bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-lg">
                             <TrendingUp className="h-5 w-5" />
@@ -213,7 +248,9 @@ export default function ExpensesPage() {
                     </div>
                     <div className="p-4 rounded-xl border border-purple-500/10 bg-purple-500/5 dark:bg-purple-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                         <div className="truncate pr-2">
-                            <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Top Spend Category</p>
+                            <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                                {type === 'income' ? 'Top Income Source' : 'Top Spend Category'}
+                            </p>
                             <h3 className="text-sm font-bold text-purple-800 dark:text-purple-300 mt-1 truncate capitalize" title={topCategory}>
                                 {topCategory}
                             </h3>
@@ -225,11 +262,17 @@ export default function ExpensesPage() {
                     </div>
                     <div className="p-4 rounded-xl border border-amber-500/10 bg-amber-500/5 dark:bg-amber-950/10 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                         <div className="truncate pr-2">
-                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Top Single Expense</p>
-                            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300 mt-1 truncate" title={pageMax?.reason}>
-                                {pageMax?.reason}
+                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                                {type === 'income' ? 'Top Single Income' : 'Top Single Spend'}
+                            </p>
+                            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300 mt-1 truncate" title={type === 'income' ? pageIncomeMax?.reason : pageMax?.reason}>
+                                {type === 'income' ? pageIncomeMax?.reason : pageMax?.reason}
                             </h3>
-                            <p className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono mt-0.5">{pageMax ? format(pageMax.amount) : ''}</p>
+                            <p className="text-xs font-extrabold text-amber-600 dark:text-amber-400 font-mono mt-0.5">
+                                {type === 'income' 
+                                    ? (pageIncomeMax ? format(pageIncomeMax.amount) : '')
+                                    : (pageMax ? format(pageMax.amount) : '')}
+                            </p>
                         </div>
                         <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-lg shrink-0">
                             <Sparkles className="h-5 w-5" />
@@ -250,6 +293,8 @@ export default function ExpensesPage() {
                 onSortByChange={setSortBy}
                 sortOrder={sortOrder}
                 onSortOrderChange={setSortOrder}
+                type={type}
+                onTypeChange={setType}
                 minAmount={minAmount}
                 onMinAmountChange={setMinAmount}
                 maxAmount={maxAmount}
