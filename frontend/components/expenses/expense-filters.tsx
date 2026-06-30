@@ -16,6 +16,8 @@ interface ExpenseFiltersProps {
     onSortByChange: (sortBy: string) => void;
     sortOrder: 'asc' | 'desc';
     onSortOrderChange: (sortOrder: 'asc' | 'desc') => void;
+    type: string;
+    onTypeChange: (type: string) => void;
     
     // Range Filters
     minAmount: string;
@@ -40,6 +42,8 @@ export function ExpenseFilters({
     onSortByChange,
     sortOrder,
     onSortOrderChange,
+    type,
+    onTypeChange,
     minAmount,
     onMinAmountChange,
     maxAmount,
@@ -59,7 +63,7 @@ export function ExpenseFilters({
             {/* Row 1: Core Search & Selects */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 {/* Search Input */}
-                <div className="md:col-span-5 flex flex-col space-y-1.5">
+                <div className="md:col-span-4 flex flex-col space-y-1.5">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         Search Description
                     </label>
@@ -76,7 +80,7 @@ export function ExpenseFilters({
                 </div>
 
                 {/* Category Filter */}
-                <div className="md:col-span-4 flex flex-col space-y-1.5">
+                <div className="md:col-span-3 flex flex-col space-y-1.5">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                         Category Filter
                     </label>
@@ -113,6 +117,27 @@ export function ExpenseFilters({
                             onChange={(e) => onMonthChange(e.target.value)}
                             className="w-full border border-border/70 pl-10 pr-4 py-2 bg-background/50 hover:bg-background/85 focus:bg-background/90 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 transition-all text-xs rounded-xl"
                         />
+                    </div>
+                </div>
+
+                {/* Transaction Type Filter */}
+                <div className="md:col-span-2 flex flex-col space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Type Filter
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={type}
+                            onChange={(e) => onTypeChange(e.target.value)}
+                            className="w-full border border-border/70 px-3 py-2 bg-background/50 hover:bg-background/85 focus:bg-background/90 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 transition-all text-xs rounded-xl appearance-none cursor-pointer"
+                        >
+                            <option value="">All Types</option>
+                            <option value="expense">Expenses Only</option>
+                            <option value="income">Income Only</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground/60">
+                            <ChevronDown className="h-3.5 w-3.5" />
+                        </div>
                     </div>
                 </div>
             </div>

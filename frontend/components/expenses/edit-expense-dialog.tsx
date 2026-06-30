@@ -5,6 +5,7 @@ import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
+import { useThemeCustomizer } from '@/components/theme-customizer-provider'
 
 interface Expense {
     _id: string;
@@ -13,6 +14,7 @@ interface Expense {
     reason: string;
     category: string;
     month: string;
+    type?: 'expense' | 'income';
 }
 
 interface EditExpenseDialogProps {
@@ -24,9 +26,11 @@ interface EditExpenseDialogProps {
 
 export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditExpenseDialogProps) {
     const { convert, convertToBase, symbol } = useCurrency()
+    const { categoryColors } = useThemeCustomizer()
     const [day, setDay] = useState<number>(1)
     const [amount, setAmount] = useState<string>('')
     const [reason, setReason] = useState<string>('')
+    const [type, setType] = useState<'expense' | 'income'>('expense')
     const [category, setCategory] = useState<string>('auto')
     const [month, setMonth] = useState<string>('')
     const [loading, setLoading] = useState(false)
@@ -37,6 +41,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
             setDay(expense.day)
             setAmount(Number(convert(expense.amount).toFixed(3)).toString())
             setReason(expense.reason)
+            setType(expense.type || 'expense')
             setCategory(expense.category)
             setMonth(expense.month)
             setError('')
@@ -76,17 +81,25 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                 amount: parsedAmount,
                 reason: reason.trim(),
                 category,
-                month
+                month,
+                type
             })
 
             onSuccess()
             onClose()
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to update expense')
+            setError(err.response?.data?.error || `Failed to update ${type}`)
         } finally {
             setLoading(false)
         }
     }
+
+    const standardExpenses = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Rent', 'Bills']
+    const standardIncomes = ['Salary', 'Freelance', 'Investments', 'Gifts']
+
+    const categoriesList = type === 'income'
+        ? [...standardIncomes, ...Object.keys(categoryColors).filter(c => !standardExpenses.includes(c) && !standardIncomes.includes(c) && c !== 'Others')]
+        : [...standardExpenses, ...Object.keys(categoryColors).filter(c => !standardExpenses.includes(c) && !standardIncomes.includes(c) && c !== 'Others')]
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -95,8 +108,8 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b">
                     <div>
-                        <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                            Edit Expense
+                        <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent capitalize">
+                            Edit {type}
                         </h2>
                         <p className="text-xs text-muted-foreground mt-0.5">Modify transaction record parameters</p>
                     </div>
@@ -115,6 +128,41 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             {error}
                         </div>
                     )}
+
+                    {/* Transaction Type Toggle */}
+                    <div className="flex flex-col space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Transaction Type</label>
+                        <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 border border-border/60 rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setType('expense')
+                                    setCategory('auto')
+                                }}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    type === 'expense'
+                                        ? 'bg-card text-rose-500 shadow-sm border border-rose-500/10'
+                                        : 'text-muted-foreground hover:bg-muted'
+                                }`}
+                            >
+                                Expense
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setType('income')
+                                    setCategory('auto')
+                                }}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    type === 'income'
+                                        ? 'bg-card text-emerald-500 shadow-sm border border-emerald-500/10'
+                                        : 'text-muted-foreground hover:bg-muted'
+                                }`}
+                            >
+                                Income
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         {/* Day */}
@@ -163,7 +211,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                         <label className="text-xs font-semibold text-muted-foreground">Reason / Description</label>
                         <input
                             type="text"
-                            placeholder="e.g. Lunch thali at office"
+                            placeholder={type === 'income' ? "e.g. Monthly salary or freelance payment" : "e.g. Lunch thali at office"}
                             required
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
@@ -187,16 +235,11 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize"
                         >
                             <option value="auto">Auto-Detect Category</option>
-                            <option value="Breakfast">Breakfast</option>
-                            <option value="Lunch">Lunch</option>
-                            <option value="Dinner">Dinner</option>
-                            <option value="Groceries">Groceries</option>
-                            <option value="Food">Food</option>
-                            <option value="Drinks">Drinks</option>
-                            <option value="Transport">Transport</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Rent">Rent</option>
-                            <option value="Bills">Bills & Utilities</option>
+                            {categoriesList.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {cat === 'Bills' ? 'Bills & Utilities' : cat}
+                                </option>
+                            ))}
                             <option value="Others">Others</option>
                         </select>
                     </div>

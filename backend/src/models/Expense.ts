@@ -7,6 +7,7 @@ export interface IExpense extends Document {
     category: string;
     uploadedAt: Date;
     month: string;
+    type: 'expense' | 'income';
 }
 
 const ExpenseSchema: Schema = new Schema({
@@ -31,6 +32,12 @@ const ExpenseSchema: Schema = new Schema({
         type: String,
         required: true
     },
+    type: {
+        type: String,
+        enum: ['expense', 'income'],
+        required: true,
+        default: 'expense'
+    },
     uploadedAt: {
         type: Date,
         default: Date.now
@@ -41,5 +48,6 @@ const ExpenseSchema: Schema = new Schema({
 ExpenseSchema.index({ month: 1, day: 1 });
 ExpenseSchema.index({ category: 1 });
 ExpenseSchema.index({ amount: 1 });
+ExpenseSchema.index({ type: 1 });
 
 export default mongoose.model<IExpense>('Expense', ExpenseSchema);

@@ -5,7 +5,10 @@ import dotenv from 'dotenv';
 import expenseRoutes from './routes/expenseRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 import { errorHandler } from './middleware/errorHandler';
+import { seedDefaultCategories } from './services/categoryService';
+import { reloadCategoryKeywordsCache } from './utils/categoryDetector';
 
 dotenv.config();
 
@@ -21,6 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', expenseRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', analyticsRoutes);
+app.use('/api', categoryRoutes);
 
 app.post('/api/shutdown', async (req, res) => {
     try {
@@ -46,8 +50,10 @@ app.use(errorHandler);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/expense_dashboard')
-    .then(() => {
+    .then(async () => {
         console.log('Connected to MongoDB');
+        await seedDefaultCategories();
+        await reloadCategoryKeywordsCache();
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

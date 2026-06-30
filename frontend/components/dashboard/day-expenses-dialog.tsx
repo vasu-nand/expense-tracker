@@ -13,6 +13,7 @@ interface Expense {
     reason: string;
     category: string;
     month: string;
+    type?: 'expense' | 'income';
 }
 
 interface DayExpensesDialogProps {
@@ -43,7 +44,7 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
             const response = await api.get(`/expenses?month=${month}&day=${day}&limit=100`);
             setExpenses(response.data.expenses || []);
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to load expenses');
+            setError(err.response?.data?.error || 'Failed to load transactions');
         } finally {
             setLoading(false);
         }
@@ -51,10 +52,15 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
 
     if (!isOpen || day === null) return null;
 
-    const totalSpend = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalExpenses = expenses.filter(e => e.type !== 'income').reduce((sum, e) => sum + e.amount, 0);
+    const totalIncome = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0);
+    const netBalance = totalIncome - totalExpenses;
 
-    const getCategoryBadgeStyles = (category: string) => {
+    const getCategoryBadgeStyles = (category: string, type?: string) => {
         const cat = category.toLowerCase();
+        if (type === 'income') {
+            return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/30';
+        }
         if (cat.includes('breakfast')) {
             return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900/30';
         }
@@ -103,7 +109,7 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
                         <Calendar className="h-5 w-5 text-primary" />
                         <div>
                             <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                                Day Expenses
+                                Day Transactions Log
                             </h2>
                             <p className="text-xs text-muted-foreground mt-0.5">{getFormattedDate()}</p>
                         </div>
@@ -133,24 +139,27 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {expenses.map((expense) => (
-                                <div 
-                                    key={expense._id} 
-                                    className="flex items-center justify-between p-3.5 bg-muted/40 rounded-xl hover:bg-muted/60 transition-colors border border-border/50"
-                                >
-                                    <div className="space-y-1.5">
-                                        <p className="text-sm font-semibold text-foreground leading-snug">
-                                            {expense.reason}
-                                        </p>
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${getCategoryBadgeStyles(expense.category)}`}>
-                                            {expense.category}
-                                        </span>
+                            {expenses.map((expense) => {
+                                const isIncome = expense.type === 'income';
+                                return (
+                                    <div 
+                                        key={expense._id} 
+                                        className="flex items-center justify-between p-3.5 bg-muted/40 rounded-xl hover:bg-muted/60 transition-colors border border-border/50"
+                                    >
+                                        <div className="space-y-1.5">
+                                            <p className="text-sm font-semibold text-foreground leading-snug">
+                                                {expense.reason}
+                                            </p>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${getCategoryBadgeStyles(expense.category, expense.type)}`}>
+                                                {expense.category}
+                                            </span>
+                                        </div>
+                                        <div className={`font-mono font-bold text-sm ${isIncome ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                            {isIncome ? '+' : '-'}{format(expense.amount)}
+                                        </div>
                                     </div>
-                                    <div className="font-mono font-bold text-foreground text-sm">
-                                        {format(expense.amount)}
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -159,10 +168,10 @@ export function DayExpensesDialog({ isOpen, onClose, day, month }: DayExpensesDi
                 <div className="flex items-center justify-between pt-4 border-t flex-shrink-0 mt-2">
                     <div className="flex flex-col">
                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                            Daily Total
+                            Daily Net Balance
                         </span>
-                        <span className="text-lg font-extrabold text-foreground font-mono">
-                            {format(totalSpend)}
+                        <span className={`text-lg font-extrabold font-mono ${netBalance >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {netBalance >= 0 ? '+' : ''}{format(netBalance)}
                         </span>
                     </div>
                     <Button onClick={onClose}>

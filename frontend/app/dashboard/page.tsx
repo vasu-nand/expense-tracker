@@ -75,11 +75,11 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <DailyTrendChart data={data?.dailyTrend || []} />
-                <CategoryPieChart data={data?.categoryBreakdown || {}} />
+                <CategoryPieChart data={data?.categoryBreakdown || {}} incomeData={data?.incomeCategoryBreakdown || {}} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <TopSpendingChart data={data?.topSpendingDays || []} />
+                <TopSpendingChart data={data?.dailyTrend || []} />
                 <ExpenseHeatmap 
                     data={data?.dailyTrend || []} 
                     month={month}

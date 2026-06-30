@@ -5,6 +5,7 @@ import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
+import { useThemeCustomizer } from '@/components/theme-customizer-provider'
 
 interface AddExpenseDialogProps {
     isOpen: boolean;
@@ -15,9 +16,11 @@ interface AddExpenseDialogProps {
 
 export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: AddExpenseDialogProps) {
     const { convert, convertToBase, symbol, format } = useCurrency()
+    const { categoryColors } = useThemeCustomizer()
     const [day, setDay] = useState<number>(new Date().getDate())
     const [amount, setAmount] = useState<string>('')
     const [reason, setReason] = useState<string>('')
+    const [type, setType] = useState<'expense' | 'income'>('expense')
     const [category, setCategory] = useState<string>('auto')
     const [month, setMonth] = useState<string>(defaultMonth)
     const [loading, setLoading] = useState(false)
@@ -72,7 +75,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
         setAmount(Number(convert(suggestion.amount).toFixed(3)).toString())
 
         // Casing normalization against standard options
-        const categoriesList = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Rent', 'Bills', 'Others']
+        const categoriesList = Object.keys(categoryColors)
         const matchedCat = categoriesList.find(c => c.toLowerCase() === suggestion.category.toLowerCase())
         setCategory(matchedCat || 'Others')
 
@@ -122,22 +125,31 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                 amount: parsedAmount,
                 reason: reason.trim(),
                 category,
-                month
+                month,
+                type
             })
 
             // Reset form
             setAmount('')
             setReason('')
             setCategory('auto')
+            setType('expense')
 
             onSuccess()
             onClose()
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to add expense')
+            setError(err.response?.data?.error || `Failed to add ${type}`)
         } finally {
             setLoading(false)
         }
     }
+
+    const standardExpenses = ['Breakfast', 'Lunch', 'Dinner', 'Groceries', 'Food', 'Drinks', 'Transport', 'Shopping', 'Rent', 'Bills']
+    const standardIncomes = ['Salary', 'Freelance', 'Investments', 'Gifts']
+
+    const categoriesList = type === 'income'
+        ? [...standardIncomes, ...Object.keys(categoryColors).filter(c => !standardExpenses.includes(c) && !standardIncomes.includes(c) && c !== 'Others')]
+        : [...standardExpenses, ...Object.keys(categoryColors).filter(c => !standardExpenses.includes(c) && !standardIncomes.includes(c) && c !== 'Others')]
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -146,8 +158,8 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                 {/* Header */}
                 <div className="flex items-center justify-between pb-4 border-b">
                     <div>
-                        <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                            Add New Expense
+                        <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent capitalize">
+                            Add New {type}
                         </h2>
                         <p className="text-xs text-muted-foreground mt-0.5">Enter details for manual transaction logging</p>
                     </div>
@@ -166,6 +178,41 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             {error}
                         </div>
                     )}
+
+                    {/* Transaction Type Toggle */}
+                    <div className="flex flex-col space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Transaction Type</label>
+                        <div className="grid grid-cols-2 gap-2 p-1 bg-muted/60 border border-border/60 rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setType('expense')
+                                    setCategory('auto')
+                                }}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    type === 'expense'
+                                        ? 'bg-card text-rose-500 shadow-sm border border-rose-500/10'
+                                        : 'text-muted-foreground hover:bg-muted'
+                                }`}
+                            >
+                                Expense
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setType('income')
+                                    setCategory('auto')
+                                }}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    type === 'income'
+                                        ? 'bg-card text-emerald-500 shadow-sm border border-emerald-500/10'
+                                        : 'text-muted-foreground hover:bg-muted'
+                                }`}
+                            >
+                                Income
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         {/* Day */}
@@ -241,7 +288,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
 
                             <input
                                 type="text"
-                                placeholder="e.g. Lunch thali at office"
+                                placeholder={type === 'income' ? "e.g. Monthly salary or freelance payment" : "e.g. Lunch thali at office"}
                                 required
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
@@ -267,16 +314,11 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize"
                         >
                             <option value="auto">Auto-Detect Category</option>
-                            <option value="Breakfast">Breakfast</option>
-                            <option value="Lunch">Lunch</option>
-                            <option value="Dinner">Dinner</option>
-                            <option value="Groceries">Groceries</option>
-                            <option value="Food">Food</option>
-                            <option value="Drinks">Drinks</option>
-                            <option value="Transport">Transport</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Rent">Rent</option>
-                            <option value="Bills">Bills & Utilities</option>
+                            {categoriesList.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {cat === 'Bills' ? 'Bills & Utilities' : cat}
+                                </option>
+                            ))}
                             <option value="Others">Others</option>
                         </select>
                     </div>
@@ -300,7 +342,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     Saving...
                                 </>
-                            ) : 'Add Expense'}
+                            ) : (type === 'income' ? 'Add Income' : 'Add Expense')}
                         </Button>
                     </div>
                 </form>
