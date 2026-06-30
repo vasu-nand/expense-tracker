@@ -66,6 +66,7 @@ interface AnalyticsData {
 export default function SettingsPage() {
     const { theme: mode, setTheme: setMode } = useTheme()
     const [activeTab, setActiveTab] = useState<'appearance' | 'currency' | 'data' | 'categories'>('appearance')
+    const [designerMode, setDesignerMode] = useState<'light' | 'dark'>('light')
     
     // Add Category Form States
     const [newCategoryName, setNewCategoryName] = useState('')
@@ -90,6 +91,30 @@ export default function SettingsPage() {
         deleteCustomCategory,
         resetCategorySettings
     } = useThemeCustomizer()
+
+    const defaultDarkTheme = {
+        background: '#090d16',
+        card: '#111726',
+        foreground: '#f8fafc',
+        border: '#1e293b',
+        primary: '#94a3b8',
+        btnGradientStart: '#94a3b8',
+        btnGradientEnd: '#475569',
+        textGradientStart: '#94a3b8',
+        textGradientEnd: '#475569'
+    }
+
+    const activeConfig = designerMode === 'light' 
+        ? currentTheme 
+        : (currentTheme.dark || defaultDarkTheme)
+
+    const handleThemeColorChange = (key: string, val: string) => {
+        if (designerMode === 'light') {
+            updateThemeColor(key as any, val)
+        } else {
+            updateDarkThemeColor(key, val)
+        }
+    }
     
     // Currency Context
     const { currency, setCurrency, format, symbol: currencySymbol } = useCurrency()
@@ -427,21 +452,47 @@ export default function SettingsPage() {
                                 <CardDescription>Customize colors and gradients as you wish. These choices auto-generate custom dark themes when toggled.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
+                                {/* Tab switch for Light vs Dark design settings */}
+                                <div className="flex border-b border-border/40 gap-1 pb-px">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDesignerMode('light')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${
+                                            designerMode === 'light'
+                                                ? 'border-primary text-primary font-bold bg-accent/30'
+                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
+                                        }`}
+                                    >
+                                        <Sun className="h-4 w-4 text-amber-500" /> Light Theme Customizer
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDesignerMode('dark')}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${
+                                            designerMode === 'dark'
+                                                ? 'border-primary text-primary font-bold bg-accent/30'
+                                                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
+                                        }`}
+                                    >
+                                        <Moon className="h-4 w-4 text-indigo-500" /> Dark Theme Customizer
+                                    </button>
+                                </div>
+
                                 {/* Color Pickers Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4">
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold text-muted-foreground uppercase">Background Color</label>
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.background}
-                                                onChange={(e) => updateThemeColor('background', e.target.value)}
+                                                value={activeConfig.background}
+                                                onChange={(e) => handleThemeColorChange('background', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.background}
-                                                onChange={(e) => updateThemeColor('background', e.target.value)}
+                                                value={activeConfig.background}
+                                                onChange={(e) => handleThemeColorChange('background', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -452,14 +503,14 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.card}
-                                                onChange={(e) => updateThemeColor('card', e.target.value)}
+                                                value={activeConfig.card}
+                                                onChange={(e) => handleThemeColorChange('card', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.card}
-                                                onChange={(e) => updateThemeColor('card', e.target.value)}
+                                                value={activeConfig.card}
+                                                onChange={(e) => handleThemeColorChange('card', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -470,14 +521,14 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.primary}
-                                                onChange={(e) => updateThemeColor('primary', e.target.value)}
+                                                value={activeConfig.primary}
+                                                onChange={(e) => handleThemeColorChange('primary', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.primary}
-                                                onChange={(e) => updateThemeColor('primary', e.target.value)}
+                                                value={activeConfig.primary}
+                                                onChange={(e) => handleThemeColorChange('primary', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -488,14 +539,14 @@ export default function SettingsPage() {
                                         <div className="flex items-center gap-3">
                                             <input
                                                 type="color"
-                                                value={currentTheme.border}
-                                                onChange={(e) => updateThemeColor('border', e.target.value)}
+                                                value={activeConfig.border}
+                                                onChange={(e) => handleThemeColorChange('border', e.target.value)}
                                                 className="w-10 h-10 border rounded cursor-pointer"
                                             />
                                             <input
                                                 type="text"
-                                                value={currentTheme.border}
-                                                onChange={(e) => updateThemeColor('border', e.target.value)}
+                                                value={activeConfig.border}
+                                                onChange={(e) => handleThemeColorChange('border', e.target.value)}
                                                 className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-background"
                                             />
                                         </div>
@@ -513,21 +564,21 @@ export default function SettingsPage() {
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.btnGradientStart}
-                                                    onChange={(e) => updateThemeColor('btnGradientStart', e.target.value)}
+                                                    value={activeConfig.btnGradientStart}
+                                                    onChange={(e) => handleThemeColorChange('btnGradientStart', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient Start"
                                                 />
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.btnGradientEnd}
-                                                    onChange={(e) => updateThemeColor('btnGradientEnd', e.target.value)}
+                                                    value={activeConfig.btnGradientEnd}
+                                                    onChange={(e) => handleThemeColorChange('btnGradientEnd', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient End"
                                                 />
                                                 <div 
                                                     className="flex-1 h-8 rounded-md border border-black/10 flex items-center justify-center text-[10px] text-white font-bold"
-                                                    style={{ backgroundImage: `linear-gradient(to right, ${currentTheme.btnGradientStart}, ${currentTheme.btnGradientEnd})` }}
+                                                    style={{ backgroundImage: `linear-gradient(to right, ${activeConfig.btnGradientStart}, ${activeConfig.btnGradientEnd})` }}
                                                 >
                                                     Button Preview
                                                 </div>
@@ -540,21 +591,21 @@ export default function SettingsPage() {
                                             <div className="flex items-center gap-3">
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.textGradientStart}
-                                                    onChange={(e) => updateThemeColor('textGradientStart', e.target.value)}
+                                                    value={activeConfig.textGradientStart}
+                                                    onChange={(e) => handleThemeColorChange('textGradientStart', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient Start"
                                                 />
                                                 <input
                                                     type="color"
-                                                    value={currentTheme.textGradientEnd}
-                                                    onChange={(e) => updateThemeColor('textGradientEnd', e.target.value)}
+                                                    value={activeConfig.textGradientEnd}
+                                                    onChange={(e) => handleThemeColorChange('textGradientEnd', e.target.value)}
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient End"
                                                 />
                                                 <div className="flex-1 h-8 flex items-center justify-center font-black text-xs">
                                                     <span 
-                                                        style={{ backgroundImage: `linear-gradient(to right, ${currentTheme.textGradientStart}, ${currentTheme.textGradientEnd})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                                                        style={{ backgroundImage: `linear-gradient(to right, ${activeConfig.textGradientStart}, ${activeConfig.textGradientEnd})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                                     >
                                                         Text Preview
                                                     </span>

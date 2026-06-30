@@ -46,7 +46,7 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                             onClick={() => setActiveTab('expense')}
                             className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                                 activeTab === 'expense'
-                                    ? 'bg-card text-rose-500 shadow-sm'
+                                    ? 'bg-card text-primary shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
@@ -57,7 +57,7 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                             onClick={() => setActiveTab('income')}
                             className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                                 activeTab === 'income'
-                                    ? 'bg-card text-emerald-500 shadow-sm'
+                                    ? 'bg-card text-primary shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
@@ -88,7 +88,7 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                         onClick={() => setActiveTab('expense')}
                         className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                             activeTab === 'expense'
-                                ? 'bg-card text-rose-500 shadow-sm'
+                                ? 'bg-card text-primary shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -99,7 +99,7 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                         onClick={() => setActiveTab('income')}
                         className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
                             activeTab === 'income'
-                                ? 'bg-card text-emerald-500 shadow-sm'
+                                ? 'bg-card text-primary shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
@@ -111,13 +111,9 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={sortedData} margin={{ top: 20, right: 10, left: 10, bottom: 10 }}>
                         <defs>
-                            <linearGradient id="barGradientExpense" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.9}/>
-                                <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.25}/>
-                            </linearGradient>
-                            <linearGradient id="barGradientIncome" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
-                                <stop offset="100%" stopColor="#10b981" stopOpacity={0.25}/>
+                            <linearGradient id="barGradientTheme" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9}/>
+                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.25}/>
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted-foreground))" strokeOpacity={0.1} />
@@ -149,10 +145,10 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                         />
                         <Bar
                             dataKey="amount"
-                            fill={activeTab === 'expense' ? 'url(#barGradientExpense)' : 'url(#barGradientIncome)'}
+                            fill="url(#barGradientTheme)"
                             radius={[6, 6, 0, 0]}
                             maxBarSize={45}
-                            stroke={activeTab === 'expense' ? '#f43f5e' : '#10b981'}
+                            stroke="hsl(var(--primary))"
                             strokeWidth={1}
                         >
                             {sortedData.map((entry, index) => (

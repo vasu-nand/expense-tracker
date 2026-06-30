@@ -6,6 +6,7 @@ import expenseRoutes from './routes/expenseRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import settingsRoutes from './routes/settingsRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { seedDefaultCategories } from './services/categoryService';
 import { reloadCategoryKeywordsCache } from './utils/categoryDetector';
@@ -25,6 +26,7 @@ app.use('/api', expenseRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api', analyticsRoutes);
 app.use('/api', categoryRoutes);
+app.use('/api', settingsRoutes);
 
 app.post('/api/shutdown', async (req, res) => {
     try {

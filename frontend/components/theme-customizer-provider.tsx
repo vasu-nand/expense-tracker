@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { api } from '@/services/api'
 
@@ -415,11 +415,12 @@ function hexToHsl(hex: string) {
 }
 
 export function ThemeCustomizerProvider({ children }: { children: React.ReactNode }) {
-    const { resolvedTheme } = useTheme()
+    const { theme: mode, setTheme: setMode, resolvedTheme } = useTheme()
     const [customTheme, setCustomThemeState] = useState<CustomTheme>(predefinedThemes[0])
     const [categoryColors, setCategoryColorsState] = useState<Record<string, string>>(predefinedCategoryPalettes[0].colors)
     const [categoryKeywords, setCategoryKeywordsState] = useState<Record<string, string[]>>(defaultCategoryKeywords)
     const [mounted, setMounted] = useState(false)
+    const isInitialLoad = useRef(true)
 
     const syncCategoriesWithBackend = async () => {
         try {
@@ -442,36 +443,76 @@ export function ThemeCustomizerProvider({ children }: { children: React.ReactNod
     }
 
     useEffect(() => {
-        const stored = localStorage.getItem('custom-theme-config')
-        if (stored) {
-            try {
-                setCustomThemeState(JSON.parse(stored))
-            } catch (e) {
-                console.error('Error parsing stored custom theme:', e)
+        const init = async () => {
+            const stored = localStorage.getItem('custom-theme-config')
+            if (stored) {
+                try {
+                    setCustomThemeState(JSON.parse(stored))
+                } catch (e) {
+                    console.error('Error parsing stored custom theme:', e)
+                }
             }
-        }
-        
-        const storedColors = localStorage.getItem('custom-category-colors')
-        if (storedColors) {
+            
+            const storedColors = localStorage.getItem('custom-category-colors')
+            if (storedColors) {
+                try {
+                    setCategoryColorsState(JSON.parse(storedColors))
+                } catch (e) {
+                    console.error('Error parsing stored category colors:', e)
+                }
+            }
+
+            const storedKeywords = localStorage.getItem('custom-category-keywords')
+            if (storedKeywords) {
+                try {
+                    setCategoryKeywordsState(JSON.parse(storedKeywords))
+                } catch (e) {
+                    console.error('Error parsing stored category keywords:', e)
+                }
+            }
+
+            await syncCategoriesWithBackend()
+
             try {
-                setCategoryColorsState(JSON.parse(storedColors))
-            } catch (e) {
-                console.error('Error parsing stored category colors:', e)
+                const response = await api.get('/settings')
+                if (response.data && response.data.settings) {
+                    const { themeMode, themeConfig } = response.data.settings
+                    if (themeConfig) {
+                        setCustomThemeState(themeConfig)
+                        localStorage.setItem('custom-theme-config', JSON.stringify(themeConfig))
+                    }
+                    if (themeMode) {
+                        setMode(themeMode)
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load settings from database:', error)
+            } finally {
+                isInitialLoad.current = false
+                setMounted(true)
             }
         }
 
-        const storedKeywords = localStorage.getItem('custom-category-keywords')
-        if (storedKeywords) {
-            try {
-                setCategoryKeywordsState(JSON.parse(storedKeywords))
-            } catch (e) {
-                console.error('Error parsing stored category keywords:', e)
-            }
-        }
-
-        syncCategoriesWithBackend()
-        setMounted(true)
+        init()
     }, [])
+
+    useEffect(() => {
+        if (!mounted || isInitialLoad.current) return
+
+        const delayDebounceFn = setTimeout(async () => {
+            try {
+                await api.put('/settings', {
+                    themeMode: mode,
+                    themeConfig: customTheme
+                })
+                console.log('Settings successfully saved to database.')
+            } catch (error) {
+                console.error('Failed to save settings to database:', error)
+            }
+        }, 1000)
+
+        return () => clearTimeout(delayDebounceFn)
+    }, [customTheme, mode, mounted])
 
     const applyTheme = (theme: CustomTheme, isDark: boolean) => {
         if (typeof window === 'undefined') return
