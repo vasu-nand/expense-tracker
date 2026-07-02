@@ -9,6 +9,22 @@ export const api = axios.create({
     },
 })
 
+// Add request interceptor to automatically attach active bank account header
+api.interceptors.request.use(
+    (config) => {
+        if (typeof window !== 'undefined') {
+            const activeAccountId = localStorage.getItem('selectedBankAccountId')
+            if (activeAccountId) {
+                config.headers['x-bank-account-id'] = activeAccountId
+            }
+        }
+        return config
+    },
+    (error) => {
+        return Promise.reject(error)
+    }
+)
+
 // Add response interceptor for error handling
 api.interceptors.response.use(
     (response) => response,

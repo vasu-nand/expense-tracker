@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { format } from 'date-fns'
+import { MonthPicker } from '@/components/ui/month-picker'
 import { api } from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -10,7 +12,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useCurrency } from '@/hooks/use-currency'
-import { cn } from '@/lib/utils'
+import { cn, getLocalMonth } from '@/lib/utils'
+import { useAccount } from '@/components/account-context'
+import { HelpCircle as HelpIcon } from 'lucide-react'
 
 interface Transaction {
     _id: string
@@ -155,9 +159,10 @@ function CategoryMultiSelect({
 // ─── Main Export Page ─────────────────────────────────────────────────────────
 export default function ExportPage() {
     const { format: formatCurrency } = useCurrency()
+    const { selectedAccount } = useAccount()
 
     // Date range — default: current month, start to end
-    const nowMonth = new Date().toISOString().slice(0, 7)
+    const nowMonth = getLocalMonth()
     const [startMonth, setStartMonth] = useState(nowMonth)
     const [endMonth, setEndMonth] = useState(nowMonth)
 
@@ -216,7 +221,7 @@ export default function ExportPage() {
 
     useEffect(() => {
         loadData()
-    }, [startMonth, endMonth, selectedCategories])
+    }, [startMonth, endMonth, selectedCategories, selectedAccount?._id])
 
     // ── Derived totals ─────────────────────────────────────────────────────────
     const totalExpense = transactions.filter(t => t.type !== 'income').reduce((s, tx) => s + tx.amount, 0)
@@ -257,9 +262,10 @@ export default function ExportPage() {
                 pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297)
             }
 
-            const safePeriod = periodLabel.replace(' → ', '_to_')
-            const safeCats = selectedCategories.length === 0 ? 'all' : selectedCategories.slice(0, 3).join('-')
-            pdf.save(`Statement_${safePeriod}_${safeCats}.pdf`)
+            const bankName = (selectedAccount?.bankName || 'Bank').replace(/\s+/g, '_')
+            const accountName = (selectedAccount?.name || 'Account').replace(/\s+/g, '_')
+            const monthLabel = startMonth === endMonth ? startMonth : `${startMonth}_to_${endMonth}`
+            pdf.save(`${bankName}-${accountName}-${monthLabel}.pdf`)
         } catch (err) {
             console.error('PDF generation error:', err)
             alert('Failed to generate PDF. Please try again.')
@@ -274,8 +280,8 @@ export default function ExportPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/40">
                 <div>
-                    <h1 className="text-3xl font-bold text-custom-gradient flex items-center gap-2">
-                        <FileText className="h-7 w-7 text-primary shrink-0" /> Export PDF Statement
+                    <h1 className="text-3xl font-bold text-custom-gradient">
+                        Export PDF Statement
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
                         Configure date range &amp; categories, then export a watermarked financial statement.
@@ -289,7 +295,7 @@ export default function ExportPage() {
             </div>
 
             {/* ── Filter Config ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="relative z-30 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Start Month */}
                 <Card className="bg-card/60 backdrop-blur border-border/80">
                     <CardHeader className="pb-2 pt-4">
@@ -298,12 +304,10 @@ export default function ExportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <input
-                            type="month"
+                        <MonthPicker
                             value={startMonth}
-                            max={endMonth}
-                            onChange={e => setStartMonth(e.target.value)}
-                            className="border rounded-md px-3 py-2 bg-background/50 border-border/80 text-foreground w-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                            onChange={setStartMonth}
+                            placeholder="Select From Month"
                         />
                     </CardContent>
                 </Card>
@@ -316,18 +320,16 @@ export default function ExportPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <input
-                            type="month"
+                        <MonthPicker
                             value={endMonth}
-                            min={startMonth}
-                            onChange={e => setEndMonth(e.target.value)}
-                            className="border rounded-md px-3 py-2 bg-background/50 border-border/80 text-foreground w-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                            onChange={setEndMonth}
+                            placeholder="Select To Month"
                         />
                     </CardContent>
                 </Card>
 
                 {/* Multi-select Category */}
-                <Card className="bg-card/60 backdrop-blur border-border/80">
+                <Card className="relative z-30 bg-card/60 backdrop-blur border-border/80">
                     <CardHeader className="pb-2 pt-4">
                         <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                             <Filter className="h-3.5 w-3.5 text-teal-500" /> Categories
@@ -400,11 +402,14 @@ export default function ExportPage() {
                 </Card>
             )}
             {!loading && !error && transactions.length === 0 && (
-                <Card className="p-12 text-center bg-card/40 border-dashed border-2">
-                    <h3 className="text-xl font-bold">No Records Found</h3>
-                    <p className="text-muted-foreground mt-2">
-                        No transactions matched your filters for {periodLabel}. Try adjusting the date range or category selection.
-                    </p>
+                <Card className="p-16 text-center bg-card/40 border-dashed border-2 border-border/80 rounded-2xl max-w-xl mx-auto">
+                    <div className="space-y-4">
+                        <HelpIcon className="h-12 w-12 text-muted-foreground/60 mx-auto" />
+                        <h3 className="text-xl font-bold">No Expenses Available</h3>
+                        <p className="text-muted-foreground text-sm">
+                            No expenses available for export. Upload a statement or add expenses first.
+                        </p>
+                    </div>
                 </Card>
             )}
 

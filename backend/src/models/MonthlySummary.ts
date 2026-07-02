@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IMonthlySummary extends Document {
+    bankAccountId: mongoose.Types.ObjectId;
     month: string;
     totalExpense: number;
     totalIncome: number;
@@ -13,10 +14,15 @@ export interface IMonthlySummary extends Document {
 }
 
 const MonthlySummarySchema: Schema = new Schema({
+    bankAccountId: {
+        type: Schema.Types.ObjectId,
+        ref: 'BankAccount',
+        required: true,
+        index: true
+    },
     month: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     totalExpense: {
         type: Number,
@@ -54,5 +60,8 @@ const MonthlySummarySchema: Schema = new Schema({
         default: Date.now
     }
 });
+
+// Ensure a month's summary is unique *per bank account*
+MonthlySummarySchema.index({ month: 1, bankAccountId: 1 }, { unique: true });
 
 export default mongoose.model<IMonthlySummary>('MonthlySummary', MonthlySummarySchema);

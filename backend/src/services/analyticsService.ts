@@ -167,7 +167,8 @@ export class AnalyticsService {
         let weekdayIncomeCount = 0;
         let weekendIncomeCount = 0;
 
-        const [year, monthNum] = month.split('-').map(Number);
+        const targetMonth = month.includes(':') ? month.split(':')[0] : (month.includes(',') ? month.split(',')[0] : month);
+        const [year, monthNum] = targetMonth.split('-').map(Number);
 
         for (const transaction of transactions) {
             const date = new Date(year, monthNum - 1, transaction.day);

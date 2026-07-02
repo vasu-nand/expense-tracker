@@ -1,7 +1,8 @@
+import mongoose from 'mongoose';
 import Category, { ICategory } from '../models/Category';
 import { reloadCategoryKeywordsCache } from '../utils/categoryDetector';
 
-const defaultCategories = [
+export const defaultCategories = [
     {
         name: 'Breakfast',
         color: '#fbbf24', // Amber
@@ -94,33 +95,38 @@ const defaultCategories = [
     }
 ];
 
-export const seedDefaultCategories = async () => {
+export const seedDefaultCategories = async (bankAccountId: string | mongoose.Types.ObjectId) => {
     try {
-        const count = await Category.countDocuments();
+        const count = await Category.countDocuments({ bankAccountId });
         if (count === 0) {
-            await Category.insertMany(defaultCategories);
-            console.log('Seeded predefined category configuration successfully');
-            await reloadCategoryKeywordsCache();
+            const categoriesToInsert = defaultCategories.map(cat => ({
+                ...cat,
+                bankAccountId
+            }));
+            await Category.insertMany(categoriesToInsert);
+            console.log(`Seeded predefined category configuration successfully for account: ${bankAccountId}`);
+            await reloadCategoryKeywordsCache(bankAccountId.toString());
         }
     } catch (error) {
         console.error('Error seeding categories:', error);
     }
 };
 
-export const getAllCategories = async (): Promise<ICategory[]> => {
-    return Category.find().sort({ name: 1 });
+export const getAllCategories = async (bankAccountId: string): Promise<ICategory[]> => {
+    return Category.find({ bankAccountId }).sort({ name: 1 });
 };
 
-export const createCategory = async (data: { name: string; color: string; keywords?: string[] }): Promise<ICategory> => {
+export const createCategory = async (data: { name: string; color: string; keywords?: string[]; bankAccountId: string }): Promise<ICategory> => {
     const formattedName = data.name.trim().charAt(0).toUpperCase() + data.name.trim().slice(1);
     
-    // Check if category already exists
-    const existing = await Category.findOne({ name: formattedName });
+    // Check if category already exists for this account
+    const existing = await Category.findOne({ name: formattedName, bankAccountId: data.bankAccountId });
     if (existing) {
-        throw new Error(`Category "${formattedName}" already exists`);
+        throw new Error(`Category "${formattedName}" already exists for this bank account`);
     }
 
     const category = new Category({
+        bankAccountId: data.bankAccountId,
         name: formattedName,
         color: data.color || '#6366f1',
         keywords: data.keywords || [formattedName.toLowerCase()],
@@ -128,28 +134,28 @@ export const createCategory = async (data: { name: string; color: string; keywor
     });
 
     const saved = await category.save();
-    await reloadCategoryKeywordsCache();
+    await reloadCategoryKeywordsCache(data.bankAccountId);
     return saved;
 };
 
-export const updateCategory = async (name: string, updates: { color?: string; keywords?: string[] }): Promise<ICategory | null> => {
-    const category = await Category.findOne({ name });
+export const updateCategory = async (name: string, updates: { color?: string; keywords?: string[] }, bankAccountId: string): Promise<ICategory | null> => {
+    const category = await Category.findOne({ name, bankAccountId });
     if (!category) {
-        throw new Error(`Category "${name}" not found`);
+        throw new Error(`Category "${name}" not found for this bank account`);
     }
 
     if (updates.color !== undefined) category.color = updates.color;
     if (updates.keywords !== undefined) category.keywords = updates.keywords;
 
     const saved = await category.save();
-    await reloadCategoryKeywordsCache();
+    await reloadCategoryKeywordsCache(bankAccountId);
     return saved;
 };
 
-export const deleteCategory = async (name: string): Promise<boolean> => {
-    const category = await Category.findOne({ name });
+export const deleteCategory = async (name: string, bankAccountId: string): Promise<boolean> => {
+    const category = await Category.findOne({ name, bankAccountId });
     if (!category) {
-        throw new Error(`Category "${name}" not found`);
+        throw new Error(`Category "${name}" not found for this bank account`);
     }
 
     if (category.isPredefined) {
@@ -157,13 +163,17 @@ export const deleteCategory = async (name: string): Promise<boolean> => {
     }
 
     await Category.deleteOne({ _id: category._id });
-    await reloadCategoryKeywordsCache();
+    await reloadCategoryKeywordsCache(bankAccountId);
     return true;
 };
 
-export const resetToDefaultCategories = async () => {
-    await Category.deleteMany({});
-    await Category.insertMany(defaultCategories);
-    await reloadCategoryKeywordsCache();
-    return defaultCategories;
+export const resetToDefaultCategories = async (bankAccountId: string) => {
+    await Category.deleteMany({ bankAccountId });
+    const categoriesToInsert = defaultCategories.map(cat => ({
+        ...cat,
+        bankAccountId
+    }));
+    await Category.insertMany(categoriesToInsert);
+    await reloadCategoryKeywordsCache(bankAccountId);
+    return categoriesToInsert;
 };

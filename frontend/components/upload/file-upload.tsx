@@ -9,9 +9,10 @@ import { cn } from '@/lib/utils'
 
 interface FileUploadProps {
     onUploadStatus: (status: string) => void
+    month: string
 }
 
-export function FileUpload({ onUploadStatus }: FileUploadProps) {
+export function FileUpload({ onUploadStatus, month }: FileUploadProps) {
     const [file, setFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
 
@@ -38,7 +39,7 @@ export function FileUpload({ onUploadStatus }: FileUploadProps) {
         setUploading(true)
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('month', new Date().toISOString().slice(0, 7))
+        formData.append('month', month)
 
         try {
             const response = await api.post('/upload', formData, {
@@ -46,8 +47,11 @@ export function FileUpload({ onUploadStatus }: FileUploadProps) {
                     'Content-Type': 'multipart/form-data'
                 }
             })
-            onUploadStatus(`Successfully uploaded ${response.data.count} expenses`)
+            onUploadStatus(`Successfully uploaded ${response.data.count} expenses for ${month}`)
             setFile(null)
+            
+            // Dispatch standard reload event
+            window.dispatchEvent(new CustomEvent('expense-added'))
         } catch (error: any) {
             onUploadStatus(`Error: ${error.response?.data?.error || 'Upload failed'}`)
         } finally {
@@ -97,7 +101,7 @@ export function FileUpload({ onUploadStatus }: FileUploadProps) {
                         </div>
                     ) : (
                         <>
-                            <p className="font-medium">Drop your file here or click to browse</p>
+                            <p className="font-medium">Drop your statement here or click to browse</p>
                             <p className="text-sm text-muted-foreground">
                                 Supports .xlsx, .xls, .csv
                             </p>
@@ -111,7 +115,7 @@ export function FileUpload({ onUploadStatus }: FileUploadProps) {
                     <Button
                         onClick={handleUpload}
                         disabled={uploading}
-                        className="w-full md:w-auto"
+                        className="w-full md:w-auto bg-custom-btn-gradient text-white font-bold"
                     >
                         {uploading ? 'Uploading...' : 'Upload File'}
                     </Button>

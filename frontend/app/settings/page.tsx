@@ -8,6 +8,9 @@ import { useCurrency, CurrencyType } from '@/hooks/use-currency'
 import { FileUpload } from '@/components/upload/file-upload'
 import { api } from '@/services/api'
 import { useTheme } from 'next-themes'
+import { getLocalMonth } from '@/lib/utils'
+import { useAccount } from '@/components/account-context'
+import { MonthPicker } from '@/components/ui/month-picker'
 import { 
     Settings, 
     Palette, 
@@ -65,6 +68,7 @@ interface AnalyticsData {
 
 export default function SettingsPage() {
     const { theme: mode, setTheme: setMode } = useTheme()
+    const { selectedAccount } = useAccount()
     const [activeTab, setActiveTab] = useState<'appearance' | 'currency' | 'data' | 'categories'>('appearance')
     const [designerMode, setDesignerMode] = useState<'light' | 'dark'>('light')
     
@@ -121,6 +125,7 @@ export default function SettingsPage() {
 
     // Data Management state
     const [uploadStatus, setUploadStatus] = useState<string>('')
+    const [uploadMonth, setUploadMonth] = useState(getLocalMonth())
     const [showResetConfirmation, setShowResetConfirmation] = useState(false)
     const [resetPassword, setResetPassword] = useState('')
     const [resettingDb, setResettingDb] = useState(false)
@@ -150,7 +155,7 @@ export default function SettingsPage() {
     }
     
     // Export state
-    const [exportMonth, setExportMonth] = useState(new Date().toISOString().slice(0, 7))
+    const [exportMonth, setExportMonth] = useState(getLocalMonth())
     const [exportCategory, setExportCategory] = useState('all')
     const [categories, setCategories] = useState<string[]>([])
     const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -199,7 +204,15 @@ export default function SettingsPage() {
         if (activeTab === 'data') {
             loadExportData()
         }
-    }, [exportMonth, exportCategory, activeTab])
+    }, [exportMonth, exportCategory, activeTab, selectedAccount?._id])
+
+    // Reset status fields when the active account switches
+    useEffect(() => {
+        setCatFormError('')
+        setCatFormSuccess('')
+        setUploadStatus('')
+        setResetError('')
+    }, [selectedAccount?._id])
 
     const handleDownloadPDF = async () => {
         if (!reportRef.current) return
@@ -734,8 +747,20 @@ export default function SettingsPage() {
                                 </CardTitle>
                                 <CardDescription>Upload CSV or Excel statements to import transactions and update database summaries.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <FileUpload onUploadStatus={setUploadStatus} />
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/40 mb-2">
+                                    <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
+                                        <Calendar className="h-4 w-4" /> Statement Month:
+                                    </span>
+                                    <div className="w-40 shrink-0">
+                                        <MonthPicker
+                                            value={uploadMonth}
+                                            onChange={setUploadMonth}
+                                            placeholder="Select Month"
+                                        />
+                                    </div>
+                                </div>
+                                <FileUpload onUploadStatus={setUploadStatus} month={uploadMonth} />
                                 {uploadStatus && (
                                     <div className="mt-4 p-3 bg-muted rounded-md text-xs font-mono border">
                                         {uploadStatus}
@@ -759,11 +784,10 @@ export default function SettingsPage() {
                                         <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                                             <Calendar className="h-3.5 w-3.5 text-teal-500" /> Statement Period
                                         </label>
-                                        <input
-                                            type="month"
+                                        <MonthPicker
                                             value={exportMonth}
-                                            onChange={(e) => setExportMonth(e.target.value)}
-                                            className="border rounded-md px-3 py-2 bg-background/50 border-border/80 text-foreground w-full focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-xs"
+                                            onChange={setExportMonth}
+                                            placeholder="Select Month"
                                         />
                                     </div>
 

@@ -414,8 +414,11 @@ function hexToHsl(hex: string) {
     }
 }
 
+import { useAccount } from './account-context'
+
 export function ThemeCustomizerProvider({ children }: { children: React.ReactNode }) {
     const { theme: mode, setTheme: setMode, resolvedTheme } = useTheme()
+    const { selectedAccount } = useAccount()
     const [customTheme, setCustomThemeState] = useState<CustomTheme>(predefinedThemes[0])
     const [categoryColors, setCategoryColorsState] = useState<Record<string, string>>(predefinedCategoryPalettes[0].colors)
     const [categoryKeywords, setCategoryKeywordsState] = useState<Record<string, string[]>>(defaultCategoryKeywords)
@@ -442,62 +445,58 @@ export function ThemeCustomizerProvider({ children }: { children: React.ReactNod
         }
     }
 
-    useEffect(() => {
-        const init = async () => {
-            const stored = localStorage.getItem('custom-theme-config')
-            if (stored) {
-                try {
-                    setCustomThemeState(JSON.parse(stored))
-                } catch (e) {
-                    console.error('Error parsing stored custom theme:', e)
-                }
-            }
-            
-            const storedColors = localStorage.getItem('custom-category-colors')
-            if (storedColors) {
-                try {
-                    setCategoryColorsState(JSON.parse(storedColors))
-                } catch (e) {
-                    console.error('Error parsing stored category colors:', e)
-                }
-            }
+    const init = async () => {
+        if (!selectedAccount) return
 
-            const storedKeywords = localStorage.getItem('custom-category-keywords')
-            if (storedKeywords) {
-                try {
-                    setCategoryKeywordsState(JSON.parse(storedKeywords))
-                } catch (e) {
-                    console.error('Error parsing stored category keywords:', e)
-                }
-            }
-
-            await syncCategoriesWithBackend()
-
+        const storedColors = localStorage.getItem('custom-category-colors')
+        if (storedColors) {
             try {
-                const response = await api.get('/settings')
-                if (response.data && response.data.settings) {
-                    const { themeMode, themeConfig } = response.data.settings
-                    if (themeConfig) {
-                        setCustomThemeState(themeConfig)
-                        localStorage.setItem('custom-theme-config', JSON.stringify(themeConfig))
-                    }
-                    if (themeMode) {
-                        setMode(themeMode)
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load settings from database:', error)
-            } finally {
-                isInitialLoad.current = false
-                setMounted(true)
+                setCategoryColorsState(JSON.parse(storedColors))
+            } catch (e) {
+                console.error('Error parsing stored category colors:', e)
             }
         }
 
-        init()
-    }, [])
+        const storedKeywords = localStorage.getItem('custom-category-keywords')
+        if (storedKeywords) {
+            try {
+                setCategoryKeywordsState(JSON.parse(storedKeywords))
+            } catch (e) {
+                console.error('Error parsing stored category keywords:', e)
+            }
+        }
+
+        await syncCategoriesWithBackend()
+
+        try {
+            const response = await api.get('/settings')
+            if (response.data && response.data.settings) {
+                const { themeMode, themeConfig } = response.data.settings
+                if (themeConfig) {
+                    setCustomThemeState(themeConfig)
+                    localStorage.setItem('custom-theme-config', JSON.stringify(themeConfig))
+                }
+                if (themeMode) {
+                    setMode(themeMode)
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load settings from database:', error)
+        } finally {
+            isInitialLoad.current = false
+            setMounted(true)
+        }
+    }
+
+    // Trigger re-initialization whenever active bank account changes
+    useEffect(() => {
+        if (selectedAccount?._id) {
+            init()
+        }
+    }, [selectedAccount?._id])
 
     useEffect(() => {
-        if (!mounted || isInitialLoad.current) return
+        if (!mounted || isInitialLoad.current || !selectedAccount?._id) return
 
         const delayDebounceFn = setTimeout(async () => {
             try {
@@ -512,7 +511,7 @@ export function ThemeCustomizerProvider({ children }: { children: React.ReactNod
         }, 1000)
 
         return () => clearTimeout(delayDebounceFn)
-    }, [customTheme, mode, mounted])
+    }, [customTheme, mode, mounted, selectedAccount?._id])
 
     const applyTheme = (theme: CustomTheme, isDark: boolean) => {
         if (typeof window === 'undefined') return
