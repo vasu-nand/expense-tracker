@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import Expense, { IExpense } from '../models/Expense';
 import MonthlySummary from '../models/MonthlySummary';
+import { buildMonthQuery } from '../utils/monthQueryHelper';
 
 function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -7,12 +9,15 @@ function escapeRegExp(string: string) {
 
 export class ExpenseService {
     async createExpense(expense: Partial<IExpense>) {
+        if (!expense.bankAccountId) {
+            throw new Error('bankAccountId is required to create an expense');
+        }
         const newExpense = new Expense(expense);
         return newExpense.save();
     }
 
-    async updateExpense(id: string, updates: Partial<IExpense>) {
-        return Expense.findByIdAndUpdate(id, updates, { new: true });
+    async updateExpense(id: string, updates: Partial<IExpense>, bankAccountId: string) {
+        return Expense.findOneAndUpdate({ _id: id, bankAccountId }, updates, { new: true });
     }
 
     async bulkCreateExpenses(expenses: Partial<IExpense>[]) {
@@ -20,6 +25,7 @@ export class ExpenseService {
     }
 
     async getAllExpenses(
+        bankAccountId: string,
         page: number = 1,
         limit: number = 50,
         category?: string,
@@ -36,12 +42,13 @@ export class ExpenseService {
         startMonth?: string,
         endMonth?: string
     ) {
-        const query: any = {};
+        const query: any = { bankAccountId };
+        
         if (category) {
             const cats = category.split(',').map(c => c.trim()).filter(Boolean);
             query.category = cats.length === 1 ? cats[0] : { $in: cats };
         }
-        if (month) query.month = month;
+        if (month) query.month = buildMonthQuery(month);
         else if (startMonth || endMonth) {
             query.month = {};
             if (startMonth) query.month.$gte = startMonth;
@@ -97,23 +104,23 @@ export class ExpenseService {
         };
     }
 
-    async getExpenseById(id: string) {
-        return Expense.findById(id);
+    async getExpenseById(id: string, bankAccountId: string) {
+        return Expense.findOne({ _id: id, bankAccountId });
     }
 
-    async deleteExpense(id: string) {
-        return Expense.findByIdAndDelete(id);
+    async deleteExpense(id: string, bankAccountId: string) {
+        return Expense.findOneAndDelete({ _id: id, bankAccountId });
     }
 
-    async clearAllExpenses() {
+    async clearAllExpenses(bankAccountId: string) {
         return Promise.all([
-            Expense.deleteMany({}),
-            MonthlySummary.deleteMany({})
+            Expense.deleteMany({ bankAccountId }),
+            MonthlySummary.deleteMany({ bankAccountId })
         ]);
     }
 
-    async getDailySummary(month: string) {
-        const expenses = await Expense.find({ month });
+    async getDailySummary(month: string, bankAccountId: string) {
+        const expenses = await Expense.find({ month, bankAccountId });
 
         const dailyMap = new Map<number, { day: number; totalExpense: number; totalIncome: number; entries: any[] }>();
 
@@ -145,11 +152,11 @@ export class ExpenseService {
         return Array.from(dailyMap.values()).sort((a, b) => a.day - b.day);
     }
 
-    async generateMonthlySummary(month: string) {
-        const transactions = await Expense.find({ month });
+    async generateMonthlySummary(month: string, bankAccountId: string) {
+        const transactions = await Expense.find({ month, bankAccountId });
 
         if (transactions.length === 0) {
-            await MonthlySummary.deleteOne({ month });
+            await MonthlySummary.deleteOne({ month, bankAccountId });
             return null;
         }
 
@@ -193,7 +200,7 @@ export class ExpenseService {
         }
 
         const summary = await MonthlySummary.findOneAndUpdate(
-            { month },
+            { month, bankAccountId },
             {
                 totalExpense,
                 totalIncome,
@@ -208,8 +215,9 @@ export class ExpenseService {
         return summary;
     }
 
-    async getDashboardData(month: string) {
-        const transactions = await Expense.find({ month });
+    async getDashboardData(month: string, bankAccountId: string) {
+        const queryMonth = buildMonthQuery(month);
+        const transactions = await Expense.find({ month: queryMonth, bankAccountId });
 
         if (transactions.length === 0) {
             return {

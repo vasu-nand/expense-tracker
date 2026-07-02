@@ -11,10 +11,17 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DayExpensesDialog } from '@/components/dashboard/day-expenses-dialog'
 import { Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getLocalMonth, cn } from '@/lib/utils'
+import { MonthPicker } from '@/components/ui/month-picker'
 
 export default function DashboardPage() {
-    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7))
-    const { data, loading, error } = useDashboard(month)
+    const [filterType, setFilterType] = useState<'single' | 'range'>('single')
+    const [month, setMonth] = useState(getLocalMonth())
+    const [startMonth, setStartMonth] = useState(getLocalMonth())
+    const [endMonth, setEndMonth] = useState(getLocalMonth())
+
+    const activeQueryMonth = filterType === 'single' ? month : `${startMonth}:${endMonth}`
+    const { data, loading, error } = useDashboard(activeQueryMonth)
     const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
     if (loading) {
@@ -48,26 +55,55 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-3 border-b border-border/20">
                 <h1 className="text-3xl font-bold text-custom-gradient">Dashboard</h1>
                 
-                <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold text-muted-foreground bg-card border border-border/80 px-3 py-2 rounded-xl font-mono shadow-sm">
-                        {new Date(month + '-02').toLocaleString('default', { month: 'short', year: 'numeric' })}
-                    </span>
-                    <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="relative h-9 w-9 rounded-xl border-border/80 text-muted-foreground hover:text-foreground shadow-sm"
-                    >
-                        <Calendar className="h-4 w-4" />
-                        <input
-                            type="month"
-                            value={month}
-                            onChange={(e) => setMonth(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                        />
-                    </Button>
+                {/* Range Selection Control */}
+                <div className="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-muted/30 border border-border/40 p-1.5 rounded-2xl shadow-sm">
+                    <div className="grid grid-cols-2 gap-1 bg-muted/65 p-1 rounded-xl">
+                        <button
+                            onClick={() => setFilterType('single')}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all text-center select-none",
+                                filterType === 'single' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            Single Month
+                        </button>
+                        <button
+                            onClick={() => setFilterType('range')}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg text-[11px] font-extrabold transition-all text-center select-none",
+                                filterType === 'range' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            Month Range
+                        </button>
+                    </div>
+
+                    {filterType === 'single' ? (
+                        <div className="flex items-center justify-between sm:justify-start gap-2 px-1 py-0.5 w-full sm:w-40">
+                            <MonthPicker
+                                value={month}
+                                onChange={setMonth}
+                                placeholder="Select Month"
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-between sm:justify-start gap-2 px-1 py-0.5">
+                            <MonthPicker
+                                value={startMonth}
+                                onChange={setStartMonth}
+                                placeholder="From"
+                            />
+                            <span className="text-[10px] text-muted-foreground font-black uppercase">to</span>
+                            <MonthPicker
+                                value={endMonth}
+                                onChange={setEndMonth}
+                                placeholder="To"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -82,7 +118,7 @@ export default function DashboardPage() {
                 <TopSpendingChart data={data?.dailyTrend || []} />
                 <ExpenseHeatmap 
                     data={data?.dailyTrend || []} 
-                    month={month}
+                    month={filterType === 'single' ? month : startMonth}
                     onDayClick={setSelectedDay}
                 />
             </div>
@@ -91,7 +127,7 @@ export default function DashboardPage() {
                 isOpen={selectedDay !== null}
                 onClose={() => setSelectedDay(null)}
                 day={selectedDay}
-                month={month}
+                month={activeQueryMonth}
             />
         </div>
     )

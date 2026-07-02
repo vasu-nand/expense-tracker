@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
 import { useThemeCustomizer } from '@/components/theme-customizer-provider'
+import { getDaysInMonth } from '@/lib/utils'
+import { MonthPicker } from '@/components/ui/month-picker'
 
 interface Expense {
     _id: string;
@@ -48,6 +50,15 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
         }
     }, [expense, isOpen])
 
+    useEffect(() => {
+        if (isOpen && month) {
+            const maxDays = getDaysInMonth(month)
+            if (day > maxDays) {
+                setDay(maxDays)
+            }
+        }
+    }, [month, isOpen])
+
     if (!isOpen || !expense) return null
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -61,9 +72,10 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
 
         const parsedAmount = convertToBase(displayAmount)
 
+        const maxDays = getDaysInMonth(month)
         const parsedDay = parseInt(day.toString())
-        if (isNaN(parsedDay) || parsedDay < 1 || parsedDay > 31) {
-            setError('Please enter a valid day (1-31)')
+        if (isNaN(parsedDay) || parsedDay < 1 || parsedDay > maxDays) {
+            setError(`Please enter a valid day (1-${maxDays})`)
             return
         }
 
@@ -171,7 +183,7 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                             <input
                                 type="number"
                                 min={1}
-                                max={31}
+                                max={getDaysInMonth(month)}
                                 required
                                 value={day}
                                 onChange={(e) => setDay(parseInt(e.target.value) || 0)}
@@ -182,12 +194,10 @@ export function EditExpenseDialog({ isOpen, onClose, onSuccess, expense }: EditE
                         {/* Month */}
                         <div className="flex flex-col space-y-1">
                             <label className="text-xs font-semibold text-muted-foreground">Month</label>
-                            <input
-                                type="month"
-                                required
+                            <MonthPicker
                                 value={month}
-                                onChange={(e) => setMonth(e.target.value)}
-                                className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                onChange={setMonth}
+                                placeholder="Select Month"
                             />
                         </div>
                     </div>

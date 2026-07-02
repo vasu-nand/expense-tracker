@@ -11,6 +11,7 @@ import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loa
 import { useCurrency } from '@/hooks/use-currency'
 import { Button } from '@/components/ui/button'
 import { api } from '@/services/api'
+import { getLocalMonth } from '@/lib/utils'
 
 export default function ExpensesPage() {
     const { format } = useCurrency()
@@ -20,7 +21,7 @@ export default function ExpensesPage() {
 
     const urlSearch = searchParams.get('search') || ''
     const urlCategory = searchParams.get('category') || ''
-    const urlMonth = searchParams.get('month') || new Date().toISOString().slice(0, 7)
+    const urlMonth = searchParams.get('month') || getLocalMonth()
     const urlSortBy = searchParams.get('sortBy') || 'day'
     const urlSortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
     const urlLimit = Number(searchParams.get('limit')) || 20

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-A **premium, full-stack expense tracking and analytics platform** with a dark-glassmorphic UI, interactive charts, real-time filtering, intelligent category auto-detection, and secure CRUD operations.
+A **premium, full-stack expense tracking and analytics platform** with a dark-glassmorphic UI, interactive charts, real-time filtering, intelligent category auto-detection, customizable themes, and secure CRUD operations.
 
 <br/>
 
@@ -46,6 +46,11 @@ A **premium, full-stack expense tracking and analytics platform** with a dark-gl
 - **KPI Cards** – Real-time cards tracking Monthly Total, Daily Average, Peak Spending Day, and transaction count.
 
 ### Analytics
+- **Interactive Spending Predictor & Fixed Costs Planner** – Dynamic projection tool to simulate and budget total monthly spending:
+  - **Remaining Variable Spend**: Configure an expected daily spend rate for remaining calendar days.
+  - **Fixed Costs**: Set amounts for recurring items (e.g., Rent, Bills) and toggle projection. The tool automatically detects if Rent or Bills categories are already paid in actual logs, preventing double-counting by syncing inputs with paid values.
+  - **Visualizer Bar**: Multi-colored progress bar mapping actual spent, projected variable, projected fixed, and a budget target overlay.
+  - **Status Alerts**: Automatic notifications calculating whether you are projected to finish the month under or over budget.
 - **Weekly Spending Bars** – Cumulative weekly totals rendered as gradient bar charts.
 - **Weekday vs. Weekend Dynamics** – Side-by-side breakdowns of transaction count, total spend, and average transaction value.
 - **Transaction Size Distribution** – Progress-meter groupings: Micro/Small (< ₹250), Medium (₹250–₹1000), Large (> ₹1000).
@@ -58,9 +63,15 @@ A **premium, full-stack expense tracking and analytics platform** with a dark-gl
 - **Add / Edit / Delete** – Full CRUD with dialogs rendered at the page root (outside any CSS containing-block context), password-protected deletion with SHA-256 verification.
 - **Global Floating Action Button (FAB)** – Rendered in the root layout, available on both mobile and desktop, bypasses any `backdrop-filter` containing-block issues.
 
+### Settings & Customization
+- **Appearance Customizer** – Fully customize the styling palette (Background, Card, Foreground, Borders, Primary accent, Button and Text gradient start/end coordinates) for both Light and Dark themes. Supports multiple predefined themes (e.g., *Teal Harmony*, *Royal Amethyst*, *Sunset Glow*, *Ocean Calm*, *Sakura Blossom*, *Cyberpunk Neon*, *Charcoal Elegance*, *Nordic Frost*, *Honeycomb Gold*).
+- **Currency Configurator** – Toggle preferred currencies (USD, INR, EUR, etc.) with dynamic translation and formatting hooks applying changes globally across the UI.
+- **Data Management Controls** – Standard drag-and-drop CSV/Excel importing alongside a secure database reset utility protecting your database from unauthorized wipes with SHA-256 validation.
+- **Category Manager** – Add custom categories, modify hex color associations, assign parsing keywords for file imports, or delete custom categories. Includes a simple restore-to-defaults feature.
+
 ### Upload
 - **Drag-and-Drop Dropzone** – Accepts CSV and Excel (.xlsx, .xls) files.
-- **Auto-Category Detection** – Server-side rule engine classifies transactions by keyword matching (Breakfast, Lunch, Dinner, Groceries, Transport, Shopping, Drinks, Others).
+- **Auto-Category Detection** – Server-side rule engine classifies transactions by keyword matching (Breakfast, Lunch, Dinner, Groceries, Transport, Shopping, Drinks, Others) which can be updated dynamically via user settings.
 - **PDF Preview** – Mobile-friendly embedded PDF viewer for uploaded statements.
 
 ### Export
@@ -108,45 +119,60 @@ expense-dashboard/
 │   ├── src/
 │   │   ├── app.ts                    # Express app entrypoint, CORS, middleware
 │   │   ├── controllers/
-│   │   │   ├── expenseController.ts  # CRUD for expenses, search, pagination
 │   │   │   ├── analyticsController.ts
-│   │   │   └── uploadController.ts   # File parse + category auto-detect
+│   │   │   ├── dashboardController.ts
+│   │   │   └── expenseController.ts  # CRUD for expenses, search, pagination
 │   │   ├── middleware/
 │   │   │   └── auth.ts               # Password hash verification (SHA-256)
 │   │   ├── models/
+│   │   │   ├── Category.ts           # Schema for custom category configurations
 │   │   │   ├── Expense.ts            # Mongoose schema: day, amount, reason, category, month
-│   │   │   └── MonthlySummary.ts
+│   │   │   ├── MonthlySummary.ts
+│   │   │   └── Settings.ts           # Schema for user theme settings and configuration
 │   │   ├── routes/
-│   │   │   ├── expenses.ts
-│   │   │   ├── analytics.ts
-│   │   │   └── upload.ts
+│   │   │   ├── analyticsRoutes.ts
+│   │   │   ├── categoryRoutes.ts     # CRUD & default overrides for categories
+│   │   │   ├── dashboardRoutes.ts
+│   │   │   ├── expenseRoutes.ts
+│   │   │   └── settingsRoutes.ts     # Save/get custom theme settings
 │   │   ├── services/
-│   │   │   └── analyticsService.ts   # Aggregation pipelines, smart insight logic
+│   │   │   ├── analyticsService.ts   # Aggregation pipelines, smart insight logic
+│   │   │   ├── categoryService.ts     # Predefined / custom category helpers
+│   │   │   └── expenseService.ts
 │   │   └── utils/
+│   │       ├── categoryDetector.ts   # Keyword-based auto-categorization
 │   │       ├── csvParser.ts
-│   │       ├── xlsxParser.ts
-│   │       └── categoryDetector.ts   # Keyword-based auto-categorization
+│   │       ├── dateUtils.ts          # Local timezone-aware month & day calculations
+│   │       ├── fileParser.ts         # CSV/Excel parsing logic with clamped date ranges
+│   │       └── xlsxParser.ts
 │   ├── .env                          # PORT, MONGO_URI
 │   ├── package.json
 │   └── tsconfig.json
 │
 ├── frontend/
 │   ├── app/                          # Next.js App Router pages
-│   │   ├── layout.tsx                # Root layout: Navigation + FAB + ShutdownWatcher
+│   │   ├── layout.tsx                # Root layout: ThemeCustomizerProvider + Nav + FAB
 │   │   ├── globals.css               # Design tokens, scrollbar, dark mode overrides
 │   │   ├── page.tsx                  # Redirect → /dashboard
 │   │   ├── dashboard/page.tsx        # Heatmap + KPI cards + Donut chart
 │   │   ├── expenses/
 │   │   │   ├── page.tsx              # Expense table, filters, CRUD dialogs (page-root rendered)
 │   │   │   └── [id]/page.tsx         # Expense detail + similar expenses
-│   │   ├── analytics/page.tsx        # Weekly bars, weekday/weekend, smart insights
+│   │   ├── analytics/page.tsx        # Weekly bars, weekday/weekend, predictor, insights
+│   │   ├── settings/
+│   │   │   └── page.tsx              # Control panel: appearance, currency, data, categories
 │   │   ├── upload/page.tsx           # File upload dropzone + PDF preview
 │   │   └── export/page.tsx           # PDF export with filters
 │   │
 │   ├── components/
+│   │   ├── theme-customizer-provider.tsx # Context for theme settings, hex-to-HSL parser, and category states
+│   │   ├── theme-provider.tsx
 │   │   ├── navigation.tsx            # Responsive nav bar with dark/light toggle
 │   │   ├── desktop-fab.tsx           # Global FAB button + AddExpenseDialog (layout-level)
-│   │   ├── charts/monthly-heatmap.tsx # Calendar-aligned weekday heatmap with tooltips
+│   │   ├── charts/
+│   │   │   └── monthly-heatmap.tsx   # Calendar-aligned weekday heatmap with tooltips
+│   │   ├── analytics/
+│   │   │   └── spending-predictor.tsx # Variable & fixed spending projection simulator
 │   │   └── expenses/
 │   │       ├── expense-table.tsx     # Table with pagination; fires onEdit/onDeleteRequest
 │   │       ├── expense-filters.tsx   # Search, category, month, sort filters
@@ -154,6 +180,7 @@ expense-dashboard/
 │   │       └── edit-expense-dialog.tsx
 │   │
 │   ├── hooks/
+│   │   ├── use-currency.tsx          # Currency formatting and conversion helpers
 │   │   ├── useExpenses.ts            # Paginated expense fetching + expense-added event listener
 │   │   └── useDashboard.ts           # Dashboard summary data fetching
 │   │
@@ -171,6 +198,15 @@ expense-dashboard/
 
 ## Architecture Notes
 
+### Timezone-Aware Date Handling (fix/date-issue)
+To prevent date display and month boundary mismatches between local client settings and server/UTC times, dates are parsed and queried using dedicated timezone-aware helper routines (`getLocalMonthString` and `getLocalMonth`). This guarantees that user interactions, heatmaps, and summaries always match the client's localized calendar boundaries.
+
+### Clamped Upload Day Parsing
+When parsing CSV or Excel templates, uploaded data is strictly clamped between day `1` and `maxDays` of the selected target month. This prevents database indexing anomalies and frontend rendering errors from rows containing invalid calendar days (e.g. Day 32).
+
+### Settings Database Synchronization & Fallbacks
+Theme customizer options and custom category configurations are synced with the MongoDB database using `/api/settings` and `/api/categories` endpoints. To avoid style flashes during client hydration, these settings are also mirrored locally in `localStorage`. 
+
 ### Dialog Positioning
 All modal dialogs (`AddExpenseDialog`, `EditExpenseDialog`, delete confirmation) are rendered **at the page root level** — outside `ExpenseTable`'s `overflow-hidden` card — to avoid CSS containing-block issues from `backdrop-filter`. Dialog panels use `style={{ backdropFilter: 'none' }}` and `z-[200]` to float above all other layers.
 
@@ -181,7 +217,7 @@ The global FAB dispatches a `window` custom event `expense-added` on success. Bo
 The backend escapes all special regex characters from the search query before building the MongoDB `$regex` filter, preventing crashes for inputs containing `(`, `)`, `[`, `]`, etc.
 
 ### Security
-Expense deletion requires a password via the `x-delete-password` HTTP header. The backend compares the SHA-256 hash of the submitted password against the stored hash before authorizing.
+Expense and category deletion requires a administrator verification password via the `x-delete-password` HTTP header. The backend compares the SHA-256 hash of the submitted password against the stored hash before authorizing.
 
 ---
 
@@ -203,6 +239,8 @@ Create `backend/.env`:
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/expense-tracker
+# Optional delete password hash (Default corresponds to: admin123)
+DELETE_PASSWORD_HASH=af0dce62e992efc95dc1e0985253fd368e54a32c60852cf77cf2c90bc839ecad
 ```
 
 ```bash

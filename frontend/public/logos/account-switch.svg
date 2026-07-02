@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 457" fill="none" stroke="#000" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+
+  <!-- Top Left Person -->
+  <ellipse cx="131" cy="68" rx="34" ry="40"></ellipse>
+
+  <path d="
+    M60 173
+    L94 160
+    L117 166
+    L131 188
+    L145 166
+    L168 160
+    L202 173
+    Q220 179 220 198
+    L220 225
+    Q220 245 200 245
+    L62 245
+    Q42 245 42 225
+    L42 198
+    Q42 179 60 173
+  "></path>
+
+  <!-- Bottom Right Person -->
+  <ellipse cx="332" cy="270" rx="34" ry="40"></ellipse>
+
+  <path d="
+    M261 375
+    L295 362
+    L318 368
+    L332 390
+    L346 368
+    L369 362
+    L403 375
+    Q421 381 421 400
+    L421 427
+    Q421 447 401 447
+    L263 447
+    Q243 447 243 427
+    L243 400
+    Q243 381 261 375
+  "></path>
+
+  <!-- Upper Arrow -->
+  <path d="
+    M269 58
+    H300
+    Q333 58 333 91
+    V170
+  "></path>
+
+  <path d="
+    M311 149
+    L333 170
+    L355 149
+  "></path>
+
+  <!-- Lower Arrow -->
+  <path d="
+    M231 379
+    H195
+    Q145 379 145 329
+    V247
+  "></path>
+
+  <path d="
+    M123 268
+    L145 247
+    L167 268
+  "></path>
+
+</svg>

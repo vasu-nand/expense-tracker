@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { AddExpenseDialog } from './expenses/add-expense-dialog'
 
+import { getLocalMonth } from '@/lib/utils'
+
 export function DesktopFab() {
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false)
 
@@ -28,7 +30,7 @@ export function DesktopFab() {
                         window.dispatchEvent(new CustomEvent('expense-added'))
                         setIsAddExpenseOpen(false)
                     }}
-                    defaultMonth={new Date().toISOString().slice(0, 7)}
+                    defaultMonth={getLocalMonth()}
                 />
             )}
         </>

@@ -7,9 +7,11 @@ import dashboardRoutes from './routes/dashboardRoutes';
 import analyticsRoutes from './routes/analyticsRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import settingsRoutes from './routes/settingsRoutes';
+import bankAccountRoutes from './routes/bankAccountRoutes';
+import comparisonRoutes from './routes/comparisonRoutes';
 import { errorHandler } from './middleware/errorHandler';
-import { seedDefaultCategories } from './services/categoryService';
 import { reloadCategoryKeywordsCache } from './utils/categoryDetector';
+import { runDatabaseMigration } from './utils/migrationHelper';
 
 dotenv.config();
 
@@ -27,6 +29,8 @@ app.use('/api', dashboardRoutes);
 app.use('/api', analyticsRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', settingsRoutes);
+app.use('/api', bankAccountRoutes);
+app.use('/api', comparisonRoutes);
 
 app.post('/api/shutdown', async (req, res) => {
     try {
@@ -54,8 +58,13 @@ app.use(errorHandler);
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/expense_dashboard')
     .then(async () => {
         console.log('Connected to MongoDB');
-        await seedDefaultCategories();
+        
+        // Execute primary account workspace migration and default seeding
+        await runDatabaseMigration();
+        
+        // Build keywords classification cache in memory
         await reloadCategoryKeywordsCache();
+        
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
