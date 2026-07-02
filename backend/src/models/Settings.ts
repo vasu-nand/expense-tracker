@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ISettings extends Document {
+    bankAccountId: mongoose.Types.ObjectId;
     themeMode: string;
     themeConfig: {
         name: string;
@@ -56,6 +57,13 @@ const ThemeConfigSchema = new Schema({
 }, { _id: false });
 
 const SettingsSchema: Schema = new Schema({
+    bankAccountId: {
+        type: Schema.Types.ObjectId,
+        ref: 'BankAccount',
+        required: true,
+        unique: true,
+        index: true
+    },
     themeMode: {
         type: String,
         default: 'light',

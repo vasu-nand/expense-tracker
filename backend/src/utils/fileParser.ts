@@ -12,16 +12,16 @@ interface ParsedExpense {
     type?: 'expense' | 'income';
 }
 
-export const parseExcelFile = (buffer: Buffer, month: string): ParsedExpense[] => {
+export const parseExcelFile = (buffer: Buffer, month: string, bankAccountId: string): ParsedExpense[] => {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-    return parseExpenses(jsonData, month);
+    return parseExpenses(jsonData, month, bankAccountId);
 };
 
-export const parseCSVFile = async (buffer: Buffer, month: string): Promise<ParsedExpense[]> => {
+export const parseCSVFile = async (buffer: Buffer, month: string, bankAccountId: string): Promise<ParsedExpense[]> => {
     const csvString = buffer.toString('utf-8');
     const rows: any[] = [];
 
@@ -34,10 +34,10 @@ export const parseCSVFile = async (buffer: Buffer, month: string): Promise<Parse
             .on('error', reject);
     });
 
-    return parseExpenses(rows, month);
+    return parseExpenses(rows, month, bankAccountId);
 };
 
-const parseExpenses = (data: any[], month: string): ParsedExpense[] => {
+const parseExpenses = (data: any[], month: string, bankAccountId: string): ParsedExpense[] => {
     const expenses: ParsedExpense[] = [];
     const headers = Object.keys(data[0] || {});
 
@@ -52,7 +52,7 @@ const parseExpenses = (data: any[], month: string): ParsedExpense[] => {
     }
 
     for (const row of data) {
-        const day = parseInt(row[dayCol]);
+        let day = parseInt(row[dayCol]);
         const amount = parseFloat(row[expenseCol]);
         const reason = String(row[reasonCol] || '');
         const rawType = typeCol ? String(row[typeCol] || '').trim().toLowerCase() : 'expense';
@@ -60,11 +60,17 @@ const parseExpenses = (data: any[], month: string): ParsedExpense[] => {
 
         if (isNaN(day) || isNaN(amount) || !reason) continue;
 
+        // Clamp day to valid range [1, maxDays] for the selected month
+        const [year, monthVal] = month.split('-').map(Number);
+        const maxDays = new Date(year, monthVal, 0).getDate();
+        if (day < 1) day = 1;
+        if (day > maxDays) day = maxDays;
+
         expenses.push({
             day,
             amount,
             reason,
-            category: detectCategory(reason),
+            category: detectCategory(reason, bankAccountId),
             month,
             type
         });
