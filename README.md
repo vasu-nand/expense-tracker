@@ -24,6 +24,9 @@ A **premium, full-stack expense tracking and analytics platform** with a dark-gl
 ### Dashboard
 ![Dashboard](assets/screenshots/dashboard.png)
 
+### Workspace Accounts
+![Workspace Accounts](assets/screenshots/accounts.png)
+
 ### Expenses
 ![Expenses](assets/screenshots/expenses.png)
 
@@ -39,6 +42,17 @@ A **premium, full-stack expense tracking and analytics platform** with a dark-gl
 ---
 
 ## Key Features
+
+### Isolated Workspaces & Bank Accounts
+- **Bank Account Collection Workspace** – Added an isolated workspace mechanism where each bank account functions as an entirely independent dataset (Dashboard, Expenses, Uploads, Analytics, Export, Categories, Monthly Summaries, Reports, Predictions, Heatmaps, Statistics, and Uploaded Statements).
+- **Workspace Customizations** – Customize individual bank workspace color theme accents, icon styles, masked account numbers, and primary identifiers.
+- **Secure Deletions** – Workspace configuration settings and transaction deletions are secured via SHA-256 password hash validations.
+- **Mobile Responsive Drawer Switching** – Compact listing view for workspaces on mobile screens, and inline SVG icon switcher toggles.
+
+### Custom Month Picker UI
+- **Zero-Browser Dropdown Dependences** – Replaced native HTML month calendars with a custom React MonthPicker component featuring year select, 12-month selection blocks, and action options.
+- **Dynamic Viewport Alignments** – Uses client-side bounding checks to prevent popover display overflows on screen edges.
+- **Month Range Queries** – Fully integrated start-to-end month query capabilities (`startMonth:endMonth`) on Dashboard, Analytics, and Expenses.
 
 ### Dashboard
 - **Monthly Heatmap Calendar** – Day-aligned calendar grid showing spending intensity via color-scaled blocks. Hover for detailed tooltips; click any day to view all transactions for that date.

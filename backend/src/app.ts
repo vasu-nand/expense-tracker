@@ -32,6 +32,16 @@ app.use('/api', settingsRoutes);
 app.use('/api', bankAccountRoutes);
 app.use('/api', comparisonRoutes);
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    const isDbConnected = mongoose.connection.readyState === 1;
+    if (isDbConnected) {
+        res.json({ status: 'ok', database: 'connected' });
+    } else {
+        res.status(503).json({ status: 'maintenance', database: 'disconnected' });
+    }
+});
+
 app.post('/api/shutdown', async (req, res) => {
     try {
         res.json({ message: 'Server is shutting down...' });
@@ -49,6 +59,11 @@ app.post('/api/shutdown', async (req, res) => {
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// 404 route handling for unmatched API endpoints
+app.use((req, res, next) => {
+    res.status(404).json({ error: `Endpoint ${req.originalUrl} not found` });
 });
 
 // Error handling
