@@ -9,6 +9,20 @@ export const runDatabaseMigration = async () => {
     try {
         console.log('Running database workspace migration check...');
         
+        // 0. Drop obsolete indexes if they exist to prevent duplicate key errors (month_1)
+        try {
+            const collection = MonthlySummary.collection;
+            const indexes = await collection.indexes();
+            const hasObsoleteMonthIndex = indexes.some(idx => idx.name === 'month_1');
+            if (hasObsoleteMonthIndex) {
+                console.log('Dropping obsolete single-month unique index "month_1" from monthlysummaries...');
+                await collection.dropIndex('month_1');
+                console.log('Obsolete index "month_1" dropped successfully.');
+            }
+        } catch (idxError) {
+            console.warn('Warning: Could not drop obsolete index (it might not exist):', idxError);
+        }
+        
         // 1. Locate or initialize the Primary Bank Account
         let primaryAccount = await BankAccount.findOne({ isPrimary: true });
         
