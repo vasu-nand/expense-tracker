@@ -528,20 +528,49 @@ export function Navigation() {
                             </div>
 
                             {/* Search bar inside mobile drawer */}
-                            <form onSubmit={handleSearchSubmit} className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Search transactions..."
-                                    value={searchQuery}
-                                    onChange={(e) => {
-                                        setSearchQuery(e.target.value)
-                                        setShowSuggestions(true)
-                                    }}
-                                    onFocus={() => setShowSuggestions(true)}
-                                    className="w-full pl-9 pr-4 py-2 bg-muted/60 border border-border/80 focus:border-primary rounded-xl text-xs outline-none"
-                                />
-                                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                            </form>
+                            <div className="relative search-container">
+                                <form onSubmit={handleSearchSubmit} className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search transactions..."
+                                        value={searchQuery}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value)
+                                            setShowSuggestions(true)
+                                        }}
+                                        onFocus={() => setShowSuggestions(true)}
+                                        className="w-full pl-9 pr-4 py-2 bg-muted/60 border border-border/80 focus:border-primary rounded-xl text-xs outline-none"
+                                    />
+                                    <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                                </form>
+
+                                {/* Suggestions Dropdown in mobile view */}
+                                {showSuggestions && (searchQuery.trim().length > 1) && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-border/95 rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5)] z-[150] overflow-hidden text-[10px] max-h-60 overflow-y-auto">
+                                        {loadingSuggestions ? (
+                                            <div className="p-3 text-center text-muted-foreground animate-pulse">Loading suggestions...</div>
+                                        ) : suggestions.length === 0 ? (
+                                            <div className="p-3 text-center text-muted-foreground italic">No matches found</div>
+                                        ) : (
+                                            <div className="py-1 divide-y divide-border/40">
+                                                {suggestions.map((s) => (
+                                                    <button
+                                                        key={s._id}
+                                                        onClick={() => handleSuggestionClick(s._id)}
+                                                        className="w-full text-left px-3 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 flex justify-between items-center transition-colors"
+                                                    >
+                                                        <div className="truncate pr-2">
+                                                            <p className="font-semibold text-foreground truncate">{s.reason}</p>
+                                                            <p className="text-[9px] text-muted-foreground font-mono">Day {s.day} • {s.category}</p>
+                                                        </div>
+                                                        <span className="font-mono font-bold text-primary shrink-0">{format(s.amount)}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Nav Items */}
                             <div className="space-y-1">

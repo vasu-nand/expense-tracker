@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { DashboardStats } from '@/components/dashboard/dashboard-stats'
 import { DailyTrendChart } from '@/components/charts/daily-trend-chart'
 import { CategoryPieChart } from '@/components/charts/category-pie-chart'
 import { TopSpendingChart } from '@/components/charts/top-spending-chart'
 import { ExpenseHeatmap } from '@/components/charts/expense-heatmap'
+import { MonthComparisonChart } from '@/components/charts/month-comparison-chart'
 import { useDashboard } from '@/hooks/useDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DayExpensesDialog } from '@/components/dashboard/day-expenses-dialog'
@@ -13,6 +14,8 @@ import { Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { getLocalMonth, cn } from '@/lib/utils'
 import { MonthPicker } from '@/components/ui/month-picker'
+import { useCurrency } from '@/hooks/use-currency'
+
 
 export default function DashboardPage() {
     const [filterType, setFilterType] = useState<'single' | 'range'>('single')
@@ -20,9 +23,51 @@ export default function DashboardPage() {
     const [startMonth, setStartMonth] = useState(getLocalMonth())
     const [endMonth, setEndMonth] = useState(getLocalMonth())
 
+    const { convert } = useCurrency()
+
     const activeQueryMonth = filterType === 'single' ? month : `${startMonth}:${endMonth}`
     const { data, loading, error } = useDashboard(activeQueryMonth)
     const [selectedDay, setSelectedDay] = useState<number | null>(null)
+
+    const isMultipleMonthsRange = filterType === 'range' && startMonth !== endMonth
+
+    const monthlySummary = useMemo(() => {
+        if (!data || !data.dailyTrend) return []
+        
+        const map = new Map<string, { month: string; expense: number; income: number; net: number }>()
+        data.dailyTrend.forEach((item: any) => {
+            const m = item.month || 'Unknown'
+            const exp = item.expense || 0
+            const inc = item.income || 0
+            
+            if (!map.has(m)) {
+                map.set(m, { month: m, expense: 0, income: 0, net: 0 })
+            }
+            const existing = map.get(m)!
+            existing.expense += exp
+            existing.income += inc
+            existing.net = existing.income - existing.expense
+        })
+        
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        return Array.from(map.values())
+            .map((item: any) => {
+                let name = item.month
+                try {
+                    const [year, mNum] = item.month.split('-')
+                    name = `${monthNames[parseInt(mNum) - 1]} ${year}`
+                } catch {}
+                return {
+                    ...item,
+                    name,
+                    expense: convert(item.expense),
+                    income: convert(item.income),
+                    net: convert(item.net)
+                }
+            })
+            .sort((a, b) => a.month.localeCompare(b.month))
+    }, [data?.dailyTrend, convert])
+
 
     if (loading) {
         return (
@@ -116,11 +161,15 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <TopSpendingChart data={data?.dailyTrend || []} />
-                <ExpenseHeatmap 
-                    data={data?.dailyTrend || []} 
-                    month={filterType === 'single' ? month : startMonth}
-                    onDayClick={setSelectedDay}
-                />
+                {isMultipleMonthsRange ? (
+                    <MonthComparisonChart data={monthlySummary} />
+                ) : (
+                    <ExpenseHeatmap 
+                        data={data?.dailyTrend || []} 
+                        month={filterType === 'single' ? month : startMonth}
+                        onDayClick={setSelectedDay}
+                    />
+                )}
             </div>
 
             <DayExpensesDialog
