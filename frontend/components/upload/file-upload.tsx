@@ -28,7 +28,8 @@ export function FileUpload({ onUploadStatus, month }: FileUploadProps) {
         accept: {
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
             'application/vnd.ms-excel': ['.xls'],
-            'text/csv': ['.csv']
+            'text/csv': ['.csv'],
+            'application/json': ['.json']
         },
         maxFiles: 1
     })
@@ -67,6 +68,7 @@ export function FileUpload({ onUploadStatus, month }: FileUploadProps) {
     const getFileIcon = () => {
         if (!file) return <Upload className="h-12 w-12 text-muted-foreground" />
         if (file.name.endsWith('.csv')) return <FileText className="h-12 w-12 text-blue-500" />
+        if (file.name.endsWith('.json')) return <FileText className="h-12 w-12 text-amber-500" />
         return <FileSpreadsheet className="h-12 w-12 text-green-500" />
     }
 
@@ -103,7 +105,7 @@ export function FileUpload({ onUploadStatus, month }: FileUploadProps) {
                         <>
                             <p className="font-medium">Drop your statement here or click to browse</p>
                             <p className="text-sm text-muted-foreground">
-                                Supports .xlsx, .xls, .csv
+                                Supports .xlsx, .xls, .csv, .json
                             </p>
                         </>
                     )}

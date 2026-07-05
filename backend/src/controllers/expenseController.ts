@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { ExpenseService } from '../services/expenseService';
-import { parseExcelFile, parseCSVFile } from '../utils/fileParser';
+import { parseExcelFile, parseCSVFile, parseJSONFile } from '../utils/fileParser';
 import { detectCategory } from '../utils/categoryDetector';
 import { getLocalMonthString, getDaysInMonth } from '../utils/dateUtils';
 import { getActiveBankAccountId } from '../utils/bankAccountHelper';
+import BankAccount from '../models/BankAccount';
 import 'multer';
 
 const expenseService = new ExpenseService();
@@ -19,7 +20,12 @@ export const uploadExpenses = async (req: Request, res: Response) => {
         const bankAccountId = await getActiveBankAccountId(req);
         let expenses;
 
-        if (req.file.mimetype === 'text/csv') {
+        const isJson = req.file.mimetype === 'application/json' || req.file.originalname.endsWith('.json');
+        const isCsv = req.file.mimetype === 'text/csv' || req.file.originalname.endsWith('.csv');
+
+        if (isJson) {
+            expenses = await parseJSONFile(req.file.buffer, month, bankAccountId);
+        } else if (isCsv) {
             expenses = await parseCSVFile(req.file.buffer, month, bankAccountId);
         } else {
             expenses = await parseExcelFile(req.file.buffer, month, bankAccountId);
@@ -29,14 +35,37 @@ export const uploadExpenses = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'No valid expense data found' });
         }
 
-        // Attach bankAccountId to every expense
-        const expensesWithAccount = expenses.map(exp => ({
-            ...exp,
-            bankAccountId: bankAccountId as any
-        }));
+        // Fetch all valid bank accounts to verify if the parsed bankAccountId exists
+        const bankAccounts = await BankAccount.find({}, '_id').lean();
+        const existingAccountIds = new Set(bankAccounts.map(acc => acc._id.toString()));
+
+        // Attach bankAccountId to every expense:
+        // Use the parsed bankAccountId if it exists and is valid in our system, otherwise fallback to the active bankAccountId.
+        const expensesWithAccount = expenses.map(exp => {
+            const expAccId = exp.bankAccountId;
+            const finalBankAccountId = (expAccId && existingAccountIds.has(expAccId))
+                ? expAccId
+                : bankAccountId;
+            return {
+                ...exp,
+                bankAccountId: finalBankAccountId as any
+            };
+        });
 
         await expenseService.bulkCreateExpenses(expensesWithAccount);
-        await expenseService.generateMonthlySummary(month, bankAccountId);
+
+        // Regenerate monthly summaries for all unique combinations of (month, bankAccountId) present in the imported data
+        const uniqueCombinations = new Set<string>();
+        for (const exp of expensesWithAccount) {
+            if (exp.month && exp.bankAccountId) {
+                uniqueCombinations.add(`${exp.month}_${exp.bankAccountId.toString()}`);
+            }
+        }
+
+        for (const comb of uniqueCombinations) {
+            const [m, accId] = comb.split('_');
+            await expenseService.generateMonthlySummary(m, accId);
+        }
 
         res.status(201).json({
             message: `${expenses.length} expenses uploaded successfully`,

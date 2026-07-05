@@ -21,7 +21,10 @@ import {
     Activity,
     Grid,
     Flame,
-    ArrowLeft
+    ArrowLeft,
+    Coins,
+    Eye,
+    X
 } from 'lucide-react'
 import Link from 'next/link'
 import { 
@@ -74,6 +77,7 @@ export default function ComparisonPage() {
     const [endMonth, setEndMonth] = useState(getLocalMonth())
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [fullscreenChart, setFullscreenChart] = useState<'total' | 'trend' | 'category' | 'intensity' | null>(null)
     
     // API Data
     const [comparisonData, setComparisonData] = useState<{
@@ -85,6 +89,70 @@ export default function ComparisonPage() {
     const [monthlyTrends, setMonthlyTrends] = useState<any[]>([])
     const [categoryChartData, setCategoryChartData] = useState<any[]>([])
     const [topCategories, setTopCategories] = useState<any[]>([])
+
+    const overviewStats = useMemo(() => {
+        if (!comparisonData || comparisonData.accounts.length === 0) return null;
+        
+        const totalCombinedSpend = comparisonData.accounts.reduce((sum, acc) => sum + acc.totalExpenses, 0);
+        const totalTxCount = comparisonData.accounts.reduce((sum, acc) => sum + acc.transactionCount, 0);
+        const combinedAvgMonthlySpend = comparisonData.accounts.reduce((sum, acc) => sum + acc.averageMonthlySpend, 0);
+        
+        let highestSpender = comparisonData.accounts[0];
+        for (const acc of comparisonData.accounts) {
+            if (acc.totalExpenses > highestSpender.totalExpenses) {
+                highestSpender = acc;
+            }
+        }
+        
+        return {
+            totalCombinedSpend,
+            totalTxCount,
+            combinedAvgMonthlySpend,
+            highestSpender
+        };
+    }, [comparisonData]);
+
+    const calendarMonth = useMemo(() => {
+        if (filterType === 'custom') return startMonth;
+        if (filterType === 'current-month') return getLocalMonth();
+        if (filterType === 'last-month') {
+            const d = new Date();
+            d.setMonth(d.getMonth() - 1);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            return `${yyyy}-${mm}`;
+        }
+        return getLocalMonth();
+    }, [filterType, startMonth])
+
+    const firstDayWeekday = useMemo(() => {
+        try {
+            const [year, monthNum] = calendarMonth.split('-').map(Number);
+            return new Date(year, monthNum - 1, 1).getDay();
+        } catch {
+            return 0;
+        }
+    }, [calendarMonth]);
+
+    const daysCount = useMemo(() => {
+        try {
+            const [year, monthNum] = calendarMonth.split('-').map(Number);
+            return new Date(year, monthNum, 0).getDate();
+        } catch {
+            return 31;
+        }
+    }, [calendarMonth]);
+
+    const calendarMonthName = useMemo(() => {
+        try {
+            const [year, monthNum] = calendarMonth.split('-').map(Number);
+            const date = new Date(year, monthNum - 1, 1);
+            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        } catch {
+            return calendarMonth;
+        }
+    }, [calendarMonth]);
+
 
     const fetchComparisonData = async () => {
         try {
@@ -266,12 +334,74 @@ export default function ComparisonPage() {
             ) : (
                 <div className="space-y-8">
                     
+                    {/* Combined Metrics Overview Banner */}
+                    {overviewStats && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                            <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md hover:shadow-lg transition-all duration-300">
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Combined Total Spend</p>
+                                        <h3 className="text-xl font-black text-rose-500 font-mono">
+                                            {format(overviewStats.totalCombinedSpend)}
+                                        </h3>
+                                    </div>
+                                    <div className="h-10 w-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                                        <Coins className="h-5 w-5" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md hover:shadow-lg transition-all duration-300">
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Combined Monthly Avg</p>
+                                        <h3 className="text-xl font-black text-teal-500 font-mono">
+                                            {format(overviewStats.combinedAvgMonthlySpend)}
+                                        </h3>
+                                    </div>
+                                    <div className="h-10 w-10 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center shrink-0">
+                                        <Activity className="h-5 w-5" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md hover:shadow-lg transition-all duration-300">
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Combined Transactions</p>
+                                        <h3 className="text-xl font-black text-indigo-500 font-mono">
+                                            {overviewStats.totalTxCount} entries
+                                        </h3>
+                                    </div>
+                                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                                        <GitCompare className="h-5 w-5" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md hover:shadow-lg transition-all duration-300">
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="space-y-1 truncate pr-1">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-wider">Top Spender Account</p>
+                                        <h3 className="text-sm font-extrabold text-foreground truncate flex items-center gap-1.5 mt-1.5">
+                                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: overviewStats.highestSpender.color }} />
+                                            {overviewStats.highestSpender.name}
+                                        </h3>
+                                    </div>
+                                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                                        <Award className="h-5 w-5" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                    
                     {/* 1. Account Summary Workspace Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {comparisonData.accounts.map((acc) => (
                             <Card 
                                 key={acc.accountId}
-                                className="border border-border/60 bg-card/30 backdrop-blur shadow hover:shadow-md transition-shadow relative overflow-hidden"
+                                className="border border-border/80 bg-card/40 backdrop-blur-md shadow hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
                             >
                                 <div className="h-1.5 w-full absolute top-0 left-0 right-0" style={{ backgroundColor: acc.color }} />
                                 
@@ -344,98 +474,209 @@ export default function ComparisonPage() {
                             </Card>
                         ))}
                     </div>
-
                     {/* 2. Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         
                         {/* 2.1 Total Spending Comparison */}
-                        <Card className="border border-border bg-card/60 backdrop-blur shadow-md">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
-                                    <Award className="h-4 w-4 text-primary" /> Total Spending Comparison
-                                </CardTitle>
-                                <CardDescription>Cumulative total spend per bank account workspace</CardDescription>
+                        <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md transition-shadow hover:shadow-lg">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
+                                        <Award className="h-4 w-4 text-primary" /> Total Spending Comparison
+                                    </CardTitle>
+                                    <CardDescription className="text-[11px]">Cumulative total spend per bank account workspace</CardDescription>
+                                </div>
+                                <button
+                                    onClick={() => setFullscreenChart('total')}
+                                    className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
+                                    title="View Fullscreen"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </button>
                             </CardHeader>
-                            <CardContent className="h-64 pt-2">
+                            <CardContent className="h-[300px] pt-2">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={cumulativeTotalData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} vertical={false} />
+                                        <defs>
+                                            {comparisonData.accounts.map(acc => (
+                                                <linearGradient key={`grad-tot-${acc.accountId}`} id={`grad-tot-${acc.accountId}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={acc.color} stopOpacity={0.95}/>
+                                                    <stop offset="100%" stopColor={acc.color} stopOpacity={0.3}/>
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                            formatter={(v: any) => [`${symbol}${Number(v).toFixed(2)}`, 'Spend']}
+                                            cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const rowData = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
+                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
+                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
+                                                                <span>{rowData.name}</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-zinc-400">Total Spending:</p>
+                                                            <p className="text-sm font-black text-rose-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        <Bar dataKey="Total Spending" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={35}>
-                                            {cumulativeTotalData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
+                                        <Bar dataKey="Total Spending" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={32}>
+                                            {cumulativeTotalData.map((entry, index) => {
+                                                const acc = comparisonData.accounts.find(a => a.name === entry.name);
+                                                return (
+                                                    <Cell key={`cell-${index}`} fill={`url(#grad-tot-${acc?.accountId || index})`} className="hover:opacity-85 transition-opacity" />
+                                                );
+                                            })}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
-
+ 
                         {/* 2.2 Monthly Trend Comparison */}
-                        <Card className="border border-border bg-card/60 backdrop-blur shadow-md">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
-                                    <TrendingUp className="h-4 w-4 text-primary" /> Monthly Trend Comparison
-                                </CardTitle>
-                                <CardDescription>Month-over-month trend comparison lines</CardDescription>
+                        <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md transition-shadow hover:shadow-lg">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
+                                        <TrendingUp className="h-4 w-4 text-primary" /> Monthly Trend Comparison
+                                    </CardTitle>
+                                    <CardDescription className="text-[11px]">Month-over-month trend comparison lines</CardDescription>
+                                </div>
+                                <button
+                                    onClick={() => setFullscreenChart('trend')}
+                                    className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
+                                    title="View Fullscreen"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </button>
                             </CardHeader>
-                            <CardContent className="h-64 pt-2">
+                            <CardContent className="h-[300px] pt-2">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={convertedMonthlyTrends} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} vertical={false} />
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                            formatter={(v: any, name: string) => [`${symbol}${Number(v).toFixed(2)}`, name]}
+                                            content={({ active, payload, label }) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[140px]">
+                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1">{label}</p>
+                                                            {[...payload]
+                                                                .sort((a, b) => Number(b.value) - Number(a.value))
+                                                                .map((p) => {
+                                                                    const acc = comparisonData.accounts.find(a => a.name === p.name);
+                                                                    return (
+                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
+                                                                            <div className="flex items-center space-x-1.5">
+                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
+                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
+                                                                            </div>
+                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toFixed(0)}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        <Legend wrapperStyle={{ fontSize: 10 }} />
+                                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: '10px' }} />
                                         {comparisonData.accounts.map((acc) => (
                                             <Line 
                                                 key={acc.accountId} 
                                                 type="monotone" 
                                                 dataKey={acc.name} 
                                                 stroke={acc.color} 
-                                                strokeWidth={2.5}
-                                                activeDot={{ r: 6 }} 
+                                                strokeWidth={3}
+                                                dot={{ fill: acc.color, r: 3 }}
+                                                activeDot={{ r: 5.5, strokeWidth: 0, fill: acc.color }} 
                                             />
                                         ))}
                                     </LineChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
-
+ 
                         {/* 2.3 Category Comparison Stacked */}
-                        <Card className="border border-border bg-card/60 backdrop-blur shadow-md">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
-                                    <Percent className="h-4 w-4 text-primary" /> Stacked Category Spend
-                                </CardTitle>
-                                <CardDescription>Contribution per bank account workspace per category</CardDescription>
+                        <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md transition-shadow hover:shadow-lg">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
+                                        <Percent className="h-4 w-4 text-primary" /> Stacked Category Spend
+                                    </CardTitle>
+                                    <CardDescription className="text-[11px]">Contribution per bank account workspace per category</CardDescription>
+                                </div>
+                                <button
+                                    onClick={() => setFullscreenChart('category')}
+                                    className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
+                                    title="View Fullscreen"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </button>
                             </CardHeader>
-                            <CardContent className="h-64 pt-2">
+                            <CardContent className="h-[300px] pt-2">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={convertedCategoryData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} vertical={false} />
+                                        <defs>
+                                            {comparisonData.accounts.map(acc => (
+                                                <linearGradient key={`grad-cat-${acc.accountId}`} id={`grad-cat-${acc.accountId}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={acc.color} stopOpacity={0.95}/>
+                                                    <stop offset="100%" stopColor={acc.color} stopOpacity={0.3}/>
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="category" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                            formatter={(v: any, name: string) => [`${symbol}${Number(v).toFixed(2)}`, name]}
+                                            content={({ active, payload, label }) => {
+                                                if (active && payload && payload.length) {
+                                                    const total = payload.reduce((sum, p) => sum + Number(p.value), 0);
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[150px]">
+                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1 capitalize">{label}</p>
+                                                            {[...payload]
+                                                                .sort((a, b) => Number(b.value) - Number(a.value))
+                                                                .map((p) => {
+                                                                    const acc = comparisonData.accounts.find(a => a.name === p.name);
+                                                                    const percent = total > 0 ? (Number(p.value) / total) * 100 : 0;
+                                                                    return (
+                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
+                                                                            <div className="flex items-center space-x-1.5">
+                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
+                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
+                                                                            </div>
+                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toFixed(0)} <span className="text-[9px] text-teal-400 font-normal">({percent.toFixed(0)}%)</span></span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            <div className="border-t border-border/10 pt-1 mt-1 flex justify-between font-black text-primary">
+                                                                <span>Total:</span>
+                                                                <span>{symbol}{total.toFixed(0)}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        <Legend wrapperStyle={{ fontSize: 10 }} />
+                                        <Legend wrapperStyle={{ fontSize: 10, paddingTop: '10px' }} />
                                         {comparisonData.accounts.map((acc) => (
                                             <Bar 
                                                 key={acc.accountId} 
                                                 dataKey={acc.name} 
                                                 stackId="a" 
-                                                fill={acc.color} 
-                                                radius={[0, 0, 0, 0]}
+                                                fill={`url(#grad-cat-${acc.accountId})`} 
+                                                radius={[3, 3, 0, 0]}
                                                 barSize={20}
                                             />
                                         ))}
@@ -443,29 +684,64 @@ export default function ComparisonPage() {
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
-
+ 
                         {/* 2.4 Average Daily Spend Chart */}
-                        <Card className="border border-border bg-card/60 backdrop-blur shadow-md">
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
-                                    <Activity className="h-4 w-4 text-primary" /> Daily Spend Intensity average
-                                </CardTitle>
-                                <CardDescription>Average daily spending rate across active entries</CardDescription>
+                        <Card className="border border-border/80 bg-card/40 backdrop-blur-md shadow-md transition-shadow hover:shadow-lg">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
+                                        <Activity className="h-4 w-4 text-primary" /> Daily Spend Intensity average
+                                    </CardTitle>
+                                    <CardDescription className="text-[11px]">Average daily spending rate across active entries</CardDescription>
+                                </div>
+                                <button
+                                    onClick={() => setFullscreenChart('intensity')}
+                                    className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
+                                    title="View Fullscreen"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                </button>
                             </CardHeader>
-                            <CardContent className="h-64 pt-2">
+                            <CardContent className="h-[300px] pt-2">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={avgDailyData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} vertical={false} />
+                                        <defs>
+                                            {comparisonData.accounts.map(acc => (
+                                                <linearGradient key={`grad-int-${acc.accountId}`} id={`grad-int-${acc.accountId}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={acc.color} stopOpacity={0.95}/>
+                                                    <stop offset="100%" stopColor={acc.color} stopOpacity={0.3}/>
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                            formatter={(v: any) => [`${symbol}${Number(v).toFixed(2)}`, 'Avg Daily Spend']}
+                                            cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const rowData = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
+                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
+                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
+                                                                <span>{rowData.name}</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-zinc-400">Avg Daily Spend:</p>
+                                                            <p className="text-sm font-black text-teal-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        <Bar dataKey="Avg Daily Spend" fill="#0d9488" radius={[4, 4, 0, 0]} barSize={35}>
-                                            {avgDailyData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} />
-                                            ))}
+                                        <Bar dataKey="Avg Daily Spend" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={32}>
+                                            {avgDailyData.map((entry, index) => {
+                                                const acc = comparisonData.accounts.find(a => a.name === entry.name);
+                                                return (
+                                                    <Cell key={`cell-${index}`} fill={`url(#grad-int-${acc?.accountId || index})`} className="hover:opacity-85 transition-opacity" />
+                                                );
+                                            })}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -504,22 +780,30 @@ export default function ComparisonPage() {
                                             {rawCategorySpend.length > 0 ? (
                                                 <>
                                                     <div className="h-40 w-full relative">
+                                                        {/* Center Donut Label */}
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                            <span className="text-[8px] uppercase font-bold text-muted-foreground tracking-wider leading-none">Total Spend</span>
+                                                            <span className="text-xs font-black text-foreground font-mono mt-1 leading-none">{format(acc.totalExpenses)}</span>
+                                                        </div>
                                                         <ResponsiveContainer width="100%" height="100%">
                                                             <PieChart>
                                                                 <Pie
                                                                     data={rawCategorySpend}
                                                                     cx="50%"
                                                                     cy="50%"
-                                                                    innerRadius={30}
-                                                                    outerRadius={60}
-                                                                    paddingAngle={2}
+                                                                    innerRadius={38}
+                                                                    outerRadius={58}
+                                                                    paddingAngle={2.5}
                                                                     dataKey="value"
                                                                 >
                                                                     {rawCategorySpend.map((entry, index) => (
-                                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="hover:opacity-85 transition-opacity" />
                                                                     ))}
                                                                 </Pie>
-                                                                <Tooltip formatter={(v: any) => [`${symbol}${Number(v).toFixed(2)}`, 'Spend']} />
+                                                                <Tooltip 
+                                                                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                                                                    formatter={(v: any) => [`${symbol}${Number(v).toFixed(2)}`, 'Spend']} 
+                                                                />
                                                             </PieChart>
                                                         </ResponsiveContainer>
                                                     </div>
@@ -653,45 +937,72 @@ export default function ComparisonPage() {
                             <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
                                 <Grid className="h-4 w-4 text-primary" /> Multi-Account Mini Heatmaps
                             </CardTitle>
-                            <CardDescription>Daily spending frequency and intensity layouts</CardDescription>
+                            <CardDescription>Daily spending frequency and intensity layouts ({calendarMonthName})</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {comparisonData.accounts.map((acc) => {
-                                    // Render 31 mini day blocks in a grid
-                                    const blocks = Array.from({ length: 31 }, (_, i) => i + 1)
+                                    const weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+                                    const blocks = Array.from({ length: daysCount }, (_, i) => i + 1)
+                                    const spacers = Array.from({ length: firstDayWeekday }, (_, i) => i)
+
                                     return (
-                                        <div key={acc.accountId} className="p-4 bg-muted/10 border border-border/10 rounded-2xl space-y-3">
-                                            <div className="flex justify-between items-center text-xs">
-                                                <span className="font-bold text-foreground">{acc.name}</span>
-                                                <span className="text-[10px] text-muted-foreground">Active Days: {Object.keys(acc.dailyTotals).length}</span>
+                                        <div key={acc.accountId} className="p-4 bg-muted/10 border border-border/10 rounded-2xl space-y-4 shadow-inner">
+                                            <div className="flex justify-between items-center text-xs border-b border-border/10 pb-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: acc.color }} />
+                                                    <span className="font-extrabold text-foreground">{acc.name}</span>
+                                                </div>
+                                                <span className="text-[10px] text-muted-foreground font-mono">Active Days: {Object.keys(acc.dailyTotals).length}</span>
                                             </div>
-                                            <div className="flex flex-wrap gap-1">
+                                            <div className="grid grid-cols-7 gap-1 md:gap-1.5 max-w-[240px] mx-auto">
+                                                {/* Weekday labels */}
+                                                {weekdays.map((wd, i) => (
+                                                    <div key={`header-${i}`} className="text-[9px] font-black text-muted-foreground uppercase text-center font-mono opacity-60">
+                                                        {wd}
+                                                    </div>
+                                                ))}
+
+                                                {/* Spacer blocks */}
+                                                {spacers.map(s => (
+                                                    <div key={`spacer-${s}`} className="w-7 h-7 bg-transparent rounded-md pointer-events-none" />
+                                                ))}
+
+                                                {/* Active days */}
                                                 {blocks.map(day => {
                                                     const amount = acc.dailyTotals[day] || 0
                                                     
-                                                    // Determine color opacity class based on amount
-                                                    let colorClass = 'bg-muted/40 text-muted-foreground border-border/20'
+                                                    let bgStyle: React.CSSProperties = {
+                                                        borderColor: 'transparent'
+                                                    }
+                                                    let colorClass = 'bg-muted/20 dark:bg-muted/10 text-muted-foreground/60 hover:bg-muted/30'
                                                     if (amount > 0) {
-                                                        if (amount < 500) colorClass = 'bg-primary/20 border-primary/30 text-primary-foreground font-bold'
-                                                        else if (amount < 2500) colorClass = 'bg-primary/50 border-primary/50 text-white font-bold'
-                                                        else colorClass = 'bg-primary border-primary text-white font-black'
+                                                        colorClass = 'text-white border shadow-sm'
+                                                        bgStyle = {
+                                                            backgroundColor: acc.color,
+                                                            borderColor: acc.color,
+                                                            opacity: amount < 500 ? 0.35 : amount < 2500 ? 0.7 : 1
+                                                        }
                                                     }
 
                                                     return (
                                                         <div 
                                                             key={day} 
+                                                            style={bgStyle}
                                                             className={cn(
-                                                                "w-6 h-6 rounded flex items-center justify-center text-[9px] border shadow-sm select-none", 
+                                                                "relative group w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-bold font-mono transition-all duration-200 select-none cursor-help hover:scale-110 hover:shadow-md hover:ring-2 hover:ring-primary/20", 
                                                                 colorClass
                                                             )}
-                                                            style={{
-                                                                backgroundColor: amount > 0 ? acc.color : undefined,
-                                                                opacity: amount > 0 ? (amount < 500 ? 0.35 : amount < 2500 ? 0.7 : 1) : undefined
-                                                            }}
-                                                            title={`Day ${day}: ${format(amount)}`}
                                                         >
                                                             {day}
+
+                                                            {/* Micro Tooltip */}
+                                                            <div className="absolute bottom-full mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-30 transition-all duration-200">
+                                                                <div className="bg-zinc-950/95 dark:bg-zinc-50/95 text-zinc-50 dark:text-zinc-950 text-[9px] font-bold rounded-md py-1 px-2 shadow-lg border border-zinc-800/10 dark:border-zinc-200/10 whitespace-nowrap font-mono">
+                                                                    Day {day}: {format(amount)}
+                                                                </div>
+                                                                <div className="w-1 h-1 -mt-0.5 rotate-45 bg-zinc-950/95 dark:bg-zinc-50/95" />
+                                                            </div>
                                                         </div>
                                                     )
                                                 })}
@@ -699,6 +1010,16 @@ export default function ComparisonPage() {
                                         </div>
                                     )
                                 })}
+                            </div>
+
+                            {/* Heatmap Legend */}
+                            <div className="flex items-center justify-end space-x-2 text-[10px] text-muted-foreground pt-4 border-t border-border/20 mt-4 font-semibold">
+                                <span>No activity</span>
+                                <div className="w-3.5 h-3.5 rounded-sm bg-muted/20 dark:bg-muted/10 border border-border/10"></div>
+                                <div className="w-3.5 h-3.5 rounded-sm bg-primary/30 border border-primary/20" style={{ opacity: 0.35 }}></div>
+                                <div className="w-3.5 h-3.5 rounded-sm bg-primary/60 border border-primary/40" style={{ opacity: 0.7 }}></div>
+                                <div className="w-3.5 h-3.5 rounded-sm bg-primary border border-primary/20" style={{ opacity: 1 }}></div>
+                                <span>More spending</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -781,6 +1102,236 @@ export default function ComparisonPage() {
                         </CardContent>
                     </Card>
 
+                </div>
+            )}
+
+            {/* Interactive Fullscreen Charts Modal Overlay */}
+            {fullscreenChart && (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-10 animate-in fade-in duration-200">
+                    <Card className="bg-card border w-full max-w-5xl h-[80vh] flex flex-col p-6 rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200">
+                        <button 
+                            onClick={() => setFullscreenChart(null)}
+                            className="absolute top-4 right-4 p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-full transition-colors z-10"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                        
+                        <div className="flex flex-col pb-4 border-b border-border/10 flex-shrink-0">
+                            <CardTitle className="text-custom-gradient text-xl">
+                                {fullscreenChart === 'total' && 'Total Spending Comparison (Fullscreen)'}
+                                {fullscreenChart === 'trend' && 'Monthly Trend Comparison (Fullscreen)'}
+                                {fullscreenChart === 'category' && 'Stacked Category Spend (Fullscreen)'}
+                                {fullscreenChart === 'intensity' && 'Daily Spend Intensity (Fullscreen)'}
+                            </CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                                {fullscreenChart === 'total' && 'Cumulative total spend per bank account workspace'}
+                                {fullscreenChart === 'trend' && 'Month-over-month trend comparison lines'}
+                                {fullscreenChart === 'category' && 'Contribution per bank account workspace per category'}
+                                {fullscreenChart === 'intensity' && 'Average daily spending rate across active entries'}
+                            </CardDescription>
+                        </div>
+                        
+                        <div className="flex-1 min-h-0 pt-6">
+                            {fullscreenChart === 'total' && (
+                                <ResponsiveContainer width="100%" height="90%">
+                                    <BarChart data={cumulativeTotalData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                                        <defs>
+                                            {comparisonData?.accounts.map(acc => (
+                                                <linearGradient key={`grad-fs-${acc.accountId}`} id={`grad-fs-${acc.accountId}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={acc.color} stopOpacity={0.95}/>
+                                                    <stop offset="100%" stopColor={acc.color} stopOpacity={0.25}/>
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
+                                        <Tooltip 
+                                            cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const rowData = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
+                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
+                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
+                                                                <span>{rowData.name}</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-zinc-400">Total Spending:</p>
+                                                            <p className="text-sm font-black text-rose-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Bar dataKey="Total Spending" fill="#0d9488" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                                            {cumulativeTotalData.map((entry, index) => {
+                                                const acc = comparisonData?.accounts.find(a => a.name === entry.name);
+                                                return (
+                                                    <Cell key={`cell-${index}`} fill={`url(#grad-fs-${acc?.accountId || index})`} className="hover:opacity-85 transition-opacity" />
+                                                );
+                                            })}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                            
+                            {fullscreenChart === 'trend' && (
+                                <ResponsiveContainer width="100%" height="90%">
+                                    <LineChart data={convertedMonthlyTrends} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
+                                        <Tooltip 
+                                            content={({ active, payload, label }) => {
+                                                if (active && payload && payload.length) {
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[150px]">
+                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1">{label}</p>
+                                                            {[...payload]
+                                                                .sort((a, b) => Number(b.value) - Number(a.value))
+                                                                .map((p) => {
+                                                                    const acc = comparisonData?.accounts.find(a => a.name === p.name);
+                                                                    return (
+                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
+                                                                            <div className="flex items-center space-x-1.5">
+                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
+                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
+                                                                            </div>
+                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: '10px' }} />
+                                        {comparisonData?.accounts.map((acc) => (
+                                            <Line 
+                                                key={acc.accountId} 
+                                                type="monotone" 
+                                                dataKey={acc.name} 
+                                                stroke={acc.color} 
+                                                strokeWidth={3}
+                                                dot={{ fill: acc.color, r: 4 }}
+                                                activeDot={{ r: 6, strokeWidth: 0, fill: acc.color }} 
+                                            />
+                                        ))}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
+                            
+                            {fullscreenChart === 'category' && (
+                                <ResponsiveContainer width="100%" height="90%">
+                                    <BarChart data={convertedCategoryData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                                        <defs>
+                                            {comparisonData?.accounts.map(acc => (
+                                                <linearGradient key={`grad-cat-fs-${acc.accountId}`} id={`grad-cat-fs-${acc.accountId}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={acc.color} stopOpacity={0.95}/>
+                                                    <stop offset="100%" stopColor={acc.color} stopOpacity={0.25}/>
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                                        <XAxis dataKey="category" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
+                                        <Tooltip 
+                                            content={({ active, payload, label }) => {
+                                                if (active && payload && payload.length) {
+                                                    const total = payload.reduce((sum, p) => sum + Number(p.value), 0);
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[160px]">
+                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1 capitalize">{label}</p>
+                                                            {[...payload]
+                                                                .sort((a, b) => Number(b.value) - Number(a.value))
+                                                                .map((p) => {
+                                                                    const acc = comparisonData?.accounts.find(a => a.name === p.name);
+                                                                    const percent = total > 0 ? (Number(p.value) / total) * 100 : 0;
+                                                                    return (
+                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
+                                                                            <div className="flex items-center space-x-1.5">
+                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
+                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
+                                                                            </div>
+                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })} <span className="text-[9px] text-teal-400 font-normal">({percent.toFixed(0)}%)</span></span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            <div className="border-t border-border/10 pt-1 mt-1 flex justify-between font-black text-primary">
+                                                                <span>Total:</span>
+                                                                <span>{symbol}{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Legend wrapperStyle={{ fontSize: 11, paddingTop: '10px' }} />
+                                        {comparisonData?.accounts.map((acc) => (
+                                            <Bar 
+                                                key={acc.accountId} 
+                                                dataKey={acc.name} 
+                                                stackId="a" 
+                                                fill={`url(#grad-cat-fs-${acc.accountId})`} 
+                                                radius={[4, 4, 0, 0]}
+                                                barSize={36}
+                                            />
+                                        ))}
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                            
+                            {fullscreenChart === 'intensity' && (
+                                <ResponsiveContainer width="100%" height="90%">
+                                    <BarChart data={avgDailyData} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
+                                        <defs>
+                                            {comparisonData?.accounts.map(acc => (
+                                                <linearGradient key={`grad-int-fs-${acc.accountId}`} id={`grad-int-fs-${acc.accountId}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={acc.color} stopOpacity={0.95}/>
+                                                    <stop offset="100%" stopColor={acc.color} stopOpacity={0.25}/>
+                                                </linearGradient>
+                                            ))}
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
+                                        <Tooltip 
+                                            cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
+                                            content={({ active, payload }) => {
+                                                if (active && payload && payload.length) {
+                                                    const rowData = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
+                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
+                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
+                                                                <span>{rowData.name}</span>
+                                                            </div>
+                                                            <p className="text-[10px] text-zinc-400">Avg Daily Spend:</p>
+                                                            <p className="text-sm font-black text-teal-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Bar dataKey="Avg Daily Spend" fill="#0d9488" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                                            {avgDailyData.map((entry, index) => {
+                                                const acc = comparisonData?.accounts.find(a => a.name === entry.name);
+                                                return (
+                                                    <Cell key={`cell-${index}`} fill={`url(#grad-int-fs-${acc?.accountId || index})`} className="hover:opacity-85 transition-opacity" />
+                                                );
+                                            })}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </Card>
                 </div>
             )}
         </div>
