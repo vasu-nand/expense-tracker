@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Expense, { IExpense } from '../models/Expense';
 import MonthlySummary from '../models/MonthlySummary';
 import { buildMonthQuery } from '../utils/monthQueryHelper';
+import { getDaysInMonth } from '../utils/dateUtils';
 
 function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -272,23 +273,37 @@ export class ExpenseService {
             incomeCategoryBreakdown[income.category] = (incomeCategoryBreakdown[income.category] || 0) + income.amount;
         }
 
-        // Daily trend data: combine both income and expense per day
-        const allDays = new Set(transactions.map(t => t.day));
-        const dailyTrendMap = new Map<number, { day: number; expense: number; income: number }>();
-        for (const day of allDays) {
-            dailyTrendMap.set(day, { day, expense: 0, income: 0 });
-        }
+        // Daily trend data: combine both income and expense per day, grouped by month and day to support ranges
+        const uniqueMonths = Array.from(new Set(transactions.map(t => t.month)));
+        const dailyTrendMap = new Map<string, { day: number; month: string; date: string; expense: number; income: number }>();
 
-        for (const transaction of transactions) {
-            const item = dailyTrendMap.get(transaction.day)!;
-            if (transaction.type === 'income') {
-                item.income += transaction.amount;
-            } else {
-                item.expense += transaction.amount;
+        for (const m of uniqueMonths) {
+            const daysInMonth = getDaysInMonth(m);
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateKey = `${m}-${String(d).padStart(2, '0')}`;
+                dailyTrendMap.set(dateKey, {
+                    day: d,
+                    month: m,
+                    date: dateKey,
+                    expense: 0,
+                    income: 0
+                });
             }
         }
 
-        const dailyTrend = Array.from(dailyTrendMap.values()).sort((a, b) => a.day - b.day);
+        for (const transaction of transactions) {
+            const dateKey = `${transaction.month}-${String(transaction.day).padStart(2, '0')}`;
+            const item = dailyTrendMap.get(dateKey);
+            if (item) {
+                if (transaction.type === 'income') {
+                    item.income += transaction.amount;
+                } else {
+                    item.expense += transaction.amount;
+                }
+            }
+        }
+
+        const dailyTrend = Array.from(dailyTrendMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
         // Top spending days
         const topSpendingDays = Array.from(dailyTotals.entries())

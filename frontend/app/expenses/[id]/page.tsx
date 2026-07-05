@@ -209,7 +209,8 @@ export default function ExpenseDetailPage() {
                             <CardDescription>Historical {isIncome ? 'income' : 'expense'} transactions of the same category chronologically ordered</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
-                            <div className="overflow-x-auto">
+                            {/* Desktop/Tablet Table View */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-sm text-left">
                                     <thead>
                                         <tr className="bg-muted/30 border-b text-xs text-muted-foreground font-medium uppercase tracking-wider">
@@ -256,6 +257,55 @@ export default function ExpenseDetailPage() {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Mobile Responsive Cards View */}
+                            <div className="block md:hidden">
+                                {sametype.length === 0 ? (
+                                    <div className="p-8 text-center text-muted-foreground text-sm italic">
+                                        No other matching entries logged in this category.
+                                    </div>
+                                ) : (
+                                    <div className="p-4 space-y-3">
+                                        {sametype.map((exp) => {
+                                            const expIsIncome = exp.type === 'income'
+                                            return (
+                                                <div 
+                                                    key={exp._id}
+                                                    className="relative bg-card border border-border/60 hover:border-border/95 rounded-xl p-4 flex justify-between items-center transition-all duration-200 overflow-hidden shadow-sm hover:shadow"
+                                                >
+                                                    {/* Left Side: Details */}
+                                                    <div className="flex-1 min-w-0 pr-4 space-y-1.5">
+                                                        <Link 
+                                                            href={`/expenses/${exp._id}`} 
+                                                            className="font-bold text-sm text-foreground hover:underline hover:text-teal-600 transition-colors cursor-pointer block truncate"
+                                                        >
+                                                            {exp.reason}
+                                                        </Link>
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="text-[10px] font-bold text-muted-foreground font-mono bg-muted/65 px-1.5 py-0.5 rounded">
+                                                                {exp.month}-{String(exp.day).padStart(2, '0')}
+                                                            </span>
+                                                            <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold capitalize border", getCategoryBadgeStyles(exp.category))}>
+                                                                {exp.category}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Right Side: Amount and Link */}
+                                                    <div className="flex flex-col items-end space-y-1.5 pr-1 z-10">
+                                                        <span className={cn("font-mono font-bold text-sm", expIsIncome ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                                                            {expIsIncome ? '+' : '-'}{format(exp.amount)}
+                                                        </span>
+                                                        <Link href={`/expenses/${exp._id}`} className="text-muted-foreground hover:text-foreground">
+                                                            <ArrowRight className="h-4.5 w-4.5" />
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
