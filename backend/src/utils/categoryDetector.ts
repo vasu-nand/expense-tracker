@@ -6,7 +6,7 @@ let categoryKeywordsCache: Record<string, Record<string, string[]>> = {};
 export const reloadCategoryKeywordsCache = async (bankAccountId?: string) => {
     try {
         const query = bankAccountId ? { bankAccountId } : {};
-        const categories = await Category.find(query);
+        const categories = await Category.find(query).lean();
         
         if (bankAccountId) {
             const cache: Record<string, string[]> = {};

@@ -45,7 +45,9 @@ router.get('/comparison', async (req: Request, res: Response) => {
         const expenseFilter = { type: { $ne: 'income' }, ...monthFilter };
 
         const comparisonStats = await Promise.all(accounts.map(async (acc) => {
-            const expenses = await Expense.find({ bankAccountId: acc._id, ...expenseFilter }).lean();
+            const expenses = await Expense.find({ bankAccountId: acc._id, ...expenseFilter })
+                .select('amount category month day reason')
+                .lean();
 
             const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
             const transactionCount = expenses.length;
@@ -98,13 +100,16 @@ router.get('/comparison', async (req: Request, res: Response) => {
                 const [y, m] = curM.split('-').map(Number);
                 const prevMStr = `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, '0')}`;
                 
-                const prevMonthExpenses = await Expense.find({
-                    bankAccountId: acc._id,
-                    type: { $ne: 'income' },
-                    month: prevMStr
-                }).lean();
+                const prevMonthAgg = await Expense.aggregate([
+                    { $match: {
+                        bankAccountId: acc._id,
+                        type: { $ne: 'income' },
+                        month: prevMStr
+                    }},
+                    { $group: { _id: null, total: { $sum: '$amount' } } }
+                ]);
                 
-                const prevTotal = prevMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const prevTotal = prevMonthAgg[0]?.total || 0;
                 if (prevTotal > 0) {
                     growthPercentage = ((totalExpenses - prevTotal) / prevTotal) * 100;
                 }

@@ -52,10 +52,10 @@ const ExpenseSchema: Schema = new Schema({
 });
 
 // Create indexes for better query performance under isolated bank account view
-ExpenseSchema.index({ bankAccountId: 1 });
 ExpenseSchema.index({ bankAccountId: 1, month: 1, day: 1 });
 ExpenseSchema.index({ bankAccountId: 1, category: 1 });
 ExpenseSchema.index({ bankAccountId: 1, amount: 1 });
 ExpenseSchema.index({ bankAccountId: 1, type: 1 });
+ExpenseSchema.index({ bankAccountId: 1, uploadedAt: -1 });
 
 export default mongoose.model<IExpense>('Expense', ExpenseSchema);

@@ -112,8 +112,8 @@ export const seedDefaultCategories = async (bankAccountId: string | mongoose.Typ
     }
 };
 
-export const getAllCategories = async (bankAccountId: string): Promise<ICategory[]> => {
-    return Category.find({ bankAccountId }).sort({ name: 1 });
+export const getAllCategories = async (bankAccountId: string): Promise<any[]> => {
+    return Category.find({ bankAccountId }).sort({ name: 1 }).lean();
 };
 
 export const createCategory = async (data: { name: string; color: string; keywords?: string[]; bankAccountId: string }): Promise<ICategory> => {

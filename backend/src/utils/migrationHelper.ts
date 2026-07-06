@@ -4,6 +4,7 @@ import MonthlySummary from '../models/MonthlySummary';
 import Category from '../models/Category';
 import Settings from '../models/Settings';
 import { seedDefaultCategories } from '../services/categoryService';
+import { reloadBankAccountCache } from './bankAccountHelper';
 
 export const runDatabaseMigration = async () => {
     try {
@@ -91,6 +92,9 @@ export const runDatabaseMigration = async () => {
                 { $set: { bankAccountId: primaryAccountId } }
             );
         }
+
+        // Build validation cache in memory
+        await reloadBankAccountCache();
 
         console.log('Database workspace migration completed successfully.');
     } catch (error) {

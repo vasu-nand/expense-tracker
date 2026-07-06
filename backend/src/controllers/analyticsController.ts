@@ -14,7 +14,7 @@ export const getAnalytics = async (req: Request, res: Response) => {
         const bankAccountId = await getActiveBankAccountId(req);
         
         const monthQuery = buildMonthQuery(month);
-        const summaries = await MonthlySummary.find({ month: monthQuery, bankAccountId });
+        const summaries = await MonthlySummary.find({ month: monthQuery, bankAccountId }).lean();
 
         if (summaries.length === 0) {
             // Return empty analytics structures instead of 404, preventing frontend crashes
@@ -55,13 +55,13 @@ export const getAnalytics = async (req: Request, res: Response) => {
             totalDays += summary.totalDays || 0;
 
             if (summary.categoryBreakdown) {
-                for (const [cat, val] of summary.categoryBreakdown.entries()) {
-                    categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + val;
+                for (const [cat, val] of Object.entries(summary.categoryBreakdown)) {
+                    categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + (val as number);
                 }
             }
             if (summary.incomeCategoryBreakdown) {
-                for (const [cat, val] of summary.incomeCategoryBreakdown.entries()) {
-                    incomeCategoryBreakdown[cat] = (incomeCategoryBreakdown[cat] || 0) + val;
+                for (const [cat, val] of Object.entries(summary.incomeCategoryBreakdown)) {
+                    incomeCategoryBreakdown[cat] = (incomeCategoryBreakdown[cat] || 0) + (val as number);
                 }
             }
         }
@@ -69,7 +69,9 @@ export const getAnalytics = async (req: Request, res: Response) => {
         const averageDailyExpense = totalDays > 0 ? totalExpense / totalDays : 0;
 
         // Get insights & extra metrics (filtered by bankAccountId & month range)
-        const expenses = await Expense.find({ month: monthQuery, bankAccountId });
+        const expenses = await Expense.find({ month: monthQuery, bankAccountId })
+            .select('day amount category type month reason')
+            .lean();
         
         // Find highest expense day across all queried months
         const dailyTotals = new Map<number, number>();

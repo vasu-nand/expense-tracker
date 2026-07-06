@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useThemeCustomizer, predefinedThemes, CustomTheme, predefinedCategoryPalettes } from '@/components/theme-customizer-provider'
@@ -296,13 +296,15 @@ export default function SettingsPage() {
     }
 
     // Partition transactions for PDF layout (max 15 per page)
-    const TRANSACTIONS_PER_PAGE = 15
-    const chunkedTransactions = []
-    if (transactions && transactions.length > 0) {
-        for (let i = 0; i < transactions.length; i += TRANSACTIONS_PER_PAGE) {
-            chunkedTransactions.push(transactions.slice(i, i + TRANSACTIONS_PER_PAGE))
+    const chunkedTransactions = useMemo(() => {
+        const chunks = []
+        if (transactions && transactions.length > 0) {
+            for (let i = 0; i < transactions.length; i += 15) {
+                chunks.push(transactions.slice(i, i + 15))
+            }
         }
-    }
+        return chunks
+    }, [transactions])
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-6xl mx-auto">

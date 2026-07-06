@@ -121,7 +121,9 @@ export class ExpenseService {
     }
 
     async getDailySummary(month: string, bankAccountId: string) {
-        const expenses = await Expense.find({ month, bankAccountId });
+        const expenses = await Expense.find({ month, bankAccountId })
+            .select('day type amount reason category')
+            .lean();
 
         const dailyMap = new Map<number, { day: number; totalExpense: number; totalIncome: number; entries: any[] }>();
 
@@ -154,7 +156,9 @@ export class ExpenseService {
     }
 
     async generateMonthlySummary(month: string, bankAccountId: string) {
-        const transactions = await Expense.find({ month, bankAccountId });
+        const transactions = await Expense.find({ month, bankAccountId })
+            .select('day type amount category')
+            .lean();
 
         if (transactions.length === 0) {
             await MonthlySummary.deleteOne({ month, bankAccountId });
@@ -218,7 +222,9 @@ export class ExpenseService {
 
     async getDashboardData(month: string, bankAccountId: string) {
         const queryMonth = buildMonthQuery(month);
-        const transactions = await Expense.find({ month: queryMonth, bankAccountId });
+        const transactions = await Expense.find({ month: queryMonth, bankAccountId })
+            .select('day amount category month type')
+            .lean();
 
         if (transactions.length === 0) {
             return {

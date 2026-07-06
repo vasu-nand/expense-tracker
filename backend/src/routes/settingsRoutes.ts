@@ -33,7 +33,7 @@ const defaultThemeConfig = {
 router.get('/settings', async (req, res) => {
     try {
         const bankAccountId = await getActiveBankAccountId(req);
-        let settings = await Settings.findOne({ bankAccountId });
+        let settings: any = await Settings.findOne({ bankAccountId }).lean();
         if (!settings) {
             settings = await Settings.create({
                 bankAccountId,

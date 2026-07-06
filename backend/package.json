@@ -9,7 +9,8 @@
         "start": "node dist/app.js",
         "seed": "ts-node src/utils/seed.ts",
         "db:export": "ts-node src/utils/dbSync.ts export",
-        "db:import": "ts-node src/utils/dbSync.ts import"
+        "db:import": "ts-node src/utils/dbSync.ts import",
+        "test": "node --require ts-node/register --test tests/**/*.test.ts"
     },
     "dependencies": {
         "express": "^4.18.2",
