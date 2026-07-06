@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { DashboardStats } from '@/components/dashboard/dashboard-stats'
-import { DailyTrendChart } from '@/components/charts/daily-trend-chart'
-import { CategoryPieChart } from '@/components/charts/category-pie-chart'
-import { TopSpendingChart } from '@/components/charts/top-spending-chart'
-import { ExpenseHeatmap } from '@/components/charts/expense-heatmap'
-import { MonthComparisonChart } from '@/components/charts/month-comparison-chart'
+import dynamic from 'next/dynamic'
+
+const DailyTrendChart = dynamic(() => import('@/components/charts/daily-trend-chart').then(mod => mod.DailyTrendChart), { ssr: false })
+const CategoryPieChart = dynamic(() => import('@/components/charts/category-pie-chart').then(mod => mod.CategoryPieChart), { ssr: false })
+const TopSpendingChart = dynamic(() => import('@/components/charts/top-spending-chart').then(mod => mod.TopSpendingChart), { ssr: false })
+const ExpenseHeatmap = dynamic(() => import('@/components/charts/expense-heatmap').then(mod => mod.ExpenseHeatmap), { ssr: false })
+const MonthComparisonChart = dynamic(() => import('@/components/charts/month-comparison-chart').then(mod => mod.MonthComparisonChart), { ssr: false })
 import { useDashboard } from '@/hooks/useDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DayExpensesDialog } from '@/components/dashboard/day-expenses-dialog'

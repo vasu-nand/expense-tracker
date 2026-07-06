@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { format } from 'date-fns'
 import { MonthPicker } from '@/components/ui/month-picker'
 import { api } from '@/services/api'
@@ -223,22 +223,32 @@ export default function ExportPage() {
         loadData()
     }, [startMonth, endMonth, selectedCategories, selectedAccount?._id])
 
-    // ── Derived totals ─────────────────────────────────────────────────────────
-    const totalExpense = transactions.filter(t => t.type !== 'income').reduce((s, tx) => s + tx.amount, 0)
-    const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, tx) => s + tx.amount, 0)
-    const netSavings = totalIncome - totalExpense
+    // ── Derived totals & Partition chunking ──────────────────────────────────
+    const { totalExpense, totalIncome, netSavings, chunkedTransactions } = useMemo(() => {
+        const expenses = transactions.filter(t => t.type !== 'income')
+        const incomes = transactions.filter(t => t.type === 'income')
+        
+        const totalExp = expenses.reduce((s, tx) => s + tx.amount, 0)
+        const totalInc = incomes.reduce((s, tx) => s + tx.amount, 0)
+        const net = totalInc - totalExp
+
+        const chunks: Transaction[][] = []
+        for (let i = 0; i < transactions.length; i += 15) {
+            chunks.push(transactions.slice(i, i + 15))
+        }
+
+        return {
+            totalExpense: totalExp,
+            totalIncome: totalInc,
+            netSavings: net,
+            chunkedTransactions: chunks
+        }
+    }, [transactions])
 
     // Period label for display
     const periodLabel = startMonth === endMonth ? startMonth : `${startMonth} → ${endMonth}`
     // Category label
     const categoryLabel = selectedCategories.length === 0 ? 'All Categories' : selectedCategories.join(', ')
-
-    // Chunk transactions for PDF pages (15 rows each)
-    const TRANSACTIONS_PER_PAGE = 15
-    const chunkedTransactions: Transaction[][] = []
-    for (let i = 0; i < transactions.length; i += TRANSACTIONS_PER_PAGE) {
-        chunkedTransactions.push(transactions.slice(i, i + TRANSACTIONS_PER_PAGE))
-    }
 
     // ── PDF Export ─────────────────────────────────────────────────────────────
     const handleDownloadPDF = async () => {

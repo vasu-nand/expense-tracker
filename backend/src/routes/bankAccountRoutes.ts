@@ -6,6 +6,7 @@ import MonthlySummary from '../models/MonthlySummary';
 import Category from '../models/Category';
 import Settings from '../models/Settings';
 import { seedDefaultCategories } from '../services/categoryService';
+import { reloadBankAccountCache } from '../utils/bankAccountHelper';
 
 const router = Router();
 
@@ -14,22 +15,39 @@ router.get('/accounts', async (req: Request, res: Response) => {
     try {
         const accounts = await BankAccount.find().sort({ createdAt: 1 });
         
-        // Fetch stats for each account
-        const accountStats = await Promise.all(accounts.map(async (acc) => {
-            const expenseStats = await Expense.aggregate([
-                { $match: { bankAccountId: acc._id, type: { $ne: 'income' } } },
-                { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } }
-            ]);
+        // Fetch stats for all accounts using aggregation to prevent N+1 query overhead
+        const expenseStats = await Expense.aggregate([
+            { $match: { type: { $ne: 'income' } } },
+            { $group: { 
+                _id: '$bankAccountId', 
+                total: { $sum: '$amount' }, 
+                count: { $sum: 1 } 
+            }}
+        ]);
 
-            const lastExpense = await Expense.findOne({ bankAccountId: acc._id }).sort({ uploadedAt: -1 }).select('uploadedAt');
+        const lastUploadStats = await Expense.aggregate([
+            { $sort: { bankAccountId: 1, uploadedAt: -1 } },
+            { $group: {
+                _id: '$bankAccountId',
+                lastUpload: { $first: '$uploadedAt' }
+            }}
+        ]);
+
+        const statsMap = new Map(expenseStats.map(s => [s._id.toString(), s]));
+        const uploadMap = new Map(lastUploadStats.map(u => [u._id.toString(), u.lastUpload]));
+
+        const accountStats = accounts.map((acc) => {
+            const accIdStr = acc._id.toString();
+            const stats = statsMap.get(accIdStr);
+            const lastUpload = uploadMap.get(accIdStr);
 
             return {
                 ...acc.toObject(),
-                expenseCount: expenseStats[0]?.count || 0,
-                totalExpenses: expenseStats[0]?.total || 0,
-                lastUpload: lastExpense?.uploadedAt || acc.createdAt
+                expenseCount: stats?.count || 0,
+                totalExpenses: stats?.total || 0,
+                lastUpload: lastUpload || acc.createdAt
             };
-        }));
+        });
 
         res.json({ accounts: accountStats });
     } catch (error: any) {
@@ -80,6 +98,9 @@ router.post('/accounts', async (req: Request, res: Response) => {
 
         // Seed default categories for this account workspace
         await seedDefaultCategories(savedAccount._id);
+
+        // Update in-memory bank account validation cache
+        await reloadBankAccountCache();
 
         res.status(201).json({ account: savedAccount });
     } catch (error: any) {
@@ -141,6 +162,9 @@ router.delete('/accounts/:id', async (req: Request, res: Response) => {
             Settings.deleteMany({ bankAccountId: account._id }),
             BankAccount.deleteOne({ _id: account._id })
         ]);
+
+        // Invalidate deleted account from cache
+        await reloadBankAccountCache();
 
         res.json({ message: `Bank account "${account.name}" and all associated data deleted successfully.` });
     } catch (error: any) {
