@@ -1,7 +1,7 @@
 import { IExpense } from '../models/Expense';
 
 export class AnalyticsService {
-    generateInsights(transactions: IExpense[]): string[] {
+    generateInsights(transactions: any[]): string[] {
         if (transactions.length === 0) {
             return ['No transactions recorded for this month. Upload a file or add a transaction to see insights.'];
         }
@@ -156,7 +156,7 @@ export class AnalyticsService {
         return insights;
     }
 
-    getWeekdayWeekendBreakdown(transactions: IExpense[], month: string) {
+    getWeekdayWeekendBreakdown(transactions: any[], month: string) {
         let weekdayTotal = 0;
         let weekendTotal = 0;
         let weekdayCount = 0;
@@ -211,7 +211,7 @@ export class AnalyticsService {
         };
     }
 
-    getWeeklySpend(transactions: IExpense[]) {
+    getWeeklySpend(transactions: any[]) {
         let week1Exp = 0, week1Inc = 0;
         let week2Exp = 0, week2Inc = 0;
         let week3Exp = 0, week3Inc = 0;
@@ -238,7 +238,7 @@ export class AnalyticsService {
         ];
     }
 
-    getTransactionSizeBreakdown(transactions: IExpense[]) {
+    getTransactionSizeBreakdown(transactions: any[]) {
         let lowExpense = 0, mediumExpense = 0, highExpense = 0;
         let lowIncome = 0, mediumIncome = 0, highIncome = 0;
 

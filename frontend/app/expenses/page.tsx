@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ExpenseTable } from '@/components/expenses/expense-table'
 import { ExpenseFilters } from '@/components/expenses/expense-filters'
@@ -118,36 +118,61 @@ export default function ExpensesPage() {
     }, [category, month, sortBy, sortOrder, limit, minAmount, maxAmount, minDay, maxDay, type])
 
     // Calculate view insights
-    const pageExpensesTotal = expenses.filter(e => e.type !== 'income').reduce((sum, e) => sum + e.amount, 0)
-    const pageIncomesTotal = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + e.amount, 0)
-    const pageNet = pageIncomesTotal - pageExpensesTotal
-    const pageTotal = pageExpensesTotal
+    const {
+        pageExpensesTotal,
+        pageIncomesTotal,
+        pageNet,
+        pageAvg,
+        pageMax,
+        pageIncomeMax,
+        topCategory,
+        topCategoryTotal
+    } = useMemo(() => {
+        const expensesOnly = expenses.filter(e => e.type !== 'income')
+        const incomesOnly = expenses.filter(e => e.type === 'income')
+        
+        const expensesTotal = expensesOnly.reduce((sum, e) => sum + e.amount, 0)
+        const incomesTotal = incomesOnly.reduce((sum, e) => sum + e.amount, 0)
+        const net = incomesTotal - expensesTotal
 
-    const expensesCount = expenses.filter(e => e.type !== 'income').length
-    const pageAvg = expensesCount > 0 ? pageExpensesTotal / expensesCount : 0
-    const pageMax = expenses.filter(e => e.type !== 'income').length > 0 
-        ? [...expenses.filter(e => e.type !== 'income')].sort((a, b) => b.amount - a.amount)[0] 
-        : null
+        const expensesCount = expensesOnly.length
+        const avg = expensesCount > 0 ? expensesTotal / expensesCount : 0
+        const max = expensesOnly.length > 0 
+            ? [...expensesOnly].sort((a, b) => b.amount - a.amount)[0] 
+            : null
 
-    const pageIncomeMax = expenses.filter(e => e.type === 'income').length > 0 
-        ? [...expenses.filter(e => e.type === 'income')].sort((a, b) => b.amount - a.amount)[0] 
-        : null
+        const incomeMax = incomesOnly.length > 0 
+            ? [...incomesOnly].sort((a, b) => b.amount - a.amount)[0] 
+            : null
 
-    const categoryTotals: Record<string, number> = {}
-    expenses.forEach(e => {
-        const matchesType = !type || e.type === type || (type === 'expense' && (!e.type || e.type === 'expense'));
-        if (matchesType) {
-            categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount
+        const categoryTotals: Record<string, number> = {}
+        expenses.forEach(e => {
+            const matchesType = !type || e.type === type || (type === 'expense' && (!e.type || e.type === 'expense'));
+            if (matchesType) {
+                categoryTotals[e.category] = (categoryTotals[e.category] || 0) + e.amount
+            }
+        })
+        
+        let topCat = 'None'
+        let topCatTotal = 0
+        Object.entries(categoryTotals).forEach(([cat, total]) => {
+            if (total > topCatTotal) {
+                topCatTotal = total
+                topCat = cat
+            }
+        })
+
+        return {
+            pageExpensesTotal: expensesTotal,
+            pageIncomesTotal: incomesTotal,
+            pageNet: net,
+            pageAvg: avg,
+            pageMax: max,
+            pageIncomeMax: incomeMax,
+            topCategory: topCat,
+            topCategoryTotal: topCatTotal
         }
-    })
-    let topCategory = 'None'
-    let topCategoryTotal = 0
-    Object.entries(categoryTotals).forEach(([cat, total]) => {
-        if (total > topCategoryTotal) {
-            topCategoryTotal = total
-            topCategory = cat
-        }
-    })
+    }, [expenses, type])
 
     const handleDeleteSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -172,6 +197,16 @@ export default function ExpensesPage() {
             setDeleting(false)
         }
     }
+
+    const handleEdit = useCallback((expense: any) => {
+        setEditingExpense(expense)
+    }, [])
+
+    const handleDeleteRequest = useCallback((expense: any) => {
+        setDeletingExpense(expense)
+        setDeletePassword('')
+        setDeleteError('')
+    }, [])
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -316,12 +351,8 @@ export default function ExpensesPage() {
                 onPageChange={setPage}
                 onLimitChange={setLimit}
                 onDelete={refetch}
-                onEdit={(expense) => setEditingExpense(expense)}
-                onDeleteRequest={(expense) => {
-                    setDeletingExpense(expense)
-                    setDeletePassword('')
-                    setDeleteError('')
-                }}
+                onEdit={handleEdit}
+                onDeleteRequest={handleDeleteRequest}
             />
 
             <AddExpenseDialog
