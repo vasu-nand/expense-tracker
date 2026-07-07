@@ -7,10 +7,9 @@ import { api } from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
-    FileText, Calendar, Filter, Sparkles, Download,
+    Calendar, Filter, Sparkles, Download,
     ArrowLeft, Loader2, ChevronDown, Check, X,
     TrendingUp, TrendingDown, Wallet, PieChart, Clock,
-    BarChartIcon,
     IndianRupee
 } from 'lucide-react'
 import Link from 'next/link'
