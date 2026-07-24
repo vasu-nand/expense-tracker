@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { api } from '@/services/api'
 import { useAccount } from '@/components/account-context'
-import { MonthPicker } from '@/components/ui/month-picker'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Button } from '@/components/ui/button'
 import { X, Loader2, Sparkles } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
 import { useThemeCustomizer } from '@/components/theme-customizer-provider'
 import { getDaysInMonth } from '@/lib/utils'
+import { BottomSelect } from '@/components/ui/bottom-select'
 
 interface AddExpenseDialogProps {
     isOpen: boolean;
@@ -29,14 +30,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
-    useEffect(() => {
-        if (isOpen) {
-            const maxDays = getDaysInMonth(month)
-            if (day > maxDays) {
-                setDay(maxDays)
-            }
-        }
-    }, [month, isOpen])
+
 
     const [suggestion, setSuggestion] = useState<any | null>(null)
 
@@ -227,30 +221,18 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        {/* Day */}
-                        <div className="flex flex-col space-y-1">
-                            <label className="text-xs font-semibold text-muted-foreground">Day of Month</label>
-                            <input
-                                type="number"
-                                min={1}
-                                max={getDaysInMonth(month)}
-                                required
-                                value={day}
-                                onChange={(e) => setDay(parseInt(e.target.value) || 0)}
-                                className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                            />
-                        </div>
-
-                        {/* Month */}
-                        <div className="flex flex-col space-y-1">
-                            <label className="text-xs font-semibold text-muted-foreground">Month</label>
-                            <MonthPicker
-                                value={month}
-                                onChange={setMonth}
-                                placeholder="Select Month"
-                            />
-                        </div>
+                    {/* Date Selector */}
+                    <div className="flex flex-col space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Transaction Date</label>
+                        <DatePicker
+                            day={day}
+                            month={month}
+                            onChange={(d, m) => {
+                                setDay(d)
+                                setMonth(m)
+                            }}
+                            label="Transaction Date"
+                        />
                     </div>
 
                     {/* Amount */}
@@ -319,19 +301,22 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                                 </span>
                             )}
                         </div>
-                        <select
+                        <BottomSelect
                             value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className="border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize"
-                        >
-                            <option value="auto">Auto-Detect Category</option>
-                            {categoriesList.map((cat) => (
-                                <option key={cat} value={cat}>
-                                    {cat === 'Bills' ? 'Bills & Utilities' : cat}
-                                </option>
-                            ))}
-                            <option value="Others">Others</option>
-                        </select>
+                            onChange={(val) => setCategory(val)}
+                            options={[
+                                { value: 'auto', label: 'Auto-Detect Category' },
+                                ...categoriesList.map((cat) => ({
+                                    value: cat,
+                                    label: cat === 'Bills' ? 'Bills & Utilities' : cat,
+                                    color: categoryColors[cat] || undefined
+                                })),
+                                { value: 'Others', label: 'Others', color: categoryColors['Others'] || undefined }
+                            ]}
+                            label="Select Category"
+                            className="w-full"
+                            triggerClassName="w-full border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 capitalize text-xs h-10"
+                        />
                     </div>
 
                     {/* Actions */}

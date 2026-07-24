@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { SlidersHorizontal, Search, Calendar, Tag, ChevronDown, ArrowUpDown, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MonthPicker } from '@/components/ui/month-picker'
+import { BottomSelect } from '@/components/ui/bottom-select'
 
 // Category Multi Select Dropdown, matching Export screen
 function CategoryMultiSelect({
@@ -239,53 +240,56 @@ export function ExpenseFilters({
                             <ArrowUpDown className="h-3.5 w-3.5" /> Sort:
                         </span>
                         <div className="flex items-center space-x-1.5">
-                            <select
+                            <BottomSelect
                                 value={sortBy}
-                                onChange={(e) => onSortByChange(e.target.value)}
-                                className="border border-border/70 rounded-xl px-3 py-1.5 bg-background/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 text-xs cursor-pointer hover:bg-background/80"
-                            >
-                                <option value="day">Date / Day</option>
-                                <option value="amount">Amount</option>
-                                <option value="reason">Description</option>
-                            </select>
+                                onChange={onSortByChange}
+                                options={[
+                                    { value: 'day', label: 'Date / Day' },
+                                    { value: 'amount', label: 'Amount' },
+                                    { value: 'reason', label: 'Description' }
+                                ]}
+                                label="Sort By"
+                                className="w-32"
+                                triggerClassName="h-9 border border-border/70 rounded-xl px-3 py-1.5 bg-background/50 hover:bg-background/80"
+                            />
 
-                            <select
+                            <BottomSelect
                                 value={sortOrder}
-                                onChange={(e) => onSortOrderChange(e.target.value as 'asc' | 'desc')}
-                                className="border border-border/70 rounded-xl px-3 py-1.5 bg-background/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 text-xs cursor-pointer hover:bg-background/80"
-                            >
-                                {sortBy === 'amount' ? (
-                                    <>
-                                        <option value="desc">Highest First</option>
-                                        <option value="asc">Lowest First</option>
-                                    </>
-                                ) : sortBy === 'reason' ? (
-                                    <>
-                                        <option value="desc">Z - A</option>
-                                        <option value="asc">A - Z</option>
-                                    </>
-                                ) : (
-                                    <>
-                                        <option value="desc">Newest First</option>
-                                        <option value="asc">Oldest First</option>
-                                    </>
-                                )}
-                            </select>
+                                onChange={(val) => onSortOrderChange(val as 'asc' | 'desc')}
+                                options={
+                                    sortBy === 'amount' ? [
+                                        { value: 'desc', label: 'Highest First' },
+                                        { value: 'asc', label: 'Lowest First' }
+                                    ] : sortBy === 'reason' ? [
+                                        { value: 'desc', label: 'Z - A' },
+                                        { value: 'asc', label: 'A - Z' }
+                                    ] : [
+                                        { value: 'desc', label: 'Newest First' },
+                                        { value: 'asc', label: 'Oldest First' }
+                                    ]
+                                }
+                                label="Sort Order"
+                                className="w-36"
+                                triggerClassName="h-9 border border-border/70 rounded-xl px-3 py-1.5 bg-background/50 hover:bg-background/80"
+                            />
                         </div>
                     </div>
 
                     {/* Transaction Type Filter */}
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Type:</span>
-                        <select
+                        <BottomSelect
                             value={type}
-                            onChange={(e) => onTypeChange(e.target.value)}
-                            className="border border-border/70 rounded-xl px-3 py-1.5 bg-background/50 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/25 text-xs cursor-pointer hover:bg-background/80"
-                        >
-                            <option value="">All Types</option>
-                            <option value="expense">Expenses Only</option>
-                            <option value="income">Income Only</option>
-                        </select>
+                            onChange={onTypeChange}
+                            options={[
+                                { value: '', label: 'All Types' },
+                                { value: 'expense', label: 'Expenses Only' },
+                                { value: 'income', label: 'Income Only' }
+                            ]}
+                            label="Transaction Type"
+                            className="w-36"
+                            triggerClassName="h-9 border border-border/70 rounded-xl px-3 py-1.5 bg-background/50 hover:bg-background/80"
+                        />
                     </div>
                 </div>
 

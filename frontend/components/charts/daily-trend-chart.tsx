@@ -117,9 +117,9 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                     viewMode === mode
                                         ? 'bg-card text-primary shadow-sm'
                                         : 'text-muted-foreground hover:text-foreground'
-                                }`}
+                                    }`}
                             >
-                                {mode === 'all' ? 'All' : mode === 'net' ? 'Net Flow' : mode}
+                                {mode === 'all' ? 'All' : mode === 'net' ? 'Net Flow' : mode === 'income' ? 'Income' : 'Expense'}
                             </button>
                         ))}
                     </div>
@@ -155,8 +155,11 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                     type="monotone"
                                     dataKey="income"
                                     stroke="#10b981"
-                                    strokeWidth={2}
-                                    dot={{ fill: '#10b981' }}
+                                    strokeWidth={2.5}
+                                    dot={{ fill: '#10b981', r: 2.5 }}
+                                    activeDot={{ r: 5.5, stroke: '#10b981', strokeWidth: 2, fill: 'white' }}
+                                    animationDuration={800}
+                                    animationEasing="ease-out"
                                     name="Income"
                                 />
                             )}
@@ -165,8 +168,11 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                     type="monotone"
                                     dataKey="expense"
                                     stroke="#f43f5e"
-                                    strokeWidth={2}
-                                    dot={{ fill: '#f43f5e' }}
+                                    strokeWidth={2.5}
+                                    dot={{ fill: '#f43f5e', r: 2.5 }}
+                                    activeDot={{ r: 5.5, stroke: '#f43f5e', strokeWidth: 2, fill: 'white' }}
+                                    animationDuration={800}
+                                    animationEasing="ease-out"
                                     name="Expense"
                                 />
                             )}
@@ -175,8 +181,11 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                     type="monotone"
                                     dataKey="net"
                                     stroke="#3b82f6"
-                                    strokeWidth={2}
-                                    dot={{ fill: '#3b82f6' }}
+                                    strokeWidth={2.5}
+                                    dot={{ fill: '#3b82f6', r: 2.5 }}
+                                    activeDot={{ r: 5.5, stroke: '#3b82f6', strokeWidth: 2, fill: 'white' }}
+                                    animationDuration={800}
+                                    animationEasing="ease-out"
                                     name="Net Flow"
                                 />
                             )}
@@ -186,8 +195,8 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
             </Card>
 
             {isFullScreen && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-10 animate-in fade-in duration-200">
-                    <Card className="bg-card border w-full max-w-5xl h-[80vh] flex flex-col p-6 rounded-2xl shadow-2xl relative animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-10 animate-in fade-in duration-300">
+                    <Card className="bg-card border w-full max-w-5xl h-[80vh] flex flex-col p-6 rounded-2xl shadow-2xl relative animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                         <button 
                             onClick={() => setIsFullScreen(false)}
                             className="absolute top-4 right-4 p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-full transition-colors z-10"
@@ -232,13 +241,13 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                             <button
                                                 key={mode}
                                                 onClick={() => setViewMode(mode)}
-                                                className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md transition-all capitalize ${
+                                                className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md transition-all ${
                                                     viewMode === mode
                                                         ? 'bg-card text-primary shadow-sm'
                                                         : 'text-muted-foreground hover:text-foreground'
                                                 }`}
                                             >
-                                                {mode === 'all' ? 'All' : mode === 'net' ? 'Net' : mode}
+                                                {mode === 'all' ? 'All' : mode === 'net' ? 'Net Flow' : mode === 'income' ? 'Income' : 'Expense'}
                                             </button>
                                         ))}
                                     </div>
@@ -277,8 +286,11 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                             type="monotone"
                                             dataKey="income"
                                             stroke="#10b981"
-                                            strokeWidth={3}
-                                            dot={{ fill: '#10b981', r: 3 }}
+                                            strokeWidth={2.5}
+                                            dot={{ fill: '#10b981', r: 2.5 }}
+                                            activeDot={{ r: 5.5, stroke: '#10b981', strokeWidth: 2, fill: 'white' }}
+                                            animationDuration={800}
+                                            animationEasing="ease-out"
                                             name="Income"
                                         />
                                     )}
@@ -287,8 +299,11 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                             type="monotone"
                                             dataKey="expense"
                                             stroke="#f43f5e"
-                                            strokeWidth={3}
-                                            dot={{ fill: '#f43f5e', r: 3 }}
+                                            strokeWidth={2.5}
+                                            dot={{ fill: '#f43f5e', r: 2.5 }}
+                                            activeDot={{ r: 5.5, stroke: '#f43f5e', strokeWidth: 2, fill: 'white' }}
+                                            animationDuration={800}
+                                            animationEasing="ease-out"
                                             name="Expense"
                                         />
                                     )}
@@ -297,8 +312,11 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                             type="monotone"
                                             dataKey="net"
                                             stroke="#3b82f6"
-                                            strokeWidth={3}
-                                            dot={{ fill: '#3b82f6', r: 3 }}
+                                            strokeWidth={2.5}
+                                            dot={{ fill: '#3b82f6', r: 2.5 }}
+                                            activeDot={{ r: 5.5, stroke: '#3b82f6', strokeWidth: 2, fill: 'white' }}
+                                            animationDuration={800}
+                                            animationEasing="ease-out"
                                             name="Net Flow"
                                         />
                                     )}

@@ -78,6 +78,7 @@ export default function ComparisonPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [fullscreenChart, setFullscreenChart] = useState<'total' | 'trend' | 'category' | 'intensity' | null>(null)
+    const [heatmapMonth, setHeatmapMonth] = useState(getLocalMonth())
     
     // API Data
     const [comparisonData, setComparisonData] = useState<{
@@ -112,18 +113,7 @@ export default function ComparisonPage() {
         };
     }, [comparisonData]);
 
-    const calendarMonth = useMemo(() => {
-        if (filterType === 'custom') return startMonth;
-        if (filterType === 'current-month') return getLocalMonth();
-        if (filterType === 'last-month') {
-            const d = new Date();
-            d.setMonth(d.getMonth() - 1);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            return `${yyyy}-${mm}`;
-        }
-        return getLocalMonth();
-    }, [filterType, startMonth])
+    const calendarMonth = heatmapMonth
 
     const firstDayWeekday = useMemo(() => {
         try {
@@ -161,7 +151,8 @@ export default function ComparisonPage() {
             
             const params = new URLSearchParams({
                 filterType,
-                ...(filterType === 'custom' && { startMonth, endMonth })
+                ...(filterType === 'custom' && { startMonth, endMonth }),
+                heatmapMonth
             })
 
             const [generalRes, monthlyRes, categoryRes] = await Promise.all([
@@ -184,7 +175,7 @@ export default function ComparisonPage() {
 
     useEffect(() => {
         fetchComparisonData()
-    }, [filterType, startMonth, endMonth])
+    }, [filterType, startMonth, endMonth, heatmapMonth])
 
     // Leaderboard sorted by total expenses (already sorted on backend, but memoized for safety)
     const sortedLeaderboard = useMemo(() => {
@@ -279,9 +270,9 @@ export default function ComparisonPage() {
                 </div>
                 
                 {/* Custom Filters Wrapper */}
-                <div className="w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <div className="w-full md:w-auto flex flex-col md:flex-row items-stretch md:items-center gap-3">
                     {/* Predefined Range Selectors */}
-                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap bg-muted rounded-xl p-0.5 text-xs font-bold border border-border/40 gap-0.5">
+                    <div className="flex flex-wrap bg-muted/80 backdrop-blur-sm rounded-xl p-1 text-xs font-semibold border border-border/40 gap-1 w-full md:w-auto">
                         {[
                             { type: 'all-time', label: 'All Time' },
                             { type: 'current-month', label: 'This Month' },
@@ -293,10 +284,10 @@ export default function ComparisonPage() {
                                 key={btn.type}
                                 onClick={() => setFilterType(btn.type as FilterType)}
                                 className={cn(
-                                    "px-3 py-1.5 rounded-lg transition-all text-xs text-center",
+                                    "px-3 py-1.5 rounded-lg transition-all text-xs font-bold flex-1 sm:flex-initial text-center whitespace-nowrap",
                                     filterType === btn.type
                                         ? 'bg-custom-btn-gradient text-white shadow-sm font-extrabold'
-                                        : 'text-muted-foreground hover:text-foreground'
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
                                 )}
                             >
                                 {btn.label}
@@ -306,7 +297,7 @@ export default function ComparisonPage() {
 
                     {/* Custom Month Inputs */}
                     {filterType === 'custom' && (
-                        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-2 text-xs">
+                        <div className="w-full md:w-auto flex items-center justify-center md:justify-start gap-2.5 text-xs animate-in slide-in-from-left-2 duration-300">
                             <MonthPicker
                                 value={startMonth}
                                 onChange={setStartMonth}
@@ -933,11 +924,20 @@ export default function ComparisonPage() {
 
                     {/* 5. Mini Heatmap Grid comparisons */}
                     <Card className="border border-border bg-card/60 backdrop-blur shadow-md">
-                        <CardHeader>
-                            <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
-                                <Grid className="h-4 w-4 text-primary" /> Multi-Account Mini Heatmaps
-                            </CardTitle>
-                            <CardDescription>Daily spending frequency and intensity layouts ({calendarMonthName})</CardDescription>
+                        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3">
+                            <div className="space-y-1">
+                                <CardTitle className="text-sm font-extrabold text-custom-gradient flex items-center gap-1.5 uppercase tracking-wider">
+                                    <Grid className="h-4 w-4 text-primary" /> Multi-Account Mini Heatmaps
+                                </CardTitle>
+                                <CardDescription>Daily spending frequency and intensity layouts ({calendarMonthName})</CardDescription>
+                            </div>
+                            <div className="w-40 shrink-0">
+                                <MonthPicker
+                                    value={heatmapMonth}
+                                    onChange={setHeatmapMonth}
+                                    placeholder="Change Month"
+                                />
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
