@@ -7,6 +7,7 @@ import { useThemeCustomizer, predefinedThemes, CustomTheme, predefinedCategoryPa
 import { useCurrency, CurrencyType } from '@/hooks/use-currency'
 import { FileUpload } from '@/components/upload/file-upload'
 import { api } from '@/services/api'
+import { BottomSelect } from '@/components/ui/bottom-select'
 import { useTheme } from 'next-themes'
 import { getLocalMonth } from '@/lib/utils'
 import { useAccount } from '@/components/account-context'
@@ -797,16 +798,21 @@ export default function SettingsPage() {
                                         <label className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
                                             <Filter className="h-3.5 w-3.5 text-teal-500" /> Category Filter
                                         </label>
-                                        <select
+                                        <BottomSelect
                                             value={exportCategory}
-                                            onChange={(e) => setExportCategory(e.target.value)}
-                                            className="border rounded-md px-3 py-2 bg-background/50 border-border/80 text-foreground w-full capitalize focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-xs"
-                                        >
-                                            <option value="all">All Categories</option>
-                                            {categories.map((cat) => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                        </select>
+                                            onChange={(val) => setExportCategory(val)}
+                                            options={[
+                                                { value: 'all', label: 'All Categories' },
+                                                ...categories.map((cat) => ({
+                                                    value: cat,
+                                                    label: cat,
+                                                    color: categoryColors[cat] || undefined
+                                                }))
+                                            ]}
+                                            label="Select Category"
+                                            className="w-full"
+                                            triggerClassName="w-full border rounded-md px-3 py-2 bg-background/50 border-border/80 text-foreground capitalize focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-xs h-10"
+                                        />
                                     </div>
                                 </div>
 

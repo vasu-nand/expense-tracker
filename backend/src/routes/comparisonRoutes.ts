@@ -39,6 +39,11 @@ router.get('/comparison', async (req: Request, res: Response) => {
         const filterType = (req.query.filterType as string) || 'all-time';
         const startMonth = req.query.startMonth as string;
         const endMonth = req.query.endMonth as string;
+        
+        const today = new Date();
+        const curYear = today.getFullYear();
+        const curMonth = String(today.getMonth() + 1).padStart(2, '0');
+        const heatmapMonth = (req.query.heatmapMonth as string) || `${curYear}-${curMonth}`;
 
         const accounts = await BankAccount.find().sort({ createdAt: 1 });
         const monthFilter = buildMonthFilter(filterType, startMonth, endMonth);
@@ -86,9 +91,15 @@ router.get('/comparison', async (req: Request, res: Response) => {
             const uniqueMonths = Object.keys(monthlyTotals);
             const averageMonthlySpend = uniqueMonths.length > 0 ? totalExpenses / uniqueMonths.length : totalExpenses;
 
-            // Mini heatmap data: group by day
+            // Mini heatmap data: group by day, filtered specifically for heatmapMonth
+            const heatmapExpenses = await Expense.find({
+                bankAccountId: acc._id,
+                type: { $ne: 'income' },
+                month: heatmapMonth
+            }).select('amount day').lean();
+
             const dailyTotals: Record<number, number> = {};
-            for (const exp of expenses) {
+            for (const exp of heatmapExpenses) {
                 dailyTotals[exp.day] = (dailyTotals[exp.day] || 0) + exp.amount;
             }
 

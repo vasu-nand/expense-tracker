@@ -5,6 +5,7 @@ import { Trash2, Loader2, ChevronLeft, ChevronRight, Edit2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
+import { BottomSelect } from '@/components/ui/bottom-select'
 
 interface Expense {
     _id: string;
@@ -267,17 +268,19 @@ export function ExpenseTable({
                         
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground border-l border-border/40 pl-3">
                             <span>Show</span>
-                            <select
+                            <BottomSelect
                                 value={limit}
-                                onChange={(e) => onLimitChange(Number(e.target.value))}
-                                className="border border-border rounded px-1.5 py-0.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 text-xs"
-                            >
-                                {[10, 20, 50, 100].map((opt) => (
-                                    <option key={opt} value={opt}>
-                                        {opt}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={(val) => onLimitChange(Number(val))}
+                                options={[
+                                    { value: 10, label: '10' },
+                                    { value: 20, label: '20' },
+                                    { value: 50, label: '50' },
+                                    { value: 100, label: '100' },
+                                ]}
+                                label="Transactions per page"
+                                className="w-16"
+                                triggerClassName="h-7 py-0 px-2 rounded-lg text-xs"
+                            />
                             <span>per page</span>
                         </div>
                     </div>
