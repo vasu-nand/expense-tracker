@@ -1,14 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { AnalyticsReport } from '@/components/analytics/analytics-report'
-import { SpendingPredictor } from '@/components/analytics/spending-predictor'
+import dynamic from 'next/dynamic'
+const AnalyticsReport = dynamic(() => import('@/components/analytics/analytics-report').then(mod => mod.AnalyticsReport), { ssr: false })
+const SpendingPredictor = dynamic(() => import('@/components/analytics/spending-predictor').then(mod => mod.SpendingPredictor), { ssr: false })
 import { api } from '@/services/api'
 import { Loader2, HelpCircle } from 'lucide-react'
 import { getLocalMonth, cn } from '@/lib/utils'
 import { useAccount } from '@/components/account-context'
 import { Card } from '@/components/ui/card'
 import { MonthPicker } from '@/components/ui/month-picker'
+import { AnalyticsEmptyState } from '@/components/analytics/analytics-empty-state'
+const AddExpenseDialog = dynamic(() => import('@/components/expenses/add-expense-dialog').then(mod => mod.AddExpenseDialog), { ssr: false })
 
 export default function AnalyticsPage() {
     const { selectedAccount } = useAccount()
@@ -22,6 +25,7 @@ export default function AnalyticsPage() {
     const [endMonth, setEndMonth] = useState(getLocalMonth())
 
     const activeQueryMonth = filterType === 'single' ? month : `${startMonth}:${endMonth}`
+    const [isAddOpen, setIsAddOpen] = useState(false)
 
     const fetchAnalytics = async () => {
         try {
@@ -128,21 +132,24 @@ export default function AnalyticsPage() {
             </div>
 
             {hasNoData ? (
-                <Card className="p-16 text-center border-dashed border-2 bg-card/20 border-border/80 rounded-2xl">
-                    <div className="max-w-md mx-auto space-y-4">
-                        <HelpCircle className="h-12 w-12 text-muted-foreground/60 mx-auto" />
-                        <h3 className="text-xl font-bold text-foreground">No Analytics Data</h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                            No analytics available for this range. Upload a bank statement or add transactions to generate insights.
-                        </p>
-                    </div>
-                </Card>
+                <div className="border border-border rounded-lg bg-card shadow-sm overflow-hidden">
+                    <AnalyticsEmptyState onAction={() => setIsAddOpen(true)} />
+                </div>
             ) : (
                 <>
                     <AnalyticsReport data={analytics} />
                     <SpendingPredictor data={analytics} selectedMonth={filterType === 'single' ? month : startMonth} />
                 </>
             )}
+
+            <AddExpenseDialog
+                isOpen={isAddOpen}
+                onClose={() => setIsAddOpen(false)}
+                onSuccess={() => {
+                    setIsAddOpen(false)
+                }}
+                defaultMonth={filterType === 'single' ? month : startMonth}
+            />
         </div>
     )
 }

@@ -17,10 +17,14 @@ import { Button } from '@/components/ui/button'
 import { getLocalMonth, cn } from '@/lib/utils'
 import { MonthPicker } from '@/components/ui/month-picker'
 import { useCurrency } from '@/hooks/use-currency'
+import { DashboardEmptyState } from '@/components/dashboard/dashboard-empty-state'
+const AddExpenseDialog = dynamic(() => import('@/components/expenses/add-expense-dialog').then(mod => mod.AddExpenseDialog), { ssr: false })
+
 
 
 export default function DashboardPage() {
     const [filterType, setFilterType] = useState<'single' | 'range'>('single')
+    const [isAddOpen, setIsAddOpen] = useState(false)
     const [month, setMonth] = useState(getLocalMonth())
     const [startMonth, setStartMonth] = useState(getLocalMonth())
     const [endMonth, setEndMonth] = useState(getLocalMonth())
@@ -154,31 +158,48 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <DashboardStats data={data} />
+            {!(data && data.totalEntries > 0) ? (
+                <div className="border border-border rounded-lg bg-card shadow-sm overflow-hidden">
+                    <DashboardEmptyState onAction={() => setIsAddOpen(true)} />
+                </div>
+            ) : (
+                <>
+                    <DashboardStats data={data} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <DailyTrendChart data={data?.dailyTrend || []} />
-                <CategoryPieChart data={data?.categoryBreakdown || {}} incomeData={data?.incomeCategoryBreakdown || {}} />
-            </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <DailyTrendChart data={data?.dailyTrend || []} />
+                        <CategoryPieChart data={data?.categoryBreakdown || {}} incomeData={data?.incomeCategoryBreakdown || {}} />
+                    </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <TopSpendingChart data={data?.dailyTrend || []} />
-                {isMultipleMonthsRange ? (
-                    <MonthComparisonChart data={monthlySummary} />
-                ) : (
-                    <ExpenseHeatmap 
-                        data={data?.dailyTrend || []} 
-                        month={filterType === 'single' ? month : startMonth}
-                        onDayClick={setSelectedDay}
-                    />
-                )}
-            </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <TopSpendingChart data={data?.dailyTrend || []} />
+                        {isMultipleMonthsRange ? (
+                            <MonthComparisonChart data={monthlySummary} />
+                        ) : (
+                            <ExpenseHeatmap 
+                                data={data?.dailyTrend || []} 
+                                month={filterType === 'single' ? month : startMonth}
+                                onDayClick={setSelectedDay}
+                            />
+                        )}
+                    </div>
+                </>
+            )}
 
             <DayExpensesDialog
                 isOpen={selectedDay !== null}
                 onClose={() => setSelectedDay(null)}
                 day={selectedDay}
                 month={activeQueryMonth}
+            />
+
+            <AddExpenseDialog
+                isOpen={isAddOpen}
+                onClose={() => setIsAddOpen(false)}
+                onSuccess={() => {
+                    setIsAddOpen(false)
+                }}
+                defaultMonth={filterType === 'single' ? month : startMonth}
             />
         </div>
     )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api } from '@/services/api'
 import { useAccount } from '@/components/account-context'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -27,8 +27,11 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
     const [type, setType] = useState<'expense' | 'income'>('expense')
     const [category, setCategory] = useState<string>('auto')
     const [month, setMonth] = useState<string>(defaultMonth)
-    const [loading, setLoading] = useState(false)
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
     const [error, setError] = useState('')
+    const submitBtnRef = useRef<HTMLButtonElement | null>(null)
+
+    const loading = status === 'loading'
 
 
 
@@ -124,7 +127,7 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
         }
 
         try {
-            setLoading(true)
+            setStatus('loading')
             setError('')
 
             await api.post('/expenses', {
@@ -136,18 +139,40 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                 type
             })
 
-            // Reset form
-            setAmount('')
-            setReason('')
-            setCategory('auto')
-            setType('expense')
+            // Calculate trigger button center coordinates for fly-out animation origin
+            let animX = window.innerWidth / 2
+            let animY = window.innerHeight / 2
+            if (submitBtnRef.current) {
+                const rect = submitBtnRef.current.getBoundingClientRect()
+                animX = rect.left + rect.width / 2
+                animY = rect.top + rect.height / 2
+            }
 
-            onSuccess()
-            onClose()
+            window.dispatchEvent(
+                new CustomEvent('trigger-transaction-animation', {
+                    detail: { type, x: animX, y: animY }
+                })
+            )
+
+            setStatus('success')
+
+            // Keep modal open for 1.2 seconds to display checkmark animation
+            setTimeout(() => {
+                setAmount('')
+                setReason('')
+                setCategory('auto')
+
+                onSuccess()
+                onClose()
+
+                setTimeout(() => {
+                    setStatus('idle')
+                }, 150)
+            }, 1200)
+
         } catch (err: any) {
             setError(err.response?.data?.error || `Failed to add ${type}`)
-        } finally {
-            setLoading(false)
+            setStatus('idle')
         }
     }
 
@@ -330,15 +355,40 @@ export function AddExpenseDialog({ isOpen, onClose, onSuccess, defaultMonth }: A
                             Cancel
                         </Button>
                         <Button
+                            ref={submitBtnRef}
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || status === 'success'}
+                            className={`transition-all duration-300 relative w-32 ${
+                                status === 'success'
+                                    ? 'bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-600 text-white'
+                                    : ''
+                            }`}
                         >
-                            {loading ? (
+                            {status === 'loading' && (
                                 <>
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     Saving...
                                 </>
-                            ) : (type === 'income' ? 'Add Income' : 'Add Expense')}
+                            )}
+                            {status === 'success' && (
+                                <div className="flex items-center justify-center space-x-1.5 animate-scale-up-spring">
+                                    <svg
+                                        className="h-4 w-4 stroke-current"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        strokeWidth="4"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M5 13l4 4L19 7"
+                                            className="animate-draw-tick"
+                                        />
+                                    </svg>
+                                    <span className="font-bold">Success</span>
+                                </div>
+                            )}
+                            {status === 'idle' && (type === 'income' ? 'Add Income' : 'Add Expense')}
                         </Button>
                     </div>
                 </form>
