@@ -149,7 +149,7 @@ export function MonthComparisonChart({ data }: MonthComparisonChartProps) {
                                 }}
                                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                                 labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, 'Amount']}
+                                formatter={(value: any) => [`${symbol}${Number(value).toFixed(2)}`, 'Amount']}
                             />
                         </PieChart>
                     </ResponsiveContainer>

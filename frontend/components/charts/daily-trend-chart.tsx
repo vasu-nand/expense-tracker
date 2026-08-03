@@ -143,9 +143,10 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                 contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                                 itemStyle={{ color: 'hsl(var(--foreground))' }}
                                 labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                formatter={(value: number, name: string) => {
-                                    const prefix = value < 0 ? '-' : ''
-                                    const absValue = Math.abs(value)
+                                formatter={(value: any, name: any) => {
+                                    const valNum = Number(value || 0)
+                                    const prefix = valNum < 0 ? '-' : ''
+                                    const absValue = Math.abs(valNum)
                                     return [`${prefix}${symbol}${absValue.toFixed(2)}`, name]
                                 }}
                             />
@@ -274,11 +275,12 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                         contentStyle={{ backgroundColor: 'white', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
                                         itemStyle={{ color: 'black' }}
                                         labelStyle={{ color: 'black' }}
-                                        formatter={(value: number, name: string) => {
-                                            const prefix = value < 0 ? '-' : ''
-                                            const absValue = Math.abs(value)
-                                            return [`${prefix}${symbol}${absValue.toFixed(2)}`, name]
-                                        }}
+                                        formatter={(value: any, name: any) => {
+                                             const valNum = Number(value || 0)
+                                             const prefix = valNum < 0 ? '-' : ''
+                                             const absValue = Math.abs(valNum)
+                                             return [`${prefix}${symbol}${absValue.toFixed(2)}`, name]
+                                         }}
                                     />
                                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                     {(viewMode === 'all' || viewMode === 'income') && (

@@ -94,7 +94,7 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                         itemStyle={{ color: 'hsl(var(--foreground))' }}
                         labelStyle={{ color: 'hsl(var(--foreground))' }}
                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
-                        formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, activeTab === 'expense' ? 'Spending' : 'Income']}
+                        formatter={(value: any) => [`${symbol}${Number(value).toFixed(2)}`, activeTab === 'expense' ? 'Spending' : 'Income']}
                         labelFormatter={(label) => label}
                     />
                     <Bar

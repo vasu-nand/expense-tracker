@@ -120,7 +120,7 @@ export function CategoryPieChart({ data, incomeData = {} }: CategoryPieChartProp
                                 }}
                                 itemStyle={{ color: 'black' }}
                                 labelStyle={{ color: 'black' }}
-                                formatter={(value: number) => [`${symbol}${value.toFixed(2)}`, activeTab === 'expense' ? 'Spend' : 'Income']}
+                                formatter={(value: any) => [`${symbol}${Number(value).toFixed(2)}`, activeTab === 'expense' ? 'Spend' : 'Income']}
                             />
                         </PieChart>
                     </ResponsiveContainer>

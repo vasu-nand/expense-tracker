@@ -354,7 +354,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                         }}
                                         itemStyle={{ color: 'hsl(var(--foreground))' }}
                                         labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                        formatter={(value: number, name: string) => [`${symbol}${Number(value).toFixed(2)}`, name]}
+                                        formatter={(value: any, name: any) => [`${symbol}${Number(value).toFixed(2)}`, name]}
                                     />
                                     <Legend
                                         wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
