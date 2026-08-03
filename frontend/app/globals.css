@@ -81,9 +81,9 @@
     }
 
     /* Dark Mode Glassmorphism Overrides */
-    .dark .bg-card, 
-    .dark [class*="bg-card"], 
-    .dark .bg-popover, 
+    .dark .bg-card,
+    .dark [class*="bg-card"],
+    .dark .bg-popover,
     .dark [class*="bg-popover"] {
         background-color: hsl(var(--card) / 0.45) !important;
         backdrop-filter: blur(12px) !important;
@@ -94,7 +94,7 @@
         border-color: hsl(var(--border) / 0.5);
     }
 
-    .dark nav, 
+    .dark nav,
     .dark [class*="border-b"] {
         border-color: hsl(var(--border) / 0.4) !important;
     }
@@ -123,10 +123,307 @@
     .bg-custom-btn-gradient {
         background-image: linear-gradient(to right, var(--btn-gradient-start, #14b8a6), var(--btn-gradient-end, #0f766e)) !important;
     }
-    
+
     .text-custom-gradient {
         background-image: linear-gradient(to right, var(--text-gradient-start, #0f766e), var(--text-gradient-end, #115e59)) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
     }
-}
+
+    @keyframes draw-tick {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes scale-up-spring {
+        0% {
+            transform: scale(0.7);
+            opacity: 0;
+        }
+
+        70% {
+            transform: scale(1.15);
+            opacity: 1;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .animate-draw-tick {
+        stroke-dasharray: 50;
+        stroke-dashoffset: 50;
+        animation: draw-tick 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+    }
+
+    .animate-scale-up-spring {
+        animation: scale-up-spring 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes delete-disintegrate {
+        0% { transform: scale(1) rotate(0deg); filter: blur(0); }
+        10% { transform: scale(1.02) rotate(-1deg); }
+        20% { transform: scale(0.98) rotate(1deg); }
+        30% { transform: scale(1.01) rotate(-1.5deg); }
+        40% { transform: scale(0.99) rotate(1.5deg); }
+        50% { transform: scale(0.95) rotate(-1deg) translateY(5px); filter: blur(1.5px); }
+        100% { transform: scale(0.85) rotate(0deg) translateY(30px); filter: blur(10px); opacity: 0; }
+    }
+
+    .animate-delete-disintegrate {
+        animation: delete-disintegrate 0.7s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+    }
+}
+
+@layer components {
+    /* Global Interactive Buttons Micro-animations */
+    button, 
+    [role="button"],
+    .btn,
+    .button,
+    a.button {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+    }
+
+    button:hover,
+    [role="button"]:hover,
+    .btn:hover,
+    .button:hover,
+    a.button:hover {
+        transform: translateY(-1.5px) scale(1.035);
+    }
+
+    button:active,
+    [role="button"]:active,
+    .btn:active,
+    .button:active,
+    a.button:active {
+        transform: translateY(0) scale(0.965);
+    }
+
+    /* Target specific navigation links as well */
+    nav a,
+    .nav-link,
+    a[href*="/dashboard"],
+    a[href*="/expenses"],
+    a[href*="/analytics"],
+    a[href*="/comparison"],
+    a[href*="/settings"] {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, color 0.2s ease !important;
+    }
+
+    nav a:hover,
+    .nav-link:hover,
+    a[href*="/dashboard"]:hover,
+    a[href*="/expenses"]:hover,
+    a[href*="/analytics"]:hover,
+    a[href*="/comparison"]:hover,
+    a[href*="/settings"]:hover {
+        transform: translateY(-0.5px) scale(1.03);
+    }
+
+    /* Icon Behavior Animations on Hover */
+    
+    /* Plus/Add Icons: rotates 90deg */
+    button:hover svg[class*="lucide-plus"],
+    [role="button"]:hover svg[class*="lucide-plus"],
+    nav a:hover svg[class*="lucide-plus"] {
+        transform: rotate(90deg) scale(1.15);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Refresh/Sync Icons: spins 180deg */
+    button:hover svg[class*="lucide-refresh"],
+    button:hover svg[class*="lucide-rotate"],
+    button:hover svg[class*="lucide-loader"],
+    [role="button"]:hover svg[class*="lucide-refresh"],
+    [role="button"]:hover svg[class*="lucide-rotate"],
+    [role="button"]:hover svg[class*="lucide-loader"] {
+        transform: rotate(180deg);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Download Icons: slide down */
+    button:hover svg[class*="lucide-download"],
+    [role="button"]:hover svg[class*="lucide-download"],
+    nav a:hover svg[class*="lucide-download"] {
+        transform: translateY(2px);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    /* Upload Icons: slide up */
+    button:hover svg[class*="lucide-upload"],
+    [role="button"]:hover svg[class*="lucide-upload"],
+    nav a:hover svg[class*="lucide-upload"] {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease-in-out;
+    }
+
+    /* Shield/Alert Danger shake */
+    @keyframes danger-shake {
+        0%, 100% { transform: translateX(0) rotate(0deg); }
+        25% { transform: translateX(-1.5px) rotate(-1.5deg); }
+        75% { transform: translateX(1.5px) rotate(1.5deg); }
+    }
+    button:hover svg[class*="lucide-alert"],
+    button:hover svg[class*="lucide-shield-alert"],
+    button:hover svg[class*="lucide-octagon"] {
+        animation: danger-shake 0.2s ease-in-out infinite;
+    }
+
+    /* Custom Deletion Animation (Lid-Pop, Handle-Tilt, Bin-Shake, Slam-Shut) */
+    @keyframes trash-shake {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-3deg) scale(1.02); }
+        75% { transform: rotate(3deg) scale(1.02); }
+    }
+    
+    button:hover svg[class*="lucide-trash"],
+    [role="button"]:hover svg[class*="lucide-trash"] {
+        animation: trash-shake 0.25s ease-in-out infinite;
+    }
+    
+    button:hover svg[class*="lucide-trash"] path:nth-of-type(1),
+    [role="button"]:hover svg[class*="lucide-trash"] path:nth-of-type(1) {
+        transform: translateY(-2px) rotate(-4deg);
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    button:hover svg[class*="lucide-trash"] path:nth-of-type(3),
+    [role="button"]:hover svg[class*="lucide-trash"] path:nth-of-type(3) {
+        transform: translateY(-3.5px) rotate(-12deg);
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* Active / Click slam down transition */
+    button:active svg[class*="lucide-trash"] path:nth-of-type(1),
+    button:active svg[class*="lucide-trash"] path:nth-of-type(3),
+    [role="button"]:active svg[class*="lucide-trash"] path:nth-of-type(1),
+    [role="button"]:active svg[class*="lucide-trash"] path:nth-of-type(3) {
+        transform: translateY(0.5px) rotate(0deg);
+        transition: transform 0.08s ease-in;
+    }
+
+    /* Sparkles/Stars: scale and yellow glow */
+    button:hover svg[class*="lucide-sparkles"],
+    [role="button"]:hover svg[class*="lucide-sparkles"],
+    nav a:hover svg[class*="lucide-sparkles"] {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 3px rgba(234, 179, 8, 0.75));
+        transition: transform 0.3s ease, filter 0.3s ease;
+    }
+
+    /* Chevron/Arrows: nudge in direction */
+    button:hover svg[class*="lucide-chevron"],
+    [role="button"]:hover svg[class*="lucide-chevron"] {
+        transform: translateY(1.5px);
+        transition: transform 0.2s ease;
+    }
+    
+    button:hover svg[class*="lucide-arrow-right"],
+    [role="button"]:hover svg[class*="lucide-arrow-right"] {
+        transform: translateX(2.5px);
+        transition: transform 0.2s ease;
+    }
+
+    button:hover svg[class*="lucide-arrow-left"],
+    [role="button"]:hover svg[class*="lucide-arrow-left"] {
+        transform: translateX(-2.5px);
+        transition: transform 0.2s ease;
+    }
+
+    /* Search Icon: scales and wiggles */
+    button:hover svg[class*="lucide-search"],
+    [role="button"]:hover svg[class*="lucide-search"],
+    nav a:hover svg[class*="lucide-search"] {
+        transform: scale(1.15) rotate(5deg);
+        transition: transform 0.25s ease;
+    }
+
+    /* Navigation Menu Items specific icon hover motions */
+    nav a:hover svg[class*="lucide-layout-dashboard"] {
+        transform: scale(1.15) rotate(5deg);
+        transition: transform 0.2s ease;
+    }
+
+    nav a:hover svg[class*="lucide-table"] {
+        transform: scale(1.15) translateY(-0.5px);
+        transition: transform 0.2s ease;
+    }
+
+    nav a:hover svg[class*="lucide-bar-chart"] {
+        transform: scale(1.15) scaleY(1.2);
+        transition: transform 0.2s ease;
+    }
+
+    nav a:hover svg[class*="lucide-git-compare"] {
+        transform: scale(1.15) rotate(15deg);
+        transition: transform 0.25s ease;
+    }
+
+    nav a:hover svg[class*="lucide-settings"] {
+        transform: rotate(45deg) scale(1.15);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Sun/Moon/Monitor settings hover micro-rotations */
+    button:hover svg[class*="lucide-sun"] {
+        transform: rotate(180deg) scale(1.15);
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    button:hover svg[class*="lucide-moon"] {
+        transform: rotate(-12deg) scale(1.15);
+        transition: transform 0.3s ease;
+    }
+
+    button:hover svg[class*="lucide-monitor"] {
+        transform: scale(1.15) translateY(-1px);
+        transition: transform 0.3s ease;
+    }
+
+    /* Theme settings active state persistent animations */
+    @keyframes sun-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .animate-sun-spin,
+    button[class*="border-foreground"] svg[class*="lucide-sun"] {
+        animation: sun-spin 8s linear infinite;
+    }
+
+    @keyframes moon-float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-3px) rotate(-8deg); }
+    }
+    .animate-moon-float,
+    button[class*="border-foreground"] svg[class*="lucide-moon"] {
+        animation: moon-float 3s ease-in-out infinite;
+    }
+
+    @keyframes monitor-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.85; }
+    }
+    .animate-monitor-pulse,
+    button[class*="border-foreground"] svg[class*="lucide-monitor"] {
+        animation: monitor-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes tag-swing {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-15deg); }
+        75% { transform: rotate(15deg); }
+    }
+    .animate-tag-swing,
+    button[class*="border-primary"] svg[class*="lucide-tag"] {
+        animation: tag-swing 1s ease-in-out infinite;
+    }
+}

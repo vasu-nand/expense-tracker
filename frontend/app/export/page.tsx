@@ -15,8 +15,11 @@ import {
 import Link from 'next/link'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn, getLocalMonth } from '@/lib/utils'
+import dynamic from 'next/dynamic'
 import { useAccount } from '@/components/account-context'
 import { HelpCircle as HelpIcon } from 'lucide-react'
+import { ExportEmptyState } from '@/components/export/export-empty-state'
+const AddExpenseDialog = dynamic(() => import('@/components/expenses/add-expense-dialog').then(mod => mod.AddExpenseDialog), { ssr: false })
 
 interface Transaction {
     _id: string
@@ -214,6 +217,7 @@ export default function ExportPage() {
     const [loading, setLoading] = useState(true)
     const [exporting, setExporting] = useState(false)
     const [error, setError] = useState('')
+    const [isAddOpen, setIsAddOpen] = useState(false)
 
     const reportRef = useRef<HTMLDivElement>(null)
 
@@ -322,7 +326,7 @@ export default function ExportPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border/40">
                 <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold text-custom-gradient">
                         Export PDF Statement
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -440,15 +444,9 @@ export default function ExportPage() {
                 </Card>
             )}
             {!loading && !error && transactions.length === 0 && (
-                <Card className="p-16 text-center bg-card/40 border-dashed border-2 border-border/80 rounded-2xl max-w-xl mx-auto">
-                    <div className="space-y-4">
-                        <HelpIcon className="h-12 w-12 text-muted-foreground/60 mx-auto" />
-                        <h3 className="text-xl font-bold">No Expenses Available</h3>
-                        <p className="text-muted-foreground text-sm">
-                            No expenses available for export. Upload a statement or add expenses first.
-                        </p>
-                    </div>
-                </Card>
+                <div className="border border-border rounded-lg bg-card shadow-sm overflow-hidden">
+                    <ExportEmptyState onAction={() => setIsAddOpen(true)} />
+                </div>
             )}
 
             {/* PDF Preview */}
@@ -819,6 +817,16 @@ export default function ExportPage() {
                     </div>
                 </div>
             )}
+
+            <AddExpenseDialog
+                isOpen={isAddOpen}
+                onClose={() => setIsAddOpen(false)}
+                onSuccess={() => {
+                    setIsAddOpen(false)
+                    loadData()
+                }}
+                defaultMonth={startMonth}
+            />
         </div>
     )
 }

@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { api } from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useCurrency } from '@/hooks/use-currency'
+import { ComparisonEmptyState } from '@/components/comparison/comparison-empty-state'
 import { 
     GitCompare, 
     Calendar, 
@@ -71,6 +73,7 @@ interface BiggestTransaction {
 }
 
 export default function ComparisonPage() {
+    const router = useRouter()
     const { format, convert, symbol } = useCurrency()
     const [filterType, setFilterType] = useState<FilterType>('all-time')
     const [startMonth, setStartMonth] = useState(getLocalMonth())
@@ -315,13 +318,9 @@ export default function ComparisonPage() {
             </div>
 
             {!hasAccounts ? (
-                <Card className="p-16 text-center border-dashed border-2 bg-card/20 border-border/80">
-                    <HelpCircle className="h-12 w-12 text-muted-foreground/60 mx-auto mb-3" />
-                    <h3 className="text-xl font-bold">No Accounts Found</h3>
-                    <p className="text-muted-foreground mt-2">
-                        You need at least one bank account to begin comparisons. Add an account from the settings or navigation menu.
-                    </p>
-                </Card>
+                <div className="border border-border rounded-lg bg-card shadow-sm overflow-hidden">
+                    <ComparisonEmptyState onAction={() => router.push('/accounts')} />
+                </div>
             ) : (
                 <div className="space-y-8">
                     

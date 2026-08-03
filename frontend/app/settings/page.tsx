@@ -12,19 +12,19 @@ import { useTheme } from 'next-themes'
 import { getLocalMonth } from '@/lib/utils'
 import { useAccount } from '@/components/account-context'
 import { MonthPicker } from '@/components/ui/month-picker'
-import { 
-    Settings, 
-    Palette, 
-    Coins, 
-    Database, 
-    Download, 
+import {
+    Settings,
+    Palette,
+    Coins,
+    Database,
+    Download,
     Upload as UploadIcon,
-    RefreshCw, 
-    Check, 
-    Sparkles, 
-    Calendar, 
-    Filter, 
-    Loader2, 
+    RefreshCw,
+    Check,
+    Sparkles,
+    Calendar,
+    Filter,
+    Loader2,
     Eye,
     Sun,
     Moon,
@@ -69,10 +69,15 @@ interface AnalyticsData {
 
 export default function SettingsPage() {
     const { theme: mode, setTheme: setMode } = useTheme()
+    const [mounted, setMounted] = useState(false)
     const { selectedAccount } = useAccount()
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
     const [activeTab, setActiveTab] = useState<'appearance' | 'currency' | 'data' | 'categories'>('appearance')
     const [designerMode, setDesignerMode] = useState<'light' | 'dark'>('light')
-    
+
     // Add Category Form States
     const [newCategoryName, setNewCategoryName] = useState('')
     const [newCategoryColor, setNewCategoryColor] = useState('#6366f1')
@@ -81,11 +86,11 @@ export default function SettingsPage() {
     const [catFormSuccess, setCatFormSuccess] = useState('')
 
     // Theme Customizer Context
-    const { 
-        theme: currentTheme, 
-        setTheme, 
-        updateThemeColor, 
-        updateDarkThemeColor, 
+    const {
+        theme: currentTheme,
+        setTheme,
+        updateThemeColor,
+        updateDarkThemeColor,
         resetTheme,
         categoryColors,
         updateCategoryColor,
@@ -109,8 +114,8 @@ export default function SettingsPage() {
         textGradientEnd: '#475569'
     }
 
-    const activeConfig = designerMode === 'light' 
-        ? currentTheme 
+    const activeConfig = designerMode === 'light'
+        ? currentTheme
         : (currentTheme.dark || defaultDarkTheme)
 
     const handleThemeColorChange = (key: string, val: string) => {
@@ -120,7 +125,7 @@ export default function SettingsPage() {
             updateDarkThemeColor(key, val)
         }
     }
-    
+
     // Currency Context
     const { currency, setCurrency, format, symbol: currencySymbol } = useCurrency()
 
@@ -154,7 +159,7 @@ export default function SettingsPage() {
             setResettingDb(false)
         }
     }
-    
+
     // Export state
     const [exportMonth, setExportMonth] = useState(getLocalMonth())
     const [exportCategory, setExportCategory] = useState('all')
@@ -165,7 +170,7 @@ export default function SettingsPage() {
     const [exportingPdf, setExportingPdf] = useState(false)
     const [exportError, setExportError] = useState('')
     const [showPreview, setShowPreview] = useState(false)
-    
+
     const reportRef = useRef<HTMLDivElement>(null)
 
     // Load Export Categories & Transactions for PDF Generation
@@ -173,11 +178,11 @@ export default function SettingsPage() {
         try {
             setLoadingExportData(true)
             setExportError('')
-            
+
             // Get category list first
             const categoriesRes = await api.get(`/categories/active?month=${exportMonth}`)
             setCategories(categoriesRes.data)
-            
+
             // Fetch matching expenses
             const params = new URLSearchParams({
                 page: '1',
@@ -185,12 +190,12 @@ export default function SettingsPage() {
                 month: exportMonth,
                 ...(exportCategory !== 'all' && { category: exportCategory })
             })
-            
+
             const [expensesRes, analyticsRes] = await Promise.all([
                 api.get(`/expenses?${params}`),
                 api.get(`/analytics?month=${exportMonth}`)
             ])
-            
+
             setTransactions(expensesRes.data.expenses || [])
             setAnalytics(analyticsRes.data)
         } catch (err: any) {
@@ -217,37 +222,37 @@ export default function SettingsPage() {
 
     const handleDownloadPDF = async () => {
         if (!reportRef.current) return
-        
+
         try {
             setExportingPdf(true)
-            
+
             const { jsPDF } = await import('jspdf')
             const html2canvas = (await import('html2canvas')).default
-            
+
             const pdf = new jsPDF('p', 'mm', 'a4')
             const pages = reportRef.current.querySelectorAll('.pdf-page')
-            
+
             for (let index = 0; index < pages.length; index++) {
                 const pageEl = pages[index] as HTMLElement
-                
+
                 const canvas = await html2canvas(pageEl, {
                     scale: 2,
                     useCORS: true,
                     backgroundColor: '#ffffff',
                     logging: false
                 })
-                
+
                 const imgData = canvas.toDataURL('image/jpeg', 0.95)
                 const imgWidth = 210
                 const imgHeight = 297
-                
+
                 if (index > 0) {
                     pdf.addPage()
                 }
-                
+
                 pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight)
             }
-            
+
             pdf.save(`Expense_Report_${exportMonth}_${exportCategory}.pdf`)
         } catch (err) {
             console.error('PDF export error:', err)
@@ -320,44 +325,40 @@ export default function SettingsPage() {
                 <button
                     type="button"
                     onClick={() => setActiveTab('appearance')}
-                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
-                        activeTab === 'appearance'
+                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${activeTab === 'appearance'
                             ? 'border-primary text-primary font-bold bg-accent/30'
                             : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
-                    }`}
+                        }`}
                 >
                     <Palette className="h-4 w-4" /> Appearance & Theme
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('currency')}
-                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
-                        activeTab === 'currency'
+                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${activeTab === 'currency'
                             ? 'border-primary text-primary font-bold bg-accent/30'
                             : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
-                    }`}
+                        }`}
                 >
                     <Coins className="h-4 w-4" /> Currencies
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('data')}
-                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
-                        activeTab === 'data'
+                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${activeTab === 'data'
                             ? 'border-primary text-primary font-bold bg-accent/30'
                             : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
-                    }`}
+                        }`}
                 >
                     <Database className="h-4 w-4" /> Data Management
                 </button>
                 <button
                     type="button"
                     onClick={() => setActiveTab('categories')}
-                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
-                        activeTab === 'categories'
+                    className={`flex items-center gap-2 px-5 py-3 border-b-2 font-semibold text-sm transition-all duration-200 whitespace-nowrap ${activeTab === 'categories'
                             ? 'border-primary text-primary font-bold bg-accent/30'
                             : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
-                    }`}
+                        }`}
                 >
                     <Tag className="h-4 w-4" /> Category Settings
                 </button>
@@ -382,11 +383,10 @@ export default function SettingsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setMode('light')}
-                                        className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
-                                            mode === 'light'
+                                        className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${mounted && mode === 'light'
                                                 ? 'border-foreground bg-accent shadow-sm scale-[1.02]'
                                                 : 'border-border/80 bg-background/55 hover:bg-muted/50 text-muted-foreground'
-                                        }`}
+                                            }`}
                                     >
                                         <Sun className="h-5 w-5 text-amber-500" />
                                         <span className="text-xs font-bold">Light Mode</span>
@@ -394,11 +394,10 @@ export default function SettingsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setMode('dark')}
-                                        className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
-                                            mode === 'dark'
+                                        className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${mounted && mode === 'dark'
                                                 ? 'border-foreground bg-accent shadow-sm scale-[1.02]'
                                                 : 'border-border/80 bg-background/55 hover:bg-muted/50 text-muted-foreground'
-                                        }`}
+                                            }`}
                                     >
                                         <Moon className="h-5 w-5 text-indigo-500" />
                                         <span className="text-xs font-bold">Dark Mode</span>
@@ -406,11 +405,10 @@ export default function SettingsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setMode('system')}
-                                        className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
-                                            mode === 'system'
+                                        className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all duration-300 ${mounted && mode === 'system'
                                                 ? 'border-foreground bg-accent shadow-sm scale-[1.02]'
                                                 : 'border-border/80 bg-background/55 hover:bg-muted/50 text-muted-foreground'
-                                        }`}
+                                            }`}
                                     >
                                         <Monitor className="h-5 w-5 text-teal-500" />
                                         <span className="text-xs font-bold">System Sync</span>
@@ -436,11 +434,10 @@ export default function SettingsPage() {
                                             <button
                                                 key={t.name}
                                                 onClick={() => setTheme(t)}
-                                                className={`p-3 rounded-xl border text-left flex flex-col justify-between h-24 transition-all duration-300 ${
-                                                    isSelected
+                                                className={`p-3 rounded-xl border text-left flex flex-col justify-between h-24 transition-all duration-300 ${isSelected
                                                         ? 'border-foreground bg-accent shadow-sm scale-[1.02]'
                                                         : 'border-border/80 bg-background/55 hover:bg-muted/50'
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex items-center justify-between w-full">
                                                     <span className="text-xs font-bold text-foreground">{t.name}</span>
@@ -473,22 +470,20 @@ export default function SettingsPage() {
                                     <button
                                         type="button"
                                         onClick={() => setDesignerMode('light')}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${
-                                            designerMode === 'light'
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${designerMode === 'light'
                                                 ? 'border-primary text-primary font-bold bg-accent/30'
                                                 : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
-                                        }`}
+                                            }`}
                                     >
                                         <Sun className="h-4 w-4 text-amber-500" /> Light Theme Customizer
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setDesignerMode('dark')}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${
-                                            designerMode === 'dark'
+                                        className={`flex-1 flex items-center justify-center gap-2 py-3 border-b-2 font-semibold text-xs transition-all duration-200 ${designerMode === 'dark'
                                                 ? 'border-primary text-primary font-bold bg-accent/30'
                                                 : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/10'
-                                        }`}
+                                            }`}
                                     >
                                         <Moon className="h-4 w-4 text-indigo-500" /> Dark Theme Customizer
                                     </button>
@@ -572,7 +567,7 @@ export default function SettingsPage() {
                                 {/* Gradients Customizer */}
                                 <div className="border-t border-border/40 pt-6 space-y-4">
                                     <h3 className="text-sm font-bold text-foreground">Gradient Settings</h3>
-                                    
+
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         {/* Button Gradient */}
                                         <div className="space-y-3">
@@ -592,7 +587,7 @@ export default function SettingsPage() {
                                                     className="w-8 h-8 border rounded cursor-pointer"
                                                     title="Gradient End"
                                                 />
-                                                <div 
+                                                <div
                                                     className="flex-1 h-8 rounded-md border border-black/10 flex items-center justify-center text-[10px] text-white font-bold"
                                                     style={{ backgroundImage: `linear-gradient(to right, ${activeConfig.btnGradientStart}, ${activeConfig.btnGradientEnd})` }}
                                                 >
@@ -620,7 +615,7 @@ export default function SettingsPage() {
                                                     title="Gradient End"
                                                 />
                                                 <div className="flex-1 h-8 flex items-center justify-center font-black text-xs">
-                                                    <span 
+                                                    <span
                                                         style={{ backgroundImage: `linear-gradient(to right, ${activeConfig.textGradientStart}, ${activeConfig.textGradientEnd})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
                                                     >
                                                         Text Preview
@@ -648,11 +643,10 @@ export default function SettingsPage() {
                                                     type="button"
                                                     key={r.val}
                                                     onClick={() => updateThemeColor('radius', r.val)}
-                                                    className={`py-2.5 px-3 text-xs font-medium rounded border transition-all duration-300 ${
-                                                        isSelected
+                                                    className={`py-2.5 px-3 text-xs font-medium rounded border transition-all duration-300 ${isSelected
                                                             ? 'border-foreground bg-accent font-bold scale-[1.02] shadow-sm'
                                                             : 'border-border/80 bg-background/55 hover:bg-muted/50 text-muted-foreground'
-                                                    }`}
+                                                        }`}
                                                     style={{ borderRadius: r.val }}
                                                 >
                                                     {r.name} ({r.val})
@@ -697,11 +691,10 @@ export default function SettingsPage() {
                                         <button
                                             key={cur}
                                             onClick={() => setCurrency(cur)}
-                                            className={`p-4 rounded-xl border text-left flex flex-col justify-between h-28 transition-all duration-300 ${
-                                                isSelected
+                                            className={`p-4 rounded-xl border text-left flex flex-col justify-between h-28 transition-all duration-300 ${isSelected
                                                     ? 'border-foreground bg-accent shadow-sm scale-[1.02]'
                                                     : 'border-border/80 bg-background/55 hover:bg-muted/50'
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex items-center justify-between w-full">
                                                 <span className="text-2xl font-black">{cur === 'INR' ? '₹' : cur === 'USD' ? '$' : cur === 'CAD' ? 'CA$' : '€'}</span>
@@ -870,7 +863,7 @@ export default function SettingsPage() {
                                         <div className="w-full overflow-x-auto py-4 rounded-lg bg-zinc-900 border border-zinc-800 shadow-inner select-none">
                                             <div className="flex min-w-max justify-start md:justify-center px-4">
                                                 <div ref={reportRef} className="flex flex-col gap-10 bg-zinc-900 text-zinc-950 p-2">
-                                                    
+
                                                     {/* PAGE 1: COVER PAGE */}
                                                     <div className="pdf-page relative w-[210mm] h-[297mm] bg-white border shadow-2xl p-[20mm] flex flex-col justify-between overflow-hidden select-none flex-shrink-0">
                                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.18] z-0">
@@ -1151,11 +1144,10 @@ export default function SettingsPage() {
                                                 key={palette.name}
                                                 type="button"
                                                 onClick={() => setCategoryColors(palette.colors)}
-                                                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all duration-300 ${
-                                                    isActive
+                                                className={`p-4 rounded-xl border text-left flex flex-col justify-between transition-all duration-300 ${isActive
                                                         ? 'border-primary bg-accent shadow-sm scale-[1.01]'
                                                         : 'border-border/80 bg-background/55 hover:bg-muted/50'
-                                                }`}
+                                                    }`}
                                             >
                                                 <div className="flex items-center justify-between w-full mb-3">
                                                     <span className="text-xs font-bold text-foreground">{palette.name}</span>
@@ -1198,7 +1190,7 @@ export default function SettingsPage() {
                                             {catFormSuccess}
                                         </div>
                                     )}
-                                    
+
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className="flex flex-col space-y-1.5">
                                             <label className="text-xs font-semibold text-muted-foreground">Category Name</label>
@@ -1270,7 +1262,7 @@ export default function SettingsPage() {
                                                 <div className="space-y-3.5">
                                                     <div className="flex justify-between items-center gap-2 min-w-0">
                                                         <span className="text-xs font-black text-foreground capitalize truncate">{catName}</span>
-                                                        <span 
+                                                        <span
                                                             className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold capitalize border flex-shrink-0"
                                                             style={{
                                                                 backgroundColor: `${currentColor}12`,
@@ -1281,7 +1273,7 @@ export default function SettingsPage() {
                                                             Preview
                                                         </span>
                                                     </div>
-                                                    
+
                                                     {/* Color Picker */}
                                                     <div className="flex items-center gap-2">
                                                         <input
@@ -1314,26 +1306,26 @@ export default function SettingsPage() {
                                                 {/* Delete Helper for custom categories */}
                                                 {!isPredefined && (
                                                     <div className="pt-2 flex justify-end border-t border-border/20 mt-2">
-                                                         <button
-                                                             type="button"
-                                                             onClick={async () => {
-                                                                 const password = prompt(`Enter admin delete password to delete "${catName}" category:`)
-                                                                 if (password === null) return
-                                                                 if (!password.trim()) {
-                                                                     alert('Password is required')
-                                                                     return
-                                                                 }
-                                                                 try {
-                                                                     await deleteCustomCategory(catName, password)
-                                                                     alert(`Successfully deleted "${catName}" category`)
-                                                                 } catch (err: any) {
-                                                                     alert(err.message)
-                                                                 }
-                                                             }}
-                                                             className="text-[10px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 transition-colors"
-                                                         >
-                                                             <Trash2 className="h-3.5 w-3.5" /> Delete Category
-                                                         </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                                const password = prompt(`Enter admin delete password to delete "${catName}" category:`)
+                                                                if (password === null) return
+                                                                if (!password.trim()) {
+                                                                    alert('Password is required')
+                                                                    return
+                                                                }
+                                                                try {
+                                                                    await deleteCustomCategory(catName, password)
+                                                                    alert(`Successfully deleted "${catName}" category`)
+                                                                } catch (err: any) {
+                                                                    alert(err.message)
+                                                                }
+                                                            }}
+                                                            className="text-[10px] font-bold text-rose-500 hover:text-rose-600 flex items-center gap-1 transition-colors"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" /> Delete Category
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
@@ -1342,13 +1334,13 @@ export default function SettingsPage() {
                                 </div>
 
                                 <div className="flex justify-end gap-3 border-t border-border/40 pt-4 mt-6">
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         onClick={async () => {
                                             if (confirm('Are you sure you want to reset all categories back to default settings?')) {
                                                 await resetCategorySettings()
                                             }
-                                        }} 
+                                        }}
                                         className="flex items-center gap-2"
                                     >
                                         <RefreshCw className="h-4 w-4" /> Reset Default Colors & Keywords

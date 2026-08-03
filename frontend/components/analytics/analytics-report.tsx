@@ -209,7 +209,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                         {insights && insights.length > 0 ? (
                             <div className="space-y-4">
                                 {insights.map((insight, index) => (
-                                    <div 
+                                    <div
                                         key={index}
                                         className="flex items-start space-x-3 p-3.5 bg-muted/40 rounded-xl hover:bg-muted/60 transition-colors border border-border/50"
                                     >
@@ -283,7 +283,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                         </div>
                                         {/* Progress Bar Container */}
                                         <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                                            <div 
+                                            <div
                                                 className={cn("h-full rounded-full transition-all duration-500 ease-out", categoryTab === 'spending' ? "bg-rose-500" : "bg-emerald-500")}
                                                 style={{ width: `${category.percentage}%` }}
                                             />
@@ -322,26 +322,26 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                 <BarChart data={convertedWeeklySpend} margin={{ top: 10, right: 10, left: 20, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="weeklySpendGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="rgb(244, 63, 94)" stopOpacity={0.85}/>
-                                            <stop offset="100%" stopColor="rgb(190, 18, 60)" stopOpacity={0.3}/>
+                                            <stop offset="0%" stopColor="rgb(244, 63, 94)" stopOpacity={0.85} />
+                                            <stop offset="100%" stopColor="rgb(190, 18, 60)" stopOpacity={0.3} />
                                         </linearGradient>
                                         <linearGradient id="weeklyIncomeGrad" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="rgb(52, 211, 153)" stopOpacity={0.9}/>
-                                            <stop offset="100%" stopColor="rgb(5, 150, 105)" stopOpacity={0.3}/>
+                                            <stop offset="0%" stopColor="rgb(52, 211, 153)" stopOpacity={0.9} />
+                                            <stop offset="100%" stopColor="rgb(5, 150, 105)" stopOpacity={0.3} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#888888" strokeOpacity={0.15} vertical={false} />
-                                    <XAxis 
-                                        dataKey="name" 
-                                        tick={{ fontSize: 11, fill: 'currentColor' }} 
+                                    <XAxis
+                                        dataKey="name"
+                                        tick={{ fontSize: 11, fill: 'currentColor' }}
                                         className="text-muted-foreground"
                                         axisLine={false}
                                         tickLine={false}
                                     />
-                                    <YAxis 
-                                        tick={{ fontSize: 11, fill: 'currentColor' }} 
+                                    <YAxis
+                                        tick={{ fontSize: 11, fill: 'currentColor' }}
                                         className="text-muted-foreground"
-                                        tickFormatter={(value: number) => `${symbol}${value}`} 
+                                        tickFormatter={(value: number) => `${symbol}${value}`}
                                         axisLine={false}
                                         tickLine={false}
                                     />
@@ -360,17 +360,17 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                         wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
                                         formatter={(value) => <span style={{ color: 'hsl(var(--muted-foreground))' }}>{value}</span>}
                                     />
-                                    <Bar 
-                                        dataKey="Spending" 
-                                        fill="url(#weeklySpendGrad)" 
+                                    <Bar
+                                        dataKey="Spending"
+                                        fill="url(#weeklySpendGrad)"
                                         radius={[4, 4, 0, 0]}
                                         barSize={20}
                                         stroke="rgb(190, 18, 60)"
                                         strokeWidth={1}
                                     />
-                                    <Bar 
-                                        dataKey="Income" 
-                                        fill="url(#weeklyIncomeGrad)" 
+                                    <Bar
+                                        dataKey="Income"
+                                        fill="url(#weeklyIncomeGrad)"
                                         radius={[4, 4, 0, 0]}
                                         barSize={20}
                                         stroke="rgb(5, 150, 105)"
@@ -423,12 +423,12 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                     <span>Weekends ({((weekdayWeekend.weekendTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100).toFixed(0)}%)</span>
                                 </div>
                                 <div className="h-3 w-full bg-primary/10 rounded-full overflow-hidden flex">
-                                    <div 
-                                        className="bg-primary h-full transition-all duration-500" 
+                                    <div
+                                        className="bg-primary h-full transition-all duration-500"
                                         style={{ width: `${(weekdayWeekend.weekdayTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100}%` }}
                                     />
-                                    <div 
-                                        className="bg-primary/50 h-full transition-all duration-500" 
+                                    <div
+                                        className="bg-primary/50 h-full transition-all duration-500"
                                         style={{ width: `${(weekdayWeekend.weekendTotal / (weekdayWeekend.weekdayTotal + weekdayWeekend.weekendTotal || 1)) * 100}%` }}
                                     />
                                 </div>
@@ -461,8 +461,8 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                     </span>
                                 </div>
                                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                                    <div 
-                                        className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
+                                    <div
+                                        className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                                         style={{ width: `${(transactionSizes.low / (transactionSizes.low + transactionSizes.medium + transactionSizes.high || 1)) * 100}%` }}
                                     />
                                 </div>
@@ -477,8 +477,8 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                     </span>
                                 </div>
                                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                                    <div 
-                                        className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+                                    <div
+                                        className="bg-amber-500 h-full rounded-full transition-all duration-500"
                                         style={{ width: `${(transactionSizes.medium / (transactionSizes.low + transactionSizes.medium + transactionSizes.high || 1)) * 100}%` }}
                                     />
                                 </div>
@@ -493,8 +493,8 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                     </span>
                                 </div>
                                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                                    <div 
-                                        className="bg-red-500 h-full rounded-full transition-all duration-500" 
+                                    <div
+                                        className="bg-red-500 h-full rounded-full transition-all duration-500"
                                         style={{ width: `${(transactionSizes.high / (transactionSizes.low + transactionSizes.medium + transactionSizes.high || 1)) * 100}%` }}
                                     />
                                 </div>

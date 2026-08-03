@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { FileUpload } from '@/components/upload/file-upload'
+import dynamic from 'next/dynamic'
+const FileUpload = dynamic(() => import('@/components/upload/file-upload').then(mod => mod.FileUpload), { ssr: false })
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Info, Calendar } from 'lucide-react'
 import Link from 'next/link'

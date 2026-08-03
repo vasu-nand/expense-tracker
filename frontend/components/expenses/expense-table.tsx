@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
 import { BottomSelect } from '@/components/ui/bottom-select'
+import { ExpensesEmptyState } from './expenses-empty-state'
 
 interface Expense {
     _id: string;
@@ -29,6 +30,7 @@ interface ExpenseTableProps {
     onDelete: () => void;
     onEdit: (expense: Expense) => void;
     onDeleteRequest: (expense: Expense) => void;
+    onAddClick?: () => void;
 }
 
 export function ExpenseTable({
@@ -42,7 +44,8 @@ export function ExpenseTable({
     onLimitChange,
     onDelete,
     onEdit,
-    onDeleteRequest
+    onDeleteRequest,
+    onAddClick
 }: ExpenseTableProps) {
     const { format } = useCurrency()
     const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -108,6 +111,14 @@ export function ExpenseTable({
         return (
             <div className="flex justify-center items-center h-64 border rounded-lg bg-card text-destructive">
                 <p>{error}</p>
+            </div>
+        )
+    }
+
+    if (expenses.length === 0) {
+        return (
+            <div className="border border-border rounded-lg bg-card shadow-sm overflow-hidden">
+                <ExpensesEmptyState onAddClick={onAddClick} />
             </div>
         )
     }

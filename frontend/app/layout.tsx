@@ -8,6 +8,7 @@ import { DesktopFab } from '@/components/desktop-fab'
 import { CurrencyProvider } from '@/hooks/use-currency'
 import { ThemeCustomizerProvider } from '@/components/theme-customizer-provider'
 import { AccountProvider } from '@/components/account-context'
+import { TransactionAnimation } from '@/components/ui/transaction-animation'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,6 +38,7 @@ export default function RootLayout({
                                         {children}
                                     </main>
                                     <DesktopFab />
+                                    <TransactionAnimation />
                                     <ShutdownWatcher />
                                 </div>
                             </CurrencyProvider>

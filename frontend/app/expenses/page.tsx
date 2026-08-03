@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ExpenseTable } from '@/components/expenses/expense-table'
 import { ExpenseFilters } from '@/components/expenses/expense-filters'
 import { useExpenses } from '@/hooks/useExpenses'
-import { AddExpenseDialog } from '@/components/expenses/add-expense-dialog'
-import { EditExpenseDialog } from '@/components/expenses/edit-expense-dialog'
+import dynamic from 'next/dynamic'
+const AddExpenseDialog = dynamic(() => import('@/components/expenses/add-expense-dialog').then(mod => mod.AddExpenseDialog), { ssr: false })
+const EditExpenseDialog = dynamic(() => import('@/components/expenses/edit-expense-dialog').then(mod => mod.EditExpenseDialog), { ssr: false })
 import { Plus, DollarSign, TrendingUp, Sparkles, Receipt, Lock, X, KeyRound, Loader2, RotateCw } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
 import { Button } from '@/components/ui/button'
 import { api } from '@/services/api'
 import { getLocalMonth } from '@/lib/utils'
 
-export default function ExpensesPage() {
+function ExpensesPageContent() {
     const { format } = useCurrency()
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -52,6 +53,7 @@ export default function ExpensesPage() {
     const [deletePassword, setDeletePassword] = useState('')
     const [deleteError, setDeleteError] = useState('')
     const [deleting, setDeleting] = useState(false)
+    const [deleteStatus, setDeleteStatus] = useState<'idle' | 'loading' | 'success'>('idle')
 
     // Sync search and filters from URL when URL parameters change (e.g. navigation)
     useEffect(() => {
@@ -189,8 +191,30 @@ export default function ExpensesPage() {
             await api.delete(`/expenses/${deletingExpense._id}`, {
                 headers: { 'x-delete-password': deletePassword }
             })
-            refetch()
-            setDeletingExpense(null)
+            
+            // Get coordinates of the submitter button
+            const submitter = (e.nativeEvent as any).submitter as HTMLElement
+            let x = window.innerWidth / 2
+            let y = window.innerHeight / 2
+            if (submitter) {
+                const rect = submitter.getBoundingClientRect()
+                x = rect.left + rect.width / 2
+                y = rect.top + rect.height / 2
+            }
+            
+            // Trigger deletion particle burst
+            window.dispatchEvent(new CustomEvent('trigger-transaction-animation', {
+                detail: { type: 'delete', x, y }
+            }))
+
+            setDeleteStatus('success')
+            
+            // Delay closing modal so animation can execute
+            setTimeout(() => {
+                refetch()
+                setDeletingExpense(null)
+                setDeleteStatus('idle')
+            }, 1100)
         } catch (err: any) {
             setDeleteError(err.response?.data?.error || 'Invalid password or failed deletion')
         } finally {
@@ -353,6 +377,7 @@ export default function ExpensesPage() {
                 onDelete={refetch}
                 onEdit={handleEdit}
                 onDeleteRequest={handleDeleteRequest}
+                onAddClick={() => setIsAddOpen(true)}
             />
 
             <AddExpenseDialog
@@ -379,7 +404,14 @@ export default function ExpensesPage() {
             {/* Password-Protected Delete Modal - rendered at page root */}
             {deletingExpense && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="relative w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-200" style={{backgroundColor: 'hsl(var(--card))', backdropFilter: 'none'}}>
+                    <div 
+                        className={`relative w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl ${
+                            deleteStatus === 'success'
+                                ? 'animate-delete-disintegrate'
+                                : 'animate-in fade-in-50 zoom-in-95 duration-200'
+                        }`} 
+                        style={{backgroundColor: 'hsl(var(--card))', backdropFilter: 'none'}}
+                    >
                         <div className="flex justify-between items-start border-b pb-3">
                             <div className="flex items-center space-x-2 text-destructive">
                                 <Lock className="h-5 w-5" />
@@ -432,15 +464,38 @@ export default function ExpensesPage() {
                                 <Button
                                     type="submit"
                                     variant="destructive"
-                                    disabled={deleting}
-                                    className="h-9 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    disabled={deleting || deleteStatus === 'success'}
+                                    className={`h-9 text-xs transition-all duration-300 relative min-w-[110px] ${
+                                        deleteStatus === 'success'
+                                            ? 'bg-rose-600 dark:bg-rose-500 hover:bg-rose-600 text-white border-rose-600'
+                                            : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                                    }`}
                                 >
-                                    {deleting ? (
+                                    {deleting && (
                                         <>
                                             <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
                                             Deleting...
                                         </>
-                                    ) : 'Confirm Delete'}
+                                    )}
+                                    {deleteStatus === 'success' && (
+                                        <div className="flex items-center justify-center space-x-1.5 animate-scale-up-spring">
+                                            <svg
+                                                className="h-3.5 w-3.5 stroke-current"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                strokeWidth="4"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M5 13l4 4L19 7"
+                                                    className="animate-draw-tick"
+                                                />
+                                            </svg>
+                                            <span className="font-bold">Deleted</span>
+                                        </div>
+                                    )}
+                                    {!deleting && deleteStatus === 'idle' && 'Confirm Delete'}
                                 </Button>
                             </div>
                         </form>
@@ -448,5 +503,18 @@ export default function ExpensesPage() {
                 </div>
             )}
         </div>
+    )
+}
+
+export default function ExpensesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+                <Loader2 className="h-10 w-10 animate-spin text-teal-500" />
+                <p className="text-muted-foreground animate-pulse text-sm">Loading transactions...</p>
+            </div>
+        }>
+            <ExpensesPageContent />
+        </Suspense>
     )
 }
