@@ -9,6 +9,7 @@ import categoryRoutes from './routes/categoryRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import bankAccountRoutes from './routes/bankAccountRoutes';
 import comparisonRoutes from './routes/comparisonRoutes';
+import portfolioRoutes from './routes/portfolioRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { reloadCategoryKeywordsCache } from './utils/categoryDetector';
 import { runDatabaseMigration } from './utils/migrationHelper';
@@ -31,6 +32,7 @@ app.use('/api', categoryRoutes);
 app.use('/api', settingsRoutes);
 app.use('/api', bankAccountRoutes);
 app.use('/api', comparisonRoutes);
+app.use('/api', portfolioRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
