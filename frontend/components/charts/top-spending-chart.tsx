@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useCurrency } from '@/hooks/use-currency'
 import { Eye, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 
 interface TopSpendingChartProps {
@@ -61,6 +62,10 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 7);
 
+    const CustomTopSpendingTooltip = (props: any) => (
+        <ChartTooltip {...props} />
+    )
+
     const renderChartContent = (isModal: boolean = false) => {
         return (
             <ResponsiveContainer width="100%" height="100%">
@@ -85,17 +90,9 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                         tickLine={false}
                     />
                     <Tooltip
-                        contentStyle={{
-                            backgroundColor: 'hsl(var(--card))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: 'var(--radius)',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                        }}
-                        itemStyle={{ color: 'hsl(var(--foreground))' }}
-                        labelStyle={{ color: 'hsl(var(--foreground))' }}
+                        wrapperStyle={{ zIndex: 1000 }}
+                        content={<CustomTopSpendingTooltip />}
                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
-                        formatter={(value: any) => [`${symbol}${Number(value).toFixed(2)}`, activeTab === 'expense' ? 'Spending' : 'Income']}
-                        labelFormatter={(label) => label}
                     />
                     <Bar
                         dataKey="amount"

@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCurrency } from '@/hooks/use-currency'
 import { Eye, X } from 'lucide-react'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 
 interface DailyTrendChartProps {
@@ -89,6 +90,10 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
         return convertedData.slice(startIndex, lastActiveIndex + 1)
     }, [convertedData, zoomRange, isFullScreen])
 
+    const CustomTrendTooltip = (props: any) => (
+        <ChartTooltip {...props} />
+    )
+
     return (
         <>
             <Card className="border border-border bg-card shadow-md transition-shadow hover:shadow-lg">
@@ -139,17 +144,7 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                 axisLine={false}
                                 tickLine={false}
                             />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                formatter={(value: any, name: any) => {
-                                    const valNum = Number(value || 0)
-                                    const prefix = valNum < 0 ? '-' : ''
-                                    const absValue = Math.abs(valNum)
-                                    return [`${prefix}${symbol}${absValue.toFixed(2)}`, name]
-                                }}
-                            />
+                            <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomTrendTooltip />} />
                             <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                             {(viewMode === 'all' || viewMode === 'income') && (
                                 <Line
@@ -271,17 +266,7 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                         axisLine={false}
                                         tickLine={false}
                                     />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: 'white', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
-                                        itemStyle={{ color: 'black' }}
-                                        labelStyle={{ color: 'black' }}
-                                        formatter={(value: any, name: any) => {
-                                             const valNum = Number(value || 0)
-                                             const prefix = valNum < 0 ? '-' : ''
-                                             const absValue = Math.abs(valNum)
-                                             return [`${prefix}${symbol}${absValue.toFixed(2)}`, name]
-                                         }}
-                                    />
+                                    <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomTrendTooltip />} />
                                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                     {(viewMode === 'all' || viewMode === 'income') && (
                                         <Line

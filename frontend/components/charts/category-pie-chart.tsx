@@ -5,6 +5,7 @@ import { useCurrency } from '@/hooks/use-currency'
 import { useThemeCustomizer } from '@/components/theme-customizer-provider'
 import { Eye, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 
 
@@ -59,6 +60,10 @@ export function CategoryPieChart({ data, incomeData = {} }: CategoryPieChartProp
 
     const totalAmount = chartData.reduce((sum, item) => sum + item.value, 0);
 
+    const CustomPieTooltip = (props: any) => (
+        <ChartTooltip {...props} showPercentage totalValue={totalAmount} />
+    )
+
     const renderMainContent = (isModal: boolean = false) => {
         if (chartData.length === 0) {
             return (
@@ -110,22 +115,11 @@ export function CategoryPieChart({ data, incomeData = {} }: CategoryPieChartProp
                                     )
                                 })}
                             </Pie>
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'white',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                                    color: 'black'
-                                }}
-                                itemStyle={{ color: 'black' }}
-                                labelStyle={{ color: 'black' }}
-                                formatter={(value: any) => [`${symbol}${Number(value).toFixed(2)}`, activeTab === 'expense' ? 'Spend' : 'Income']}
-                            />
+                            <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomPieTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Center Text inside Donut */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
                         <span className={cn("font-semibold tracking-wider text-muted-foreground uppercase", isModal ? "text-xs" : "text-[10px]")}>
                             Total
                         </span>

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Sparkles, AlertTriangle, Lightbulb, PieChart, BarChart3, CalendarDays, Activity, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 import { cn } from '@/lib/utils'
 
 interface AnalyticsReportProps {
@@ -345,17 +346,7 @@ export function AnalyticsReport({ data }: AnalyticsReportProps) {
                                         axisLine={false}
                                         tickLine={false}
                                     />
-                                    <RechartsTooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--card))',
-                                            border: '1px solid hsl(var(--border))',
-                                            borderRadius: 'var(--radius)',
-                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                        }}
-                                        itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                        labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                        formatter={(value: any, name: any) => [`${symbol}${Number(value).toFixed(2)}`, name]}
-                                    />
+                                    <RechartsTooltip content={<ChartTooltip />} />
                                     <Legend
                                         wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
                                         formatter={(value) => <span style={{ color: 'hsl(var(--muted-foreground))' }}>{value}</span>}

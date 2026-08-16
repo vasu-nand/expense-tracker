@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-glow-tx" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0.05" />
+    </linearGradient>
+
+    <linearGradient id="emerald-tx" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="rose-tx" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#e11d48" />
+    </linearGradient>
+
+    <linearGradient id="amber-tx" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <filter id="shadow-tx" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+
+    <style>
+      @keyframes float-receipt {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+      }
+      @keyframes arrow-bounce {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+      }
+      @keyframes coin-drop {
+        0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+        50% { opacity: 1; }
+        100% { transform: translateY(15px) rotate(180deg); opacity: 0; }
+      }
+      @keyframes pulse-ring {
+        0%, 100% { opacity: 0.2; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.05); }
+      }
+      .anim-receipt { animation: float-receipt 4s ease-in-out infinite; transform-origin: center; }
+      .anim-arrow { animation: arrow-bounce 2.5s ease-in-out infinite; transform-origin: center; }
+      .anim-coin { animation: coin-drop 3s ease-in-out infinite; transform-origin: center; }
+      .anim-ring { animation: pulse-ring 4s ease-in-out infinite; transform-origin: center; }
+    </style>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="200" cy="150" r="115" fill="url(#bg-glow-tx)" className="anim-ring" />
+
+  <!-- Main Floating Receipt Ledger -->
+  <g className="anim-receipt" filter="url(#shadow-tx)">
+    <rect x="120" y="65" width="160" height="170" rx="16" fill="#181825" stroke="#313244" stroke-width="2" />
+    
+    <!-- Receipt Header -->
+    <rect x="120" y="65" width="160" height="35" rx="16" fill="#2a2b3d" />
+    <rect x="120" y="85" width="160" height="15" fill="#2a2b3d" />
+    
+    <text x="140" y="87" font-family="Arial, sans-serif" font-weight="extrabold" font-size="12" fill="#10b981">TRANSACTIONS &amp; DIVIDENDS</text>
+
+    <!-- Buy Row (Green) -->
+    <g transform="translate(135, 115)">
+      <circle cx="12" cy="12" r="12" fill="url(#emerald-tx)" />
+      <path d="M 8 16 L 16 8 M 16 8 H 10 M 16 8 V 14" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <rect x="32" y="5" width="50" height="6" rx="3" fill="#6c7086" />
+      <rect x="32" y="15" width="30" height="4" rx="2" fill="#45475a" />
+      <text x="120" y="16" font-family="Arial, sans-serif" font-weight="bold" font-size="11" fill="#10b981" text-anchor="end">+₹25,000</text>
+    </g>
+
+    <line x1="135" y1="145" x2="265" y2="145" stroke="#313244" stroke-width="1" stroke-dasharray="3 3" />
+
+    <!-- Sell Row (Red) -->
+    <g transform="translate(135, 155)">
+      <circle cx="12" cy="12" r="12" fill="url(#rose-tx)" />
+      <path d="M 8 8 L 16 16 M 16 16 H 10 M 16 16 V 10" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <rect x="32" y="5" width="45" height="6" rx="3" fill="#6c7086" />
+      <rect x="32" y="15" width="25" height="4" rx="2" fill="#45475a" />
+      <text x="120" y="16" font-family="Arial, sans-serif" font-weight="bold" font-size="11" fill="#f43f5e" text-anchor="end">-₹12,400</text>
+    </g>
+
+    <line x1="135" y1="185" x2="265" y2="185" stroke="#313244" stroke-width="1" stroke-dasharray="3 3" />
+
+    <!-- Dividend Payout Row (Amber) -->
+    <g transform="translate(135, 195)">
+      <circle cx="12" cy="12" r="12" fill="url(#amber-tx)" />
+      <text x="12" y="16" font-family="Arial, sans-serif" font-weight="bold" font-size="12" fill="#ffffff" text-anchor="middle">₹</text>
+      <rect x="32" y="5" width="55" height="6" rx="3" fill="#6c7086" />
+      <rect x="32" y="15" width="35" height="4" rx="2" fill="#45475a" />
+      <text x="120" y="16" font-family="Arial, sans-serif" font-weight="bold" font-size="11" fill="#f59e0b" text-anchor="end">+₹1,850</text>
+    </g>
+  </g>
+
+  <!-- Side Floating Arrows & Coins -->
+  <g className="anim-arrow" transform="translate(80, 110)" filter="url(#shadow-tx)">
+    <circle cx="20" cy="20" r="18" fill="url(#emerald-tx)" />
+    <path d="M 14 24 L 26 12 M 26 12 H 18 M 26 12 V 20" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <g className="anim-coin" transform="translate(295, 100)" filter="url(#shadow-tx)">
+    <circle cx="15" cy="15" r="15" fill="url(#amber-tx)" />
+    <text x="15" y="20" font-family="Arial, sans-serif" font-weight="bold" font-size="13" fill="#ffffff" text-anchor="middle">₹</text>
+  </g>
+</svg>

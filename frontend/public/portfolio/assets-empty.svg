@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" width="100%" height="100%">
+  <defs>
+    <!-- Background & Glow Gradients -->
+    <linearGradient id="assets-bg-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18" />
+      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0.05" />
+    </linearGradient>
+    
+    <linearGradient id="vault-card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#9333ea" />
+    </linearGradient>
+
+    <linearGradient id="glass-body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181825" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#11111b" stop-opacity="0.98" />
+    </linearGradient>
+
+    <linearGradient id="emerald-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="cyan-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+
+    <linearGradient id="amber-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <linearGradient id="ring-line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0" />
+      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Shadow Filter -->
+    <filter id="assets-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+
+    <!-- Embedded Keyframe Animations -->
+    <style>
+      @keyframes main-float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-12px) rotate(1.2deg); }
+      }
+      @keyframes float-badge1 {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-16px) scale(1.06); }
+      }
+      @keyframes float-badge2 {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(-8deg); }
+      }
+      @keyframes float-badge3 {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-14px) scale(1.08); }
+      }
+      @keyframes pulse-ring {
+        0%, 100% { opacity: 0.4; transform: scale(1); }
+        50% { opacity: 0.75; transform: scale(1.06); }
+      }
+      @keyframes rotate-dashed {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes shimmer-bar {
+        0%, 100% { opacity: 0.6; transform: scaleX(1); }
+        50% { opacity: 1; transform: scaleX(1.1); }
+      }
+
+      .animated-main-vault { animation: main-float 5.2s ease-in-out infinite; transform-origin: center; }
+      .animated-badge-stock { animation: float-badge1 3.8s ease-in-out infinite; transform-origin: center; }
+      .animated-badge-crypto { animation: float-badge2 4.5s ease-in-out infinite; transform-origin: center; }
+      .animated-badge-mf { animation: float-badge3 4.1s ease-in-out infinite 0.5s; transform-origin: center; }
+      .animated-pulse-glow { animation: pulse-ring 4s ease-in-out infinite; transform-origin: center; }
+      .animated-orbit-ring { animation: rotate-dashed 25s linear infinite; transform-origin: center; }
+      .animated-shimmer { animation: shimmer-bar 3s ease-in-out infinite; transform-origin: left; }
+    </style>
+  </defs>
+
+  <!-- Glowing Background & Orbit Rings -->
+  <circle cx="200" cy="150" r="130" fill="url(#assets-bg-glow)" className="animated-pulse-glow" />
+  <g className="animated-orbit-ring">
+    <circle cx="200" cy="150" r="115" stroke="url(#ring-line)" stroke-width="2" fill="none" stroke-dasharray="10 8" />
+  </g>
+
+  <!-- Background Asset Grid Pattern -->
+  <g opacity="0.12">
+    <line x1="60" y1="230" x2="340" y2="230" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" />
+    <line x1="60" y1="180" x2="340" y2="180" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" />
+    <line x1="60" y1="130" x2="340" y2="130" stroke="#6366f1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- Central Asset Catalog Vault Card -->
+  <g className="animated-main-vault" filter="url(#assets-shadow)">
+    <!-- Main Card Body -->
+    <rect x="105" y="80" width="190" height="140" rx="24" fill="url(#glass-body)" stroke="#313244" stroke-width="2.5" />
+    
+    <!-- Top Header Banner -->
+    <path d="M 105 104 C 105 90.7 115.7 80 129 80 L 271 80 C 284.3 80 295 90.7 295 104 L 295 120 L 105 120 Z" fill="url(#vault-card-grad)" />
+
+    <!-- Asset Directory Header Text / Ticker Icon -->
+    <rect x="125" y="94" width="28" height="16" rx="5" fill="#ffffff" opacity="0.25" />
+    <circle cx="134" cy="102" r="4" fill="#ffffff" />
+    <rect x="144" y="99" width="35" height="6" rx="3" fill="#ffffff" opacity="0.9" />
+    
+    <rect x="235" y="94" width="45" height="16" rx="8" fill="#10b981" opacity="0.9" />
+    <text x="257.5" y="105.5" font-family="system-ui, sans-serif" font-weight="900" font-size="9" fill="#ffffff" text-anchor="middle">+24.8%</text>
+
+    <!-- Asset Rows Inside Vault Card -->
+    <!-- Row 1: Stock (NSE / RELIANCE) -->
+    <g transform="translate(125, 134)">
+      <rect x="0" y="0" width="150" height="22" rx="7" fill="#24273a" />
+      <circle cx="12" cy="11" r="5" fill="url(#cyan-glow)" />
+      <rect x="24" y="7" width="45" height="8" rx="2" fill="#89b4fa" />
+      <rect x="105" y="7" width="32" height="8" rx="2" fill="#a6e3a1" className="animated-shimmer" />
+    </g>
+
+    <!-- Row 2: Crypto (BTC / ETH) -->
+    <g transform="translate(125, 162)">
+      <rect x="0" y="0" width="150" height="22" rx="7" fill="#24273a" />
+      <circle cx="12" cy="11" r="5" fill="url(#amber-glow)" />
+      <rect x="24" y="7" width="55" height="8" rx="2" fill="#f9e2af" />
+      <rect x="105" y="7" width="32" height="8" rx="2" fill="#f38ba8" />
+    </g>
+
+    <!-- Row 3: Mutual Fund / ETF -->
+    <g transform="translate(125, 190)">
+      <rect x="0" y="0" width="150" height="22" rx="7" fill="#24273a" />
+      <circle cx="12" cy="11" r="5" fill="url(#emerald-glow)" />
+      <rect x="24" y="7" width="40" height="8" rx="2" fill="#a6e3a1" />
+      <rect x="105" y="7" width="32" height="8" rx="2" fill="#a6e3a1" className="animated-shimmer" />
+    </g>
+  </g>
+
+  <!-- Floating Orbiting Badges -->
+
+  <!-- Top-Left Badge: Stocks Ticker #AAPL -->
+  <g className="animated-badge-stock" transform="translate(65, 65)" filter="url(#assets-shadow)">
+    <rect x="0" y="0" width="70" height="34" rx="12" fill="url(#cyan-glow)" />
+    <text x="35" y="17" font-family="system-ui, sans-serif" font-weight="900" font-size="11" fill="#ffffff" text-anchor="middle">STOCKS</text>
+    <text x="35" y="27" font-family="system-ui, sans-serif" font-weight="700" font-size="8" fill="#e0f2fe" text-anchor="middle">NSE • NASDAQ</text>
+  </g>
+
+  <!-- Right Orbiting Badge: Crypto Coin (BTC) -->
+  <g className="animated-badge-crypto" transform="translate(290, 140)" filter="url(#assets-shadow)">
+    <circle cx="22" cy="22" r="22" fill="url(#amber-glow)" />
+    <circle cx="22" cy="22" r="17" fill="none" stroke="#fde047" stroke-width="1.5" opacity="0.8" />
+    <text x="22" y="28" font-family="system-ui, sans-serif" font-weight="900" font-size="17" fill="#ffffff" text-anchor="middle">₿</text>
+  </g>
+
+  <!-- Bottom-Left Badge: Growth Chart / Mutual Funds -->
+  <g className="animated-badge-mf" transform="translate(70, 185)" filter="url(#assets-shadow)">
+    <rect x="0" y="0" width="65" height="32" rx="10" fill="url(#emerald-glow)" />
+    <path d="M 12 22 L 25 15 L 38 18 L 52 10" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline points="45,10 52,10 52,17" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Top-Right Floating Star Sparkle -->
+  <g transform="translate(305, 75)" opacity="0.85">
+    <path d="M 10 0 L 13 7 L 20 10 L 13 13 L 10 20 L 7 13 L 0 10 L 7 7 Z" fill="#38bdf8" />
+  </g>
+</svg>

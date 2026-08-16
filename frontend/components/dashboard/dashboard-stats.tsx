@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, DollarSign, Calendar, List, ArrowDownRight, ArrowUpRight, Wallet } from 'lucide-react'
+import { TrendingUp, DollarSign, Calendar, List, ArrowDownRight, ArrowUpRight, Wallet, Landmark } from 'lucide-react'
 import { useCurrency } from '@/hooks/use-currency'
 
 interface DashboardStatsProps {
@@ -11,12 +11,21 @@ interface DashboardStatsProps {
         highestExpenseDay: number
         totalEntries: number
     }
+    portfolioNetWorth?: number
 }
 
-export function DashboardStats({ data }: DashboardStatsProps) {
+export function DashboardStats({ data, portfolioNetWorth }: DashboardStatsProps) {
     const { format } = useCurrency()
 
-    const stats = [
+    const primaryStats = [
+        {
+            title: 'Total Net Worth',
+            value: format(portfolioNetWorth || 0),
+            icon: Landmark,
+            description: 'Combined investments & portfolio assets',
+            color: 'from-purple-500/10 to-purple-500/5 text-purple-600 dark:text-purple-400 border-purple-500/20',
+            barColor: 'from-purple-400 to-purple-600'
+        },
         {
             title: 'Total Income',
             value: format(data.totalIncome || 0),
@@ -32,7 +41,10 @@ export function DashboardStats({ data }: DashboardStatsProps) {
             description: 'Cumulative spending for the month',
             color: 'from-rose-500/10 to-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-500/20',
             barColor: 'from-rose-400 to-rose-600'
-        },
+        }
+    ]
+
+    const secondaryStats = [
         {
             title: 'Net Savings',
             value: format(data.netSavings || 0),
@@ -69,28 +81,38 @@ export function DashboardStats({ data }: DashboardStatsProps) {
         }
     ]
 
+    const renderCard = (stat: any, index: number) => {
+        const Icon = stat.icon
+        return (
+            <Card key={index} className="overflow-hidden border border-border/80 bg-card/60 backdrop-blur transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 group">
+                <div className={`h-1 bg-gradient-to-r ${stat.barColor}`} />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {stat.title}
+                    </CardTitle>
+                    <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.color} transition-transform duration-300 group-hover:scale-110`}>
+                        <Icon className="h-4 w-4" />
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-2">
+                    <div className="text-2xl font-black font-mono tracking-tight text-foreground">{stat.value}</div>
+                    <p className="text-[10px] text-muted-foreground mt-1 font-medium">{stat.description}</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
-            {stats.map((stat, index) => {
-                const Icon = stat.icon
-                return (
-                    <Card key={index} className="overflow-hidden border border-border/80 bg-card/60 backdrop-blur transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 group">
-                        <div className={`h-1 bg-gradient-to-r ${stat.barColor}`} />
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-4">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                {stat.title}
-                            </CardTitle>
-                            <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.color} transition-transform duration-300 group-hover:scale-110`}>
-                                <Icon className="h-4 w-4" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-2">
-                            <div className="text-2xl font-black font-mono tracking-tight text-foreground">{stat.value}</div>
-                            <p className="text-[10px] text-muted-foreground mt-1 font-medium">{stat.description}</p>
-                        </CardContent>
-                    </Card>
-                )
-            })}
+        <div className="space-y-3 sm:space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-500">
+            {/* Desktop Row 1: 3 cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                {primaryStats.map((stat, idx) => renderCard(stat, idx))}
+            </div>
+
+            {/* Desktop Row 2: 4 cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                {secondaryStats.map((stat, idx) => renderCard(stat, idx + 3))}
+            </div>
         </div>
     )
 }
