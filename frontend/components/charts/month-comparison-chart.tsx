@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useCurrency } from '@/hooks/use-currency'
 import { Eye, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 interface MonthComparisonChartProps {
     data: Array<{
@@ -64,8 +65,12 @@ export function MonthComparisonChart({ data }: MonthComparisonChartProps) {
             'url(#grad-monthA-income)': colors.monthA.income[0],
             'url(#grad-monthA-expense)': colors.monthA.expense[0],
             'url(#grad-monthB-income)': colors.monthB.income[0],
-            'url(#grad-monthB-expense)': colors.monthB.expense[0],
+            'url(#grad-monthB-expense)': colors.monthB.expense[0]
         };
+
+        const CustomMonthCompTooltip = (props: any) => (
+            <ChartTooltip {...props} />
+        )
 
         return (
             <div className={cn("flex flex-col items-stretch gap-6 w-full h-full md:flex-row", isModal && "pb-8")}>
@@ -136,21 +141,11 @@ export function MonthComparisonChart({ data }: MonthComparisonChartProps) {
                                 dataKey="value"
                                 labelLine={false}
                             >
-                                {pieData.map((entry, index) => (
+                                 {pieData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.fill} className="transition-opacity duration-300 hover:opacity-85" />
                                 ))}
                             </Pie>
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'hsl(var(--card))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 'var(--radius)',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-                                }}
-                                itemStyle={{ color: 'hsl(var(--foreground))' }}
-                                labelStyle={{ color: 'hsl(var(--foreground))' }}
-                                formatter={(value: any) => [`${symbol}${Number(value).toFixed(2)}`, 'Amount']}
-                            />
+                            <Tooltip content={<CustomMonthCompTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Center Net Savings */}

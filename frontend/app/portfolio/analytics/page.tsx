@@ -18,6 +18,7 @@ import { api } from '@/services/api'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 import { 
     BarChart, 
     Bar, 
@@ -99,65 +100,13 @@ export default function PortfolioAnalyticsPage() {
     }
 
     // Fully Theme-Responsive Glassmorphism Custom Tooltips
-    const CustomAllocationTooltip = ({ active, payload }: any) => {
-        if (!active || !payload || !payload.length) return null
-        const data = payload[0]
-        const categoryName = data.payload?.category || data.name
-        const value = Number(data.value || 0)
-        const percent = totalVal > 0 ? ((value / totalVal) * 100).toFixed(1) : '0.0'
-        const color = data.payload?.color || data.color || data.fill || '#6366f1'
+    const CustomAllocationTooltip = (props: any) => (
+        <ChartTooltip {...props} showPercentage totalValue={totalVal} />
+    )
 
-        return (
-            <div className="bg-card/95 backdrop-blur-xl border border-border shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] rounded-2xl p-4 min-w-[200px] text-xs space-y-2 ring-1 ring-border/50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center gap-2 border-b border-border/60 pb-2">
-                    <span className="h-3 w-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: color }} />
-                    <span className="font-extrabold text-foreground tracking-wide text-xs">{categoryName}</span>
-                </div>
-                <div className="space-y-1.5 pt-0.5">
-                    <div className="flex items-center justify-between text-muted-foreground gap-4">
-                        <span className="font-medium">Allocated Capital:</span>
-                        <span className="font-mono font-extrabold text-foreground">{format(value)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-muted-foreground gap-4">
-                        <span className="font-medium">Portfolio Share:</span>
-                        <span className="font-mono font-bold text-primary">{percent}%</span>
-                    </div>
-                </div>
-            </div>
-        )
-    }
-
-    const CustomHoldingsTooltip = ({ active, payload }: any) => {
-        if (!active || !payload || !payload.length) return null
-        const data = payload[0]
-        const symbol = data.payload?.name || data.name
-        const fullName = data.payload?.fullName || ''
-        const value = Number(data.value || 0)
-        const percent = totalVal > 0 ? ((value / totalVal) * 100).toFixed(1) : '0.0'
-        const color = data.payload?.color || '#6366f1'
-
-        return (
-            <div className="bg-card/95 backdrop-blur-xl border border-border shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] rounded-2xl p-4 min-w-[200px] text-xs space-y-2 ring-1 ring-border/50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center gap-2 border-b border-border/60 pb-2">
-                    <span className="h-3 w-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: color }} />
-                    <div>
-                        <p className="font-extrabold text-foreground font-mono text-xs">{symbol}</p>
-                        {fullName && <p className="text-xs text-muted-foreground truncate max-w-[160px]">{fullName}</p>}
-                    </div>
-                </div>
-                <div className="space-y-1.5 pt-0.5">
-                    <div className="flex items-center justify-between text-muted-foreground gap-4">
-                        <span className="font-medium">Market Value:</span>
-                        <span className="font-mono font-extrabold text-foreground">{format(value)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-muted-foreground gap-4">
-                        <span className="font-medium">Capital Weight:</span>
-                        <span className="font-mono font-bold text-amber-500">{percent}%</span>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    const CustomHoldingsTooltip = (props: any) => (
+        <ChartTooltip {...props} showPercentage totalValue={totalVal} />
+    )
 
     return (
         <div className="container mx-auto p-4 sm:p-6 space-y-6">

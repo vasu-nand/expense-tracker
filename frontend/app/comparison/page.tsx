@@ -33,6 +33,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
     ResponsiveContainer, Legend, LineChart, Line, PieChart, Pie, Cell 
 } from 'recharts'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 import { getLocalMonth, cn } from '@/lib/utils'
 import { MonthPicker } from '@/components/ui/month-picker'
 import { DynamicIcon } from '@/components/navigation'
@@ -500,22 +501,7 @@ export default function ComparisonPage() {
                                         <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
                                             cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
-                                            content={({ active, payload }) => {
-                                                if (active && payload && payload.length) {
-                                                    const rowData = payload[0].payload;
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
-                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
-                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
-                                                                <span>{rowData.name}</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-zinc-400">Total Spending:</p>
-                                                            <p className="text-sm font-black text-rose-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
+                                            content={<ChartTooltip />}
                                         />
                                         <Bar dataKey="Total Spending" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={32}>
                                             {cumulativeTotalData.map((entry, index) => {
@@ -553,32 +539,7 @@ export default function ComparisonPage() {
                                         <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
-                                        <Tooltip 
-                                            content={({ active, payload, label }) => {
-                                                if (active && payload && payload.length) {
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[140px]">
-                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1">{label}</p>
-                                                            {[...payload]
-                                                                .sort((a, b) => Number(b.value) - Number(a.value))
-                                                                .map((p) => {
-                                                                    const acc = comparisonData.accounts.find(a => a.name === p.name);
-                                                                    return (
-                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
-                                                                            <div className="flex items-center space-x-1.5">
-                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
-                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
-                                                                            </div>
-                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toFixed(0)}</span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
+                                        <Tooltip content={<ChartTooltip />} />
                                         <Legend wrapperStyle={{ fontSize: 10, paddingTop: '10px' }} />
                                         {comparisonData.accounts.map((acc) => (
                                             <Line 
@@ -627,38 +588,7 @@ export default function ComparisonPage() {
                                         <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="category" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 9 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
-                                        <Tooltip 
-                                            content={({ active, payload, label }) => {
-                                                if (active && payload && payload.length) {
-                                                    const total = payload.reduce((sum, p) => sum + Number(p.value), 0);
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[150px]">
-                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1 capitalize">{label}</p>
-                                                            {[...payload]
-                                                                .sort((a, b) => Number(b.value) - Number(a.value))
-                                                                .map((p) => {
-                                                                    const acc = comparisonData.accounts.find(a => a.name === p.name);
-                                                                    const percent = total > 0 ? (Number(p.value) / total) * 100 : 0;
-                                                                    return (
-                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
-                                                                            <div className="flex items-center space-x-1.5">
-                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
-                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
-                                                                            </div>
-                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toFixed(0)} <span className="text-[9px] text-teal-400 font-normal">({percent.toFixed(0)}%)</span></span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            <div className="border-t border-border/10 pt-1 mt-1 flex justify-between font-black text-primary">
-                                                                <span>Total:</span>
-                                                                <span>{symbol}{total.toFixed(0)}</span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
+                                        <Tooltip content={<ChartTooltip showPercentage />} />
                                         <Legend wrapperStyle={{ fontSize: 10, paddingTop: '10px' }} />
                                         {comparisonData.accounts.map((acc) => (
                                             <Bar 
@@ -708,22 +638,7 @@ export default function ComparisonPage() {
                                         <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
                                             cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
-                                            content={({ active, payload }) => {
-                                                if (active && payload && payload.length) {
-                                                    const rowData = payload[0].payload;
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
-                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
-                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
-                                                                <span>{rowData.name}</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-zinc-400">Avg Daily Spend:</p>
-                                                            <p className="text-sm font-black text-teal-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
+                                            content={<ChartTooltip />}
                                         />
                                         <Bar dataKey="Avg Daily Spend" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={32}>
                                             {avgDailyData.map((entry, index) => {
@@ -790,10 +705,7 @@ export default function ComparisonPage() {
                                                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="hover:opacity-85 transition-opacity" />
                                                                     ))}
                                                                 </Pie>
-                                                                <Tooltip 
-                                                                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                                                    formatter={(v: any) => [`${symbol}${Number(v).toFixed(2)}`, 'Spend']} 
-                                                                />
+                                                                <Tooltip content={<ChartTooltip showPercentage />} />
                                                             </PieChart>
                                                         </ResponsiveContainer>
                                                     </div>
@@ -1147,22 +1059,7 @@ export default function ComparisonPage() {
                                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
                                             cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
-                                            content={({ active, payload }) => {
-                                                if (active && payload && payload.length) {
-                                                    const rowData = payload[0].payload;
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
-                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
-                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
-                                                                <span>{rowData.name}</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-zinc-400">Total Spending:</p>
-                                                            <p className="text-sm font-black text-rose-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
+                                            content={<ChartTooltip />}
                                         />
                                         <Bar dataKey="Total Spending" fill="#0d9488" radius={[8, 8, 0, 0]} maxBarSize={60}>
                                             {cumulativeTotalData.map((entry, index) => {
@@ -1182,32 +1079,7 @@ export default function ComparisonPage() {
                                         <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
-                                        <Tooltip 
-                                            content={({ active, payload, label }) => {
-                                                if (active && payload && payload.length) {
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[150px]">
-                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1">{label}</p>
-                                                            {[...payload]
-                                                                .sort((a, b) => Number(b.value) - Number(a.value))
-                                                                .map((p) => {
-                                                                    const acc = comparisonData?.accounts.find(a => a.name === p.name);
-                                                                    return (
-                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
-                                                                            <div className="flex items-center space-x-1.5">
-                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
-                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
-                                                                            </div>
-                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
+                                        <Tooltip content={<ChartTooltip />} />
                                         <Legend wrapperStyle={{ fontSize: 11, paddingTop: '10px' }} />
                                         {comparisonData?.accounts.map((acc) => (
                                             <Line 
@@ -1238,38 +1110,7 @@ export default function ComparisonPage() {
                                         <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
                                         <XAxis dataKey="category" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
-                                        <Tooltip 
-                                            content={({ active, payload, label }) => {
-                                                if (active && payload && payload.length) {
-                                                    const total = payload.reduce((sum, p) => sum + Number(p.value), 0);
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono space-y-1.5 min-w-[160px]">
-                                                            <p className="font-black text-zinc-300 border-b border-border/10 pb-1 mb-1 capitalize">{label}</p>
-                                                            {[...payload]
-                                                                .sort((a, b) => Number(b.value) - Number(a.value))
-                                                                .map((p) => {
-                                                                    const acc = comparisonData?.accounts.find(a => a.name === p.name);
-                                                                    const percent = total > 0 ? (Number(p.value) / total) * 100 : 0;
-                                                                    return (
-                                                                        <div key={p.name} className="flex justify-between items-center space-x-4">
-                                                                            <div className="flex items-center space-x-1.5">
-                                                                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: acc?.color || p.color }} />
-                                                                                <span className="text-[10px] text-zinc-400 font-bold truncate max-w-[80px]">{p.name}</span>
-                                                                            </div>
-                                                                            <span className="font-extrabold text-zinc-100">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })} <span className="text-[9px] text-teal-400 font-normal">({percent.toFixed(0)}%)</span></span>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            <div className="border-t border-border/10 pt-1 mt-1 flex justify-between font-black text-primary">
-                                                                <span>Total:</span>
-                                                                <span>{symbol}{total.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
+                                        <Tooltip content={<ChartTooltip showPercentage />} />
                                         <Legend wrapperStyle={{ fontSize: 11, paddingTop: '10px' }} />
                                         {comparisonData?.accounts.map((acc) => (
                                             <Bar 
@@ -1301,22 +1142,7 @@ export default function ComparisonPage() {
                                         <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${symbol}${v}`} axisLine={false} tickLine={false} />
                                         <Tooltip 
                                             cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
-                                            content={({ active, payload }) => {
-                                                if (active && payload && payload.length) {
-                                                    const rowData = payload[0].payload;
-                                                    return (
-                                                        <div className="bg-zinc-950/95 dark:bg-zinc-900/95 text-white p-3 rounded-xl border border-border/20 shadow-xl text-xs font-mono">
-                                                            <div className="flex items-center space-x-1.5 font-bold mb-1">
-                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rowData.color }} />
-                                                                <span>{rowData.name}</span>
-                                                            </div>
-                                                            <p className="text-[10px] text-zinc-400">Avg Daily Spend:</p>
-                                                            <p className="text-sm font-black text-teal-400">{symbol}{Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
+                                            content={<ChartTooltip />}
                                         />
                                         <Bar dataKey="Avg Daily Spend" fill="#0d9488" radius={[8, 8, 0, 0]} maxBarSize={60}>
                                             {avgDailyData.map((entry, index) => {

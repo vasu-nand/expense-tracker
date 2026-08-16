@@ -14,6 +14,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { reloadCategoryKeywordsCache } from './utils/categoryDetector';
 import { runDatabaseMigration } from './utils/migrationHelper';
 import { startPriceScheduler } from './services/priceScheduler';
+import { migrateExistingPortfolioTransactions } from './services/portfolioMigrationService';
 
 dotenv.config();
 
@@ -79,6 +80,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/expense_d
         
         // Execute primary account workspace migration and default seeding
         await runDatabaseMigration();
+        
+        // Migrate & backfill portfolio transactions and dividends into Expense entries
+        await migrateExistingPortfolioTransactions();
         
         // Build keywords classification cache in memory
         await reloadCategoryKeywordsCache();

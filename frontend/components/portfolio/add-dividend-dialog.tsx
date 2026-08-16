@@ -13,9 +13,11 @@ interface AddDividendDialogProps {
     onClose: () => void
     onSuccess: () => void
     assets: Array<{ _id: string; symbol: string; name: string; assetType: string }>
+    initialAssetId?: string
+    editingDividend?: any
 }
 
-export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDividendDialogProps) {
+export function AddDividendDialog({ isOpen, onClose, onSuccess, assets, initialAssetId, editingDividend }: AddDividendDialogProps) {
     const [mounted, setMounted] = useState(false)
     const [assetId, setAssetId] = useState('')
     const [amount, setAmount] = useState('')
@@ -24,6 +26,8 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [availableAssets, setAvailableAssets] = useState(assets)
+    const [bankAccounts, setBankAccounts] = useState<any[]>([])
+    const [bankAccountId, setBankAccountId] = useState('')
 
     const bodyRef = useRef<HTMLDivElement>(null)
     const [canScrollDown, setCanScrollDown] = useState(false)
@@ -44,27 +48,64 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
     useEffect(() => {
         setMounted(true)
         if (isOpen) {
+            if (editingDividend) {
+                setAssetId(editingDividend.assetId?._id || editingDividend.assetId || '')
+                setAmount(String(editingDividend.amount || ''))
+                setTax(String(editingDividend.tax || 0))
+                setBankAccountId(editingDividend.bankAccountId?._id || editingDividend.bankAccountId || '')
+                if (editingDividend.date) {
+                    setDate(new Date(editingDividend.date).toISOString().slice(0, 10))
+                }
+            } else {
+                setAmount('')
+                setTax('0')
+                setDate(new Date().toISOString().slice(0, 10))
+                if (initialAssetId) {
+                    setAssetId(initialAssetId)
+                }
+            }
+
+            api.get('/accounts')
+                .then(res => {
+                    const accs = res.data?.accounts || []
+                    setBankAccounts(accs)
+                    if (accs.length > 0 && !bankAccountId) {
+                        const targetBankId = editingDividend?.bankAccountId?._id || editingDividend?.bankAccountId || accs[0]._id
+                        setBankAccountId(targetBankId)
+                    }
+                })
+                .catch(() => {})
+
             api.get('/portfolio/assets')
                 .then(res => {
                     const fetched = res.data || []
                     setAvailableAssets(fetched)
                     if (fetched.length > 0) {
-                        const exists = fetched.some((a: any) => String(a._id) === String(assetId))
-                        if (!assetId || !exists) {
+                        if (editingDividend) {
+                            setAssetId(editingDividend.assetId?._id || editingDividend.assetId)
+                        } else if (initialAssetId) {
+                            setAssetId(initialAssetId)
+                        } else if (!assetId) {
                             setAssetId(fetched[0]._id)
                         }
                     }
                 })
                 .catch(() => {
                     setAvailableAssets(assets)
-                    if (assets.length > 0 && !assetId) {
-                        setAssetId(assets[0]._id)
+                    if (assets.length > 0) {
+                        if (editingDividend) {
+                            setAssetId(editingDividend.assetId?._id || editingDividend.assetId)
+                        } else if (initialAssetId) {
+                            setAssetId(initialAssetId)
+                        } else if (!assetId) {
+                            setAssetId(assets[0]._id)
+                        }
                     }
                 })
             
             setTimeout(checkScroll, 150)
         }
-    }, [isOpen, assets])
+    }, [isOpen, assets, initialAssetId, editingDividend])
 
     if (!isOpen || !mounted || typeof document === 'undefined') return null
 
@@ -84,18 +125,26 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
         try {
             setLoading(true)
             setError('')
-            await api.post('/portfolio/dividends', {
+            const payload = {
                 assetId,
+                bankAccountId: bankAccountId || undefined,
                 amount: amtNum,
-                tax: parseFloat(tax) || 0,
+                tax: Math.max(0, parseFloat(tax) || 0),
                 date: new Date(date).toISOString()
-            })
+            }
+
+            if (editingDividend?._id) {
+                await api.put(`/portfolio/dividends/${editingDividend._id}`, payload)
+            } else {
+                await api.post('/portfolio/dividends', payload)
+            }
+
             setAmount('')
             setTax('0')
             onSuccess()
             onClose()
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to log dividend')
+            setError(err.response?.data?.error || 'Failed to save dividend')
         } finally {
             setLoading(false)
         }
@@ -116,6 +165,11 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
         label: `${a.symbol} - ${a.name}`
     }))
 
+    const bankAccountOptions = bankAccounts.map(b => ({
+        value: b._id,
+        label: `${b.name} (${b.bankName})`
+    }))
+
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
@@ -125,7 +179,7 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
                         <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                             <Coins className="h-5 w-5" />
                         </div>
-                        <h2 className="text-lg font-extrabold text-foreground">Record Dividend Income</h2>
+                        <h2 className="text-lg font-extrabold text-foreground">{editingDividend ? 'Edit Dividend Entry' : 'Record Dividend Income'}</h2>
                     </div>
                     <button onClick={onClose} className="p-1 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
                         <X className="h-5 w-5" />
@@ -157,6 +211,20 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
                                 disabled={availableAssets.length === 0}
                             />
                         </div>
+
+                        {bankAccounts.length > 0 && (
+                            <div>
+                                <label className="text-xs font-bold text-muted-foreground block mb-1">Deposit Bank Account</label>
+                                <BottomSelect
+                                    value={bankAccountId}
+                                    onChange={setBankAccountId}
+                                    options={bankAccountOptions}
+                                    label="Select Bank Account"
+                                    placeholder="Select bank account..."
+                                    triggerClassName="py-2 text-xs"
+                                />
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -215,7 +283,7 @@ export function AddDividendDialog({ isOpen, onClose, onSuccess, assets }: AddDiv
                             Cancel
                         </Button>
                         <Button type="submit" size="sm" disabled={loading || !assetId} className="rounded-xl text-xs bg-custom-btn-gradient text-white">
-                            {loading ? 'Saving...' : 'Record Dividend'}
+                            {loading ? 'Saving...' : editingDividend ? 'Update Dividend' : 'Record Dividend'}
                         </Button>
                     </div>
                 </form>

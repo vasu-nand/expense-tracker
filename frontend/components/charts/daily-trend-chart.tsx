@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCurrency } from '@/hooks/use-currency'
 import { Eye, X } from 'lucide-react'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 
 interface DailyTrendChartProps {
@@ -89,35 +90,9 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
         return convertedData.slice(startIndex, lastActiveIndex + 1)
     }, [convertedData, zoomRange, isFullScreen])
 
-    const CustomTrendTooltip = ({ active, payload, label }: any) => {
-        if (!active || !payload || !payload.length) return null
-
-        return (
-            <div className="bg-card/95 backdrop-blur-xl border border-border shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] rounded-2xl p-4 min-w-[190px] text-xs space-y-2 ring-1 ring-border/50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="font-extrabold text-foreground border-b border-border/60 pb-1.5 text-xs">
-                    {label}
-                </div>
-                <div className="space-y-1.5 pt-0.5">
-                    {payload.map((entry: any, index: number) => {
-                        const valNum = Number(entry.value || 0)
-                        const prefix = valNum < 0 ? '-' : ''
-                        const absValue = Math.abs(valNum)
-                        return (
-                            <div key={index} className="flex items-center justify-between text-muted-foreground gap-3">
-                                <div className="flex items-center gap-1.5">
-                                    <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: entry.stroke || entry.color }} />
-                                    <span className="font-medium text-foreground">{entry.name}:</span>
-                                </div>
-                                <span className="font-mono font-extrabold text-foreground">
-                                    {prefix}{symbol}{absValue.toFixed(2)}
-                                </span>
-                            </div>
-                        )
-                    })}
-                </div>
-            </div>
-        )
-    }
+    const CustomTrendTooltip = (props: any) => (
+        <ChartTooltip {...props} />
+    )
 
     return (
         <>

@@ -12,6 +12,7 @@ import {
     Filter, 
     Plus, 
     Trash2, 
+    Pencil,
     RefreshCw, 
     Calendar,
     DollarSign
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils'
 
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
 import { BottomSelect } from '@/components/ui/bottom-select'
+import { TradingViewLink } from '@/components/portfolio/tradingview-link'
 
 export default function PortfolioTransactionsPage() {
     const { format } = useCurrency()
@@ -83,6 +85,8 @@ export default function PortfolioTransactionsPage() {
     const [isAddTxOpen, setIsAddTxOpen] = useState(false)
     const [isAddDividendOpen, setIsAddDividendOpen] = useState(false)
     const [isAddAssetOpen, setIsAddAssetOpen] = useState(false)
+    const [editingTx, setEditingTx] = useState<any>(null)
+    const [editingDividend, setEditingDividend] = useState<any>(null)
 
     const fetchAllData = async () => {
         try {
@@ -384,7 +388,10 @@ export default function PortfolioTransactionsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="p-3">
-                                                    <div className="font-bold text-foreground">{tx.assetId?.symbol || 'UNASSIGNED'}</div>
+                                                    <div className="font-bold text-foreground flex items-center gap-1.5">
+                                                        <span>{tx.assetId?.symbol || 'UNASSIGNED'}</span>
+                                                        {tx.assetId?.symbol && <TradingViewLink symbol={tx.assetId.symbol} exchange={tx.assetId.exchange} />}
+                                                    </div>
                                                     <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{tx.assetId?.name}</div>
                                                 </td>
                                                 <td className="p-3 text-right font-mono font-bold">{tx.quantity}</td>
@@ -394,7 +401,17 @@ export default function PortfolioTransactionsPage() {
                                                 <td className="p-3 text-muted-foreground whitespace-nowrap">
                                                     {new Date(tx.dateTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </td>
-                                                <td className="p-3 pr-6 text-right">
+                                                <td className="p-3 pr-6 text-right flex items-center justify-end gap-1">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingTx(tx)
+                                                            setIsAddTxOpen(true)
+                                                        }}
+                                                        className="p-1 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                                        title="Edit transaction"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteTx(tx._id)}
                                                         className="p-1 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
@@ -438,7 +455,10 @@ export default function PortfolioTransactionsPage() {
                                         return (
                                             <tr key={div._id} className="hover:bg-muted/30 transition-colors">
                                                 <td className="p-3 pl-6">
-                                                    <div className="font-bold text-foreground">{div.assetId?.symbol || 'UNASSIGNED'}</div>
+                                                    <div className="font-bold text-foreground flex items-center gap-1.5">
+                                                        <span>{div.assetId?.symbol || 'UNASSIGNED'}</span>
+                                                        {div.assetId?.symbol && <TradingViewLink symbol={div.assetId.symbol} exchange={div.assetId.exchange} />}
+                                                    </div>
                                                     <div className="text-[10px] text-muted-foreground truncate max-w-[150px]">{div.assetId?.name}</div>
                                                 </td>
                                                 <td className="p-3 text-right font-mono">{format(div.amount)}</td>
@@ -447,7 +467,17 @@ export default function PortfolioTransactionsPage() {
                                                 <td className="p-3 text-muted-foreground whitespace-nowrap">
                                                     {new Date(div.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </td>
-                                                <td className="p-3 pr-6 text-right">
+                                                <td className="p-3 pr-6 text-right flex items-center justify-end gap-1">
+                                                    <button
+                                                        onClick={() => {
+                                                            setEditingDividend(div)
+                                                            setIsAddDividendOpen(true)
+                                                        }}
+                                                        className="p-1 rounded-lg text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500 transition-colors"
+                                                        title="Edit dividend entry"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteDividend(div._id)}
                                                         className="p-1 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
@@ -488,7 +518,10 @@ export default function PortfolioTransactionsPage() {
                                     {filteredAssets.map((asset) => (
                                         <tr key={asset._id} className="hover:bg-muted/30 transition-colors">
                                             <td className="p-3 pl-6">
-                                                <div className="font-bold text-foreground font-mono">{asset.symbol}</div>
+                                                <div className="font-bold text-foreground font-mono flex items-center gap-1.5">
+                                                    <span>{asset.symbol}</span>
+                                                    <TradingViewLink symbol={asset.symbol} exchange={asset.exchange} />
+                                                </div>
                                                 <div className="text-[10px] text-muted-foreground truncate max-w-[200px]">{asset.name}</div>
                                             </td>
                                             <td className="p-3">
@@ -526,16 +559,24 @@ export default function PortfolioTransactionsPage() {
             {/* Dialog Modals */}
             <AddTransactionDialog
                 isOpen={isAddTxOpen}
-                onClose={() => setIsAddTxOpen(false)}
+                onClose={() => {
+                    setIsAddTxOpen(false)
+                    setEditingTx(null)
+                }}
                 onSuccess={fetchAllData}
                 assets={assetsList}
+                editingTransaction={editingTx}
             />
 
             <AddDividendDialog
                 isOpen={isAddDividendOpen}
-                onClose={() => setIsAddDividendOpen(false)}
+                onClose={() => {
+                    setIsAddDividendOpen(false)
+                    setEditingDividend(null)
+                }}
                 onSuccess={fetchAllData}
                 assets={assetsList}
+                editingDividend={editingDividend}
             />
 
             <AddAssetDialog

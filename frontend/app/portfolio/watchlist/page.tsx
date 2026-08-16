@@ -21,6 +21,7 @@ import { api } from '@/services/api'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
+import { TradingViewLink } from '@/components/portfolio/tradingview-link'
 
 export default function WatchlistPage() {
     const { format } = useCurrency()
@@ -131,7 +132,10 @@ export default function WatchlistPage() {
                                             <tr key={item._id} className="hover:bg-muted/30 transition-colors">
                                                 <td className="p-3.5 font-bold text-foreground">
                                                     <div className="flex flex-col">
-                                                        <span className="font-black text-sm">{item.symbol}</span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="font-black text-sm">{item.symbol}</span>
+                                                            <TradingViewLink symbol={item.symbol} exchange={item.exchange} />
+                                                        </div>
                                                         <span className="text-[11px] text-muted-foreground font-normal">{item.name}</span>
                                                     </div>
                                                 </td>

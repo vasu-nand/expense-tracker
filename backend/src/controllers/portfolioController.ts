@@ -10,6 +10,8 @@ import Expense from '../models/Expense';
 import { getAssetPrice, getLiveExchangeRates, searchSymbols } from '../services/priceService';
 import { calculateXIRR } from '../utils/wealthEngine';
 import { recordAndSyncAllPrices } from '../services/priceScheduler';
+import { syncTransactionToExpense, syncDividendToExpense, removeSyncedExpense } from '../services/portfolioSyncService';
+import { migrateExistingPortfolioTransactions } from '../services/portfolioMigrationService';
 
 // Get comprehensive wealth & portfolio summary
 export const getPortfolioSummary = async (req: Request, res: Response): Promise<void> => {
@@ -305,6 +307,15 @@ export const deleteAsset = async (req: Request, res: Response): Promise<void> =>
         const { id } = req.params;
         const asset = await InvestmentAsset.findById(id);
         if (asset) {
+            const txs = await InvestmentTransaction.find({ assetId: id });
+            for (const tx of txs) {
+                await removeSyncedExpense(tx.expenseId);
+            }
+            const divs = await Dividend.find({ assetId: id });
+            for (const div of divs) {
+                await removeSyncedExpense(div.expenseId);
+            }
+
             await InvestmentTransaction.deleteMany({ assetId: id });
             await Dividend.deleteMany({ assetId: id });
             await Watchlist.deleteMany({ symbol: asset.symbol });
@@ -321,6 +332,7 @@ export const getTransactions = async (req: Request, res: Response): Promise<void
     try {
         const transactions = await InvestmentTransaction.find()
             .populate('assetId')
+            .populate('bankAccountId')
             .sort({ dateTime: -1 });
         res.json(transactions);
     } catch (error: any) {
@@ -330,9 +342,10 @@ export const getTransactions = async (req: Request, res: Response): Promise<void
 
 export const addTransaction = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { assetId, type, quantity, price, fees, tax, dateTime, notes } = req.body;
+        const { assetId, bankAccountId, type, quantity, price, fees, tax, dateTime, notes } = req.body;
         const transaction = new InvestmentTransaction({
             assetId,
+            bankAccountId: bankAccountId || undefined,
             type,
             quantity,
             price,
@@ -342,6 +355,12 @@ export const addTransaction = async (req: Request, res: Response): Promise<void>
             notes
         });
         await transaction.save();
+
+        const asset = await InvestmentAsset.findById(assetId);
+        if (asset) {
+            await syncTransactionToExpense(transaction, asset);
+        }
+
         res.status(201).json(transaction);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -351,8 +370,45 @@ export const addTransaction = async (req: Request, res: Response): Promise<void>
 export const deleteTransaction = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        await InvestmentTransaction.findByIdAndDelete(id);
+        const transaction = await InvestmentTransaction.findById(id);
+        if (transaction) {
+            await removeSyncedExpense(transaction.expenseId);
+            await InvestmentTransaction.findByIdAndDelete(id);
+        }
         res.json({ message: 'Transaction deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const updateTransaction = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { assetId, bankAccountId, type, quantity, price, fees, tax, dateTime, notes } = req.body;
+        const transaction = await InvestmentTransaction.findById(id);
+        if (!transaction) {
+            res.status(404).json({ error: 'Transaction not found' });
+            return;
+        }
+
+        if (assetId) transaction.assetId = assetId;
+        if (bankAccountId !== undefined) transaction.bankAccountId = bankAccountId || undefined;
+        if (type) transaction.type = type;
+        if (quantity !== undefined) transaction.quantity = quantity;
+        if (price !== undefined) transaction.price = price;
+        if (fees !== undefined) transaction.fees = Math.max(0, fees);
+        if (tax !== undefined) transaction.tax = Math.max(0, tax);
+        if (dateTime) transaction.dateTime = new Date(dateTime);
+        if (notes !== undefined) transaction.notes = notes;
+
+        await transaction.save();
+
+        const asset = await InvestmentAsset.findById(transaction.assetId);
+        if (asset) {
+            await syncTransactionToExpense(transaction, asset);
+        }
+
+        res.json(transaction);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -370,14 +426,21 @@ export const getDividends = async (req: Request, res: Response): Promise<void> =
 
 export const addDividend = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { assetId, amount, date, tax } = req.body;
+        const { assetId, bankAccountId, amount, date, tax } = req.body;
         const dividend = new Dividend({
             assetId,
+            bankAccountId: bankAccountId || undefined,
             amount,
             date: date || new Date(),
-            tax: tax || 0
+            tax: Math.max(0, tax || 0)
         });
         await dividend.save();
+
+        const asset = await InvestmentAsset.findById(assetId);
+        if (asset) {
+            await syncDividendToExpense(dividend, asset);
+        }
+
         res.status(201).json(dividend);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -387,8 +450,53 @@ export const addDividend = async (req: Request, res: Response): Promise<void> =>
 export const deleteDividend = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        await Dividend.findByIdAndDelete(id);
+        const dividend = await Dividend.findById(id);
+        if (dividend) {
+            await removeSyncedExpense(dividend.expenseId);
+            await Dividend.findByIdAndDelete(id);
+        }
         res.json({ message: 'Dividend deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const updateDividend = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { assetId, bankAccountId, amount, date, tax } = req.body;
+        const dividend = await Dividend.findById(id);
+        if (!dividend) {
+            res.status(404).json({ error: 'Dividend entry not found' });
+            return;
+        }
+
+        if (assetId) dividend.assetId = assetId;
+        if (bankAccountId !== undefined) dividend.bankAccountId = bankAccountId || undefined;
+        if (amount !== undefined) dividend.amount = amount;
+        if (tax !== undefined) dividend.tax = Math.max(0, tax);
+        if (date) dividend.date = new Date(date);
+
+        await dividend.save();
+
+        const asset = await InvestmentAsset.findById(dividend.assetId);
+        if (asset) {
+            await syncDividendToExpense(dividend, asset);
+        }
+
+        res.json(dividend);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const migratePortfolioExpenses = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const result = await migrateExistingPortfolioTransactions();
+        res.json({
+            message: 'Portfolio expenses migration completed successfully',
+            ...result
+        });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

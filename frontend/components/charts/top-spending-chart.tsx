@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useCurrency } from '@/hooks/use-currency'
 import { Eye, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 
 interface TopSpendingChartProps {
@@ -61,23 +62,9 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 7);
 
-    const CustomTopSpendingTooltip = ({ active, payload, label }: any) => {
-        if (!active || !payload || !payload.length) return null
-        const data = payload[0]
-        const value = Number(data.value || 0)
-
-        return (
-            <div className="bg-card/95 backdrop-blur-xl border border-border shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] rounded-2xl p-3.5 min-w-[170px] text-xs space-y-1.5 ring-1 ring-border/50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="font-extrabold text-foreground border-b border-border/60 pb-1.5 text-xs">
-                    {label}
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground pt-0.5">
-                    <span className="font-medium">{activeTab === 'expense' ? 'Spending:' : 'Income:'}</span>
-                    <span className="font-mono font-extrabold text-foreground">{symbol}{value.toFixed(2)}</span>
-                </div>
-            </div>
-        )
-    }
+    const CustomTopSpendingTooltip = (props: any) => (
+        <ChartTooltip {...props} />
+    )
 
     const renderChartContent = (isModal: boolean = false) => {
         return (

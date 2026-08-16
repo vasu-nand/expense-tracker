@@ -45,6 +45,8 @@ const ASSET_COLORS: Record<string, string> = {
 }
 
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
+import { TradingViewLink } from '@/components/portfolio/tradingview-link'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 export default function PortfolioOverviewPage() {
     const { format } = useCurrency()
@@ -92,34 +94,9 @@ export default function PortfolioOverviewPage() {
 
     const isPositivePL = (summary.totalProfitLoss || 0) >= 0
 
-    const CustomOverviewTooltip = ({ active, payload }: any) => {
-        if (!active || !payload || !payload.length) return null
-        const data = payload[0]
-        const categoryName = data.name || data.payload?.name
-        const value = Number(data.value || 0)
-        const totalVal = summary.currentValue || summary.netWorth || 1
-        const percent = ((value / totalVal) * 100).toFixed(1)
-        const color = ASSET_COLORS[data.payload?.key] || data.fill || '#6366f1'
-
-        return (
-            <div className="bg-card/95 backdrop-blur-xl border border-border shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] rounded-2xl p-4 min-w-[190px] text-xs space-y-2 ring-1 ring-border/50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center gap-2 border-b border-border/60 pb-2">
-                    <span className="h-3 w-3 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: color }} />
-                    <span className="font-extrabold text-foreground tracking-wide text-xs">{categoryName}</span>
-                </div>
-                <div className="space-y-1.5 pt-0.5">
-                    <div className="flex items-center justify-between text-muted-foreground gap-4">
-                        <span className="font-medium">Market Value:</span>
-                        <span className="font-mono font-extrabold text-foreground">{format(value)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-muted-foreground gap-4">
-                        <span className="font-medium">Capital Share:</span>
-                        <span className="font-mono font-bold text-primary">{percent}%</span>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+    const CustomOverviewTooltip = (props: any) => (
+        <ChartTooltip {...props} showPercentage totalValue={summary.currentValue || summary.netWorth} />
+    )
 
     return (
         <div className="container mx-auto p-4 sm:p-6 space-y-6">
@@ -267,7 +244,10 @@ export default function PortfolioOverviewPage() {
                                                 <tr key={h.assetId} className="hover:bg-muted/30 transition-colors">
                                                     <td className="p-3.5 font-bold text-foreground">
                                                         <div className="flex flex-col">
-                                                            <span className="font-black text-sm">{h.symbol}</span>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="font-black text-sm">{h.symbol}</span>
+                                                                <TradingViewLink symbol={h.symbol} exchange={h.exchange} />
+                                                            </div>
                                                             <span className="text-[11px] text-muted-foreground font-normal truncate max-w-[140px]">{h.name}</span>
                                                         </div>
                                                     </td>

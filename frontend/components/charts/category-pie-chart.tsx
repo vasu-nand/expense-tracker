@@ -5,6 +5,7 @@ import { useCurrency } from '@/hooks/use-currency'
 import { useThemeCustomizer } from '@/components/theme-customizer-provider'
 import { Eye, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ChartTooltip } from '@/components/charts/chart-tooltip'
 
 
 
@@ -59,26 +60,9 @@ export function CategoryPieChart({ data, incomeData = {} }: CategoryPieChartProp
 
     const totalAmount = chartData.reduce((sum, item) => sum + item.value, 0);
 
-    const CustomPieTooltip = ({ active, payload }: any) => {
-        if (!active || !payload || !payload.length) return null
-        const data = payload[0]
-        const name = data.name
-        const value = Number(data.value || 0)
-        const color = data.payload?.fill || data.fill || '#6366f1'
-
-        return (
-            <div className="bg-card/95 backdrop-blur-xl border border-border shadow-xl dark:shadow-[0_12px_35px_rgba(0,0,0,0.5)] rounded-2xl p-3.5 min-w-[170px] text-xs space-y-1.5 ring-1 ring-border/50 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center gap-2 border-b border-border/60 pb-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: color }} />
-                    <span className="font-extrabold text-foreground tracking-wide text-xs capitalize">{name}</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground pt-0.5">
-                    <span className="font-medium">{activeTab === 'expense' ? 'Spend:' : 'Income:'}</span>
-                    <span className="font-mono font-extrabold text-foreground">{symbol}{value.toFixed(2)}</span>
-                </div>
-            </div>
-        )
-    }
+    const CustomPieTooltip = (props: any) => (
+        <ChartTooltip {...props} showPercentage totalValue={totalAmount} />
+    )
 
     const renderMainContent = (isModal: boolean = false) => {
         if (chartData.length === 0) {

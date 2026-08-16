@@ -21,6 +21,7 @@ import { AddAssetDialog } from '@/components/portfolio/add-asset-dialog'
 import { AddTransactionDialog } from '@/components/portfolio/add-transaction-dialog'
 import { AddDividendDialog } from '@/components/portfolio/add-dividend-dialog'
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
+import { TradingViewLink } from '@/components/portfolio/tradingview-link'
 import { api } from '@/services/api'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
@@ -50,6 +51,8 @@ export default function PortfolioAssetsPage() {
     const [isAddAssetOpen, setIsAddAssetOpen] = useState(false)
     const [isAddTxOpen, setIsAddTxOpen] = useState(false)
     const [isAddDividendOpen, setIsAddDividendOpen] = useState(false)
+    const [selectedAssetIdForTx, setSelectedAssetIdForTx] = useState<string | undefined>(undefined)
+    const [selectedAssetIdForDiv, setSelectedAssetIdForDiv] = useState<string | undefined>(undefined)
 
     const fetchAssets = async () => {
         try {
@@ -250,7 +253,10 @@ export default function PortfolioAssetsPage() {
                                     return (
                                         <tr key={asset._id} className="hover:bg-muted/30 transition-colors">
                                             <td className="p-3.5 pl-6">
-                                                <div className="font-extrabold text-foreground font-mono text-xs">{asset.symbol}</div>
+                                                <div className="font-extrabold text-foreground font-mono text-xs flex items-center gap-1.5">
+                                                    <span>{asset.symbol}</span>
+                                                    <TradingViewLink symbol={asset.symbol} exchange={asset.exchange} />
+                                                </div>
                                                 <div className="text-[11px] text-muted-foreground truncate max-w-[220px]">{asset.name}</div>
                                             </td>
                                             <td className="p-3.5">
@@ -290,7 +296,10 @@ export default function PortfolioAssetsPage() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        onClick={() => setIsAddTxOpen(true)}
+                                                        onClick={() => {
+                                                            setSelectedAssetIdForTx(asset._id)
+                                                            setIsAddTxOpen(true)
+                                                        }}
                                                         className="h-7 text-[11px] px-2 rounded-lg gap-1 border-primary/30 text-primary hover:bg-primary/10"
                                                         title="Record trade for this asset"
                                                     >
@@ -299,7 +308,10 @@ export default function PortfolioAssetsPage() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        onClick={() => setIsAddDividendOpen(true)}
+                                                        onClick={() => {
+                                                            setSelectedAssetIdForDiv(asset._id)
+                                                            setIsAddDividendOpen(true)
+                                                        }}
                                                         className="h-7 text-[11px] px-2 rounded-lg gap-1 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10"
                                                         title="Record dividend for this asset"
                                                     >
@@ -332,16 +344,24 @@ export default function PortfolioAssetsPage() {
 
             <AddTransactionDialog
                 isOpen={isAddTxOpen}
-                onClose={() => setIsAddTxOpen(false)}
+                onClose={() => {
+                    setIsAddTxOpen(false)
+                    setSelectedAssetIdForTx(undefined)
+                }}
                 onSuccess={fetchAssets}
                 assets={assets}
+                initialAssetId={selectedAssetIdForTx}
             />
 
             <AddDividendDialog
                 isOpen={isAddDividendOpen}
-                onClose={() => setIsAddDividendOpen(false)}
+                onClose={() => {
+                    setIsAddDividendOpen(false)
+                    setSelectedAssetIdForDiv(undefined)
+                }}
                 onSuccess={fetchAssets}
                 assets={assets}
+                initialAssetId={selectedAssetIdForDiv}
             />
         </div>
     )

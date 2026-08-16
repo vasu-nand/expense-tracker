@@ -15,9 +15,11 @@ interface AddTransactionDialogProps {
     onClose: () => void
     onSuccess: () => void
     assets: Array<{ _id: string; symbol: string; name: string; assetType: string }>
+    initialAssetId?: string
+    editingTransaction?: any
 }
 
-export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: AddTransactionDialogProps) {
+export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets, initialAssetId, editingTransaction }: AddTransactionDialogProps) {
     const { convert, convertToBase, format, currency } = useCurrency()
     const [mounted, setMounted] = useState(false)
     const [assetId, setAssetId] = useState('')
@@ -32,6 +34,8 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
     const [error, setError] = useState('')
     const [availableAssets, setAvailableAssets] = useState(assets)
     const [fetchingPrice, setFetchingPrice] = useState(false)
+    const [bankAccounts, setBankAccounts] = useState<any[]>([])
+    const [bankAccountId, setBankAccountId] = useState('')
 
     const bodyRef = useRef<HTMLDivElement>(null)
     const [canScrollDown, setCanScrollDown] = useState(false)
@@ -52,31 +56,77 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
     useEffect(() => {
         setMounted(true)
         if (isOpen) {
+            if (editingTransaction) {
+                const targetAssetId = editingTransaction.assetId?._id || editingTransaction.assetId || ''
+                setAssetId(targetAssetId)
+                setType(editingTransaction.type || 'buy')
+                setQuantity(String(editingTransaction.quantity || ''))
+                setPrice(String(convert(editingTransaction.price || 0).toFixed(2)))
+                setFees(String(convert(editingTransaction.fees || 0)))
+                setTax(String(convert(editingTransaction.tax || 0)))
+                setNotes(editingTransaction.notes || '')
+                setBankAccountId(editingTransaction.bankAccountId?._id || editingTransaction.bankAccountId || '')
+                if (editingTransaction.dateTime) {
+                    setDateTime(new Date(editingTransaction.dateTime).toISOString().slice(0, 16))
+                }
+            } else {
+                setQuantity('')
+                setPrice('')
+                setFees('0')
+                setTax('0')
+                setNotes('')
+                setDateTime(new Date().toISOString().slice(0, 16))
+                if (initialAssetId) {
+                    setAssetId(initialAssetId)
+                }
+            }
+
+            api.get('/accounts')
+                .then(res => {
+                    const accs = res.data?.accounts || []
+                    setBankAccounts(accs)
+                    if (accs.length > 0 && !bankAccountId) {
+                        const targetBankId = editingTransaction?.bankAccountId?._id || editingTransaction?.bankAccountId || accs[0]._id
+                        setBankAccountId(targetBankId)
+                    }
+                })
+                .catch(() => {})
+
             api.get('/portfolio/assets')
                 .then(res => {
                     const fetched = res.data || []
                     setAvailableAssets(fetched)
                     if (fetched.length > 0) {
-                        const exists = fetched.some((a: any) => String(a._id) === String(assetId))
-                        if (!assetId || !exists) {
+                        if (editingTransaction) {
+                            const targetId = editingTransaction.assetId?._id || editingTransaction.assetId
+                            setAssetId(targetId)
+                        } else if (initialAssetId) {
+                            setAssetId(initialAssetId)
+                        } else if (!assetId) {
                             setAssetId(fetched[0]._id)
                         }
                     }
                 })
                 .catch(() => {
                     setAvailableAssets(assets)
-                    if (assets.length > 0 && !assetId) {
-                        setAssetId(assets[0]._id)
+                    if (assets.length > 0) {
+                        if (editingTransaction) {
+                            setAssetId(editingTransaction.assetId?._id || editingTransaction.assetId)
+                        } else if (initialAssetId) {
+                            setAssetId(initialAssetId)
+                        } else if (!assetId) {
+                            setAssetId(assets[0]._id)
+                        }
                     }
                 })
             
             setTimeout(checkScroll, 150)
         }
-    }, [isOpen, assets])
+    }, [isOpen, assets, initialAssetId, editingTransaction])
 
-    // Auto-fetch current market price whenever selected assetId changes, formatted in current display currency
+    // Auto-fetch current market price whenever selected assetId changes (only for new transaction)
     useEffect(() => {
-        if (assetId && availableAssets.length > 0) {
+        if (!editingTransaction && assetId && availableAssets.length > 0) {
             const targetAsset = availableAssets.find(a => String(a._id) === String(assetId))
             if (targetAsset?.symbol) {
                 setFetchingPrice(true)
@@ -91,7 +141,7 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
                     .finally(() => setFetchingPrice(false))
             }
         }
-    }, [assetId, availableAssets, currency])
+    }, [assetId, availableAssets, currency, editingTransaction])
 
     if (!isOpen || !mounted || typeof document === 'undefined') return null
 
@@ -112,14 +162,15 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
 
         // Convert user input from current display currency back to INR base currency for backend storage
         const basePrice = convertToBase(rawPriceInput)
-        const baseFees = convertToBase(parseFloat(fees) || 0)
-        const baseTax = convertToBase(parseFloat(tax) || 0)
+        const baseFees = Math.max(0, convertToBase(parseFloat(fees) || 0))
+        const baseTax = Math.max(0, convertToBase(parseFloat(tax) || 0))
 
         try {
             setLoading(true)
             setError('')
-            await api.post('/portfolio/transactions', {
+            const payload = {
                 assetId,
+                bankAccountId: bankAccountId || undefined,
                 type,
                 quantity: qtyNum,
                 price: basePrice,
@@ -127,14 +178,21 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
                 tax: baseTax,
                 dateTime: new Date(dateTime).toISOString(),
                 notes: notes.trim()
-            })
+            }
+
+            if (editingTransaction?._id) {
+                await api.put(`/portfolio/transactions/${editingTransaction._id}`, payload)
+            } else {
+                await api.post('/portfolio/transactions', payload)
+            }
+
             setQuantity('')
             setPrice('')
             setNotes('')
             onSuccess()
             onClose()
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to record transaction')
+            setError(err.response?.data?.error || 'Failed to save transaction')
         } finally {
             setLoading(false)
         }
@@ -159,6 +217,11 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
         label: `${a.symbol} - ${a.name} (${a.assetType})`
     }))
 
+    const bankAccountOptions = bankAccounts.map(b => ({
+        value: b._id,
+        label: `${b.name} (${b.bankName})`
+    }))
+
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
@@ -171,7 +234,7 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
                         )}>
                             {type === 'buy' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownLeft className="h-5 w-5" />}
                         </div>
-                        <h2 className="text-lg font-extrabold text-foreground">Record Transaction</h2>
+                        <h2 className="text-lg font-extrabold text-foreground">{editingTransaction ? 'Edit Transaction' : 'Record Transaction'}</h2>
                     </div>
                     <button onClick={onClose} className="p-1 rounded-lg text-muted-foreground hover:bg-muted transition-colors">
                         <X className="h-5 w-5" />
@@ -229,6 +292,20 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
                                 disabled={availableAssets.length === 0}
                             />
                         </div>
+
+                        {bankAccounts.length > 0 && (
+                            <div>
+                                <label className="text-xs font-bold text-muted-foreground block mb-1">Linked Bank Account</label>
+                                <BottomSelect
+                                    value={bankAccountId}
+                                    onChange={setBankAccountId}
+                                    options={bankAccountOptions}
+                                    label="Select Bank Account"
+                                    placeholder="Select bank account..."
+                                    triggerClassName="py-2 text-xs"
+                                />
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -333,7 +410,7 @@ export function AddTransactionDialog({ isOpen, onClose, onSuccess, assets }: Add
                             Cancel
                         </Button>
                         <Button type="submit" size="sm" disabled={loading || !assetId} className="rounded-xl text-xs bg-custom-btn-gradient text-white">
-                            {loading ? 'Recording...' : 'Record Transaction'}
+                            {loading ? 'Saving...' : editingTransaction ? 'Update Transaction' : 'Record Transaction'}
                         </Button>
                     </div>
                 </form>

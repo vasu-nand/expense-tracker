@@ -9,6 +9,8 @@ export interface IExpense extends Document {
     uploadedAt: Date;
     month: string;
     type: 'expense' | 'income';
+    sourceType?: 'investment_buy' | 'investment_sell' | 'dividend';
+    sourceId?: mongoose.Types.ObjectId;
 }
 
 const ExpenseSchema: Schema = new Schema({
@@ -44,6 +46,13 @@ const ExpenseSchema: Schema = new Schema({
         enum: ['expense', 'income'],
         required: true,
         default: 'expense'
+    },
+    sourceType: {
+        type: String,
+        enum: ['investment_buy', 'investment_sell', 'dividend']
+    },
+    sourceId: {
+        type: Schema.Types.ObjectId
     },
     uploadedAt: {
         type: Date,

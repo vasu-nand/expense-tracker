@@ -2,6 +2,8 @@ import { Schema, model, Document, Types } from 'mongoose';
 
 export interface IInvestmentTransaction extends Document {
     assetId: Types.ObjectId;
+    bankAccountId?: Types.ObjectId;
+    expenseId?: Types.ObjectId;
     type: 'buy' | 'sell';
     quantity: number;
     price: number;
@@ -14,6 +16,8 @@ export interface IInvestmentTransaction extends Document {
 
 const InvestmentTransactionSchema = new Schema<IInvestmentTransaction>({
     assetId: { type: Schema.Types.ObjectId, ref: 'InvestmentAsset', required: true },
+    bankAccountId: { type: Schema.Types.ObjectId, ref: 'BankAccount' },
+    expenseId: { type: Schema.Types.ObjectId, ref: 'Expense' },
     type: { type: String, required: true, enum: ['buy', 'sell'] },
     quantity: { type: Number, required: true, min: 0.00000001 },
     price: { type: Number, required: true, min: 0 },
