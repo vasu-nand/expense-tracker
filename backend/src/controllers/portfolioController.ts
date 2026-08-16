@@ -7,6 +7,7 @@ import WealthGoal from '../models/WealthGoal';
 import PriceAlert from '../models/PriceAlert';
 import BankAccount from '../models/BankAccount';
 import Expense from '../models/Expense';
+import ExchangeRate from '../models/ExchangeRate';
 import { getAssetPrice, getLiveExchangeRates, searchSymbols } from '../services/priceService';
 import { calculateXIRR } from '../utils/wealthEngine';
 import { recordAndSyncAllPrices } from '../services/priceScheduler';
@@ -668,7 +669,11 @@ export const getPriceBySymbol = async (req: Request, res: Response): Promise<voi
 export const getExchangeRates = async (req: Request, res: Response): Promise<void> => {
     try {
         const rates = await getLiveExchangeRates();
-        res.json(rates);
+        const dbDoc = await ExchangeRate.findOne({ baseCurrency: 'USD' });
+        res.json({
+            ...rates,
+            lastUpdated: dbDoc?.lastUpdated || new Date()
+        });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

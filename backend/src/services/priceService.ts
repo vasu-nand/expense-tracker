@@ -1,3 +1,5 @@
+import ExchangeRate from '../models/ExchangeRate';
+
 interface CachedPrice {
     price: number;
     change: number;
@@ -28,59 +30,120 @@ let exchangeRateCache: CachedExchangeRates = {
 };
 
 /**
- * Fetch live exchange rates from global currency API (open.er-api.com)
+ * Fetch live exchange rates from MongoDB DB or open.er-api.com and persist daily in DB
  */
 export async function getLiveExchangeRates(): Promise<Record<string, number>> {
     const now = Date.now();
-    const cacheExpiry = 60 * 60 * 1000; // 1 hour cache TTL
+    const oneDayMs = 24 * 60 * 60 * 1000; // 24-hour daily rate update window
 
-    if (exchangeRateCache.lastUpdated && (now - exchangeRateCache.lastUpdated < cacheExpiry) && Object.keys(exchangeRateCache.rates).length > 0) {
+    // 1. Return in-memory cache if fresh today
+    if (exchangeRateCache.lastUpdated && (now - exchangeRateCache.lastUpdated < oneDayMs) && Object.keys(exchangeRateCache.rates).length > 0) {
         return exchangeRateCache.rates;
     }
 
+    // 2. Check MongoDB for today's stored daily exchange rate
+    try {
+        const dbDoc = await ExchangeRate.findOne({ baseCurrency: 'USD' });
+        if (dbDoc && dbDoc.rates && dbDoc.lastUpdated) {
+            const dbAge = now - new Date(dbDoc.lastUpdated).getTime();
+            if (dbAge < oneDayMs && dbDoc.rates.INR) {
+                const ratesObj: Record<string, number> = typeof (dbDoc.rates as any).toObject === 'function' 
+                    ? (dbDoc.rates as any).toObject() 
+                    : dbDoc.rates;
+                
+                exchangeRateCache = {
+                    rates: {
+                        USD: 1.0,
+                        INR: Number(ratesObj.INR || 86.85),
+                        EUR: Number(ratesObj.EUR || 0.92),
+                        CAD: Number(ratesObj.CAD || 1.38)
+                    },
+                    lastUpdated: new Date(dbDoc.lastUpdated).getTime()
+                };
+                return exchangeRateCache.rates;
+            }
+        }
+    } catch (dbErr) {
+        console.warn('Could not read ExchangeRate from DB:', dbErr);
+    }
+
+    // 3. Rates in DB are missing or older than 24h -> Fetch fresh rates from live API
+    let freshRates: Record<string, number> | null = null;
     try {
         const response = await fetch('https://open.er-api.com/v6/latest/USD');
         if (response.ok) {
             const data: any = await response.json();
             if (data && data.rates && data.rates.INR) {
-                exchangeRateCache = {
-                    rates: {
-                        USD: 1.0,
-                        INR: Number(data.rates.INR),
-                        EUR: Number(data.rates.EUR || 0.92),
-                        CAD: Number(data.rates.CAD || 1.38)
-                    },
-                    lastUpdated: now
+                freshRates = {
+                    USD: 1.0,
+                    INR: Number(data.rates.INR),
+                    EUR: Number(data.rates.EUR || 0.92),
+                    CAD: Number(data.rates.CAD || 1.38)
                 };
-                return exchangeRateCache.rates;
             }
         }
     } catch (error) {
         console.warn('Primary currency API fetch failed, trying secondary fallback API...', error);
     }
 
-    try {
-        const fallbackResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        if (fallbackResponse.ok) {
-            const fbData: any = await fallbackResponse.json();
-            if (fbData && fbData.rates && fbData.rates.INR) {
-                exchangeRateCache = {
-                    rates: {
+    if (!freshRates) {
+        try {
+            const fallbackResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+            if (fallbackResponse.ok) {
+                const fbData: any = await fallbackResponse.json();
+                if (fbData && fbData.rates && fbData.rates.INR) {
+                    freshRates = {
                         USD: 1.0,
                         INR: Number(fbData.rates.INR),
                         EUR: Number(fbData.rates.EUR || 0.92),
                         CAD: Number(fbData.rates.CAD || 1.38)
-                    },
-                    lastUpdated: now
-                };
-                return exchangeRateCache.rates;
+                    };
+                }
             }
+        } catch (fbErr) {
+            console.error('Secondary currency API fetch failed:', fbErr);
         }
-    } catch (fbErr) {
-        console.error('Secondary currency API fetch failed:', fbErr);
     }
 
-    return exchangeRateCache.rates.INR ? exchangeRateCache.rates : { USD: 1.0, INR: 86.85, EUR: 0.92, CAD: 1.38 };
+    // 4. Persist fresh daily rates to MongoDB database
+    if (freshRates) {
+        try {
+            await ExchangeRate.findOneAndUpdate(
+                { baseCurrency: 'USD' },
+                { rates: freshRates, lastUpdated: new Date() },
+                { upsert: true, new: true }
+            );
+            console.log('✅ Updated daily currency exchange rates in MongoDB database');
+        } catch (saveErr) {
+            console.error('Failed to save exchange rates to DB:', saveErr);
+        }
+
+        exchangeRateCache = {
+            rates: freshRates,
+            lastUpdated: now
+        };
+        return freshRates;
+    }
+
+    // 5. Fallback to existing DB entry if API failed
+    try {
+        const dbDocFallback = await ExchangeRate.findOne({ baseCurrency: 'USD' });
+        if (dbDocFallback && dbDocFallback.rates) {
+            const ratesObj: Record<string, number> = typeof (dbDocFallback.rates as any).toObject === 'function' 
+                ? (dbDocFallback.rates as any).toObject() 
+                : dbDocFallback.rates;
+            
+            return {
+                USD: 1.0,
+                INR: Number(ratesObj.INR || 86.85),
+                EUR: Number(ratesObj.EUR || 0.92),
+                CAD: Number(ratesObj.CAD || 1.38)
+            };
+        }
+    } catch (err) {}
+
+    // Final fallback defaults
+    return { USD: 1.0, INR: 86.85, EUR: 0.92, CAD: 1.38 };
 }
 
 /**
