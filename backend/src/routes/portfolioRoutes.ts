@@ -3,6 +3,11 @@ import {
     getPortfolioSummary,
     getAssets,
     createAsset,
+    deleteAsset,
+    refreshPrices,
+    getPriceBySymbol,
+    getExchangeRates,
+    searchStockSymbols,
     getTransactions,
     addTransaction,
     deleteTransaction,
@@ -26,6 +31,11 @@ const router = Router();
 router.get('/portfolio/summary', getPortfolioSummary);
 router.get('/portfolio/assets', getAssets);
 router.post('/portfolio/assets', createAsset);
+router.delete('/portfolio/assets/:id', deleteAsset);
+router.post('/portfolio/refresh-prices', refreshPrices);
+router.get('/portfolio/price/:symbol', getPriceBySymbol);
+router.get('/portfolio/exchange-rates', getExchangeRates);
+router.get('/portfolio/search-symbols', searchStockSymbols);
 
 router.get('/portfolio/transactions', getTransactions);
 router.post('/portfolio/transactions', addTransaction);

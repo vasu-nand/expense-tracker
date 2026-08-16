@@ -64,7 +64,7 @@ export function BottomSelect({
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [isOpen])
 
-    const selectedOption = options.find(opt => opt.value === value)
+    const selectedOption = options.find(opt => String(opt.value) === String(value))
 
     const handleSelect = (val: string | number) => {
         onChange(val)
@@ -154,7 +154,7 @@ export function BottomSelect({
                             {/* Options */}
                             <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1 max-h-[50vh]">
                                 {options.map((opt) => {
-                                    const isSelected = opt.value === value
+                                    const isSelected = String(opt.value) === String(value)
                                     return (
                                         <button
                                             key={opt.value}

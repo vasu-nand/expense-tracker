@@ -6,6 +6,9 @@ export interface IInvestmentAsset extends Document {
     assetType: 'stocks' | 'etfs' | 'mutual_funds' | 'bonds' | 'crypto' | 'gold_silver' | 'real_estate' | 'fixed_deposits' | 'retirement_plans' | 'savings_accounts';
     exchange?: string;
     currency: string;
+    lastPrice?: number;
+    dayChange?: number;
+    lastPriceUpdatedAt?: Date;
     createdAt: Date;
 }
 
@@ -19,6 +22,9 @@ const InvestmentAssetSchema = new Schema<IInvestmentAsset>({
     },
     exchange: { type: String, trim: true },
     currency: { type: String, required: true, default: 'USD', uppercase: true, trim: true },
+    lastPrice: { type: Number, default: 0 },
+    dayChange: { type: Number, default: 0 },
+    lastPriceUpdatedAt: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
 });
 

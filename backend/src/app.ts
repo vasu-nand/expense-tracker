@@ -13,6 +13,7 @@ import portfolioRoutes from './routes/portfolioRoutes';
 import { errorHandler } from './middleware/errorHandler';
 import { reloadCategoryKeywordsCache } from './utils/categoryDetector';
 import { runDatabaseMigration } from './utils/migrationHelper';
+import { startPriceScheduler } from './services/priceScheduler';
 
 dotenv.config();
 
@@ -82,6 +83,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/expense_d
         // Build keywords classification cache in memory
         await reloadCategoryKeywordsCache();
         
+        // Start 15-minute price recording scheduler
+        startPriceScheduler();
+
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

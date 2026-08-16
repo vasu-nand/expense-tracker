@@ -7,8 +7,9 @@ import WealthGoal from '../models/WealthGoal';
 import PriceAlert from '../models/PriceAlert';
 import BankAccount from '../models/BankAccount';
 import Expense from '../models/Expense';
-import { getAssetPrice } from '../services/priceService';
+import { getAssetPrice, getLiveExchangeRates, searchSymbols } from '../services/priceService';
 import { calculateXIRR } from '../utils/wealthEngine';
+import { recordAndSyncAllPrices } from '../services/priceScheduler';
 
 // Get comprehensive wealth & portfolio summary
 export const getPortfolioSummary = async (req: Request, res: Response): Promise<void> => {
@@ -113,7 +114,7 @@ export const getPortfolioSummary = async (req: Request, res: Response): Promise<
             totalRealizedPL += pos.realizedPL;
 
             if (pos.quantity > 0) {
-                const priceData = await getAssetPrice(pos.symbol);
+                const priceData = await getAssetPrice(pos.symbol, pos.currency);
                 const currentValue = pos.quantity * priceData.price;
                 const unrealizedPL = currentValue - pos.totalCost;
                 
@@ -195,8 +196,82 @@ export const getPortfolioSummary = async (req: Request, res: Response): Promise<
 // Asset CRUD
 export const getAssets = async (req: Request, res: Response): Promise<void> => {
     try {
+        // Auto-sync any Watchlist items into InvestmentAssets if missing
+        const watchlistItems = await Watchlist.find();
+        for (const item of watchlistItems) {
+            const sym = item.symbol.toUpperCase();
+            const exists = await InvestmentAsset.findOne({ symbol: sym });
+            if (!exists) {
+                const isIndian = sym.endsWith('.NS') || sym.endsWith('.BO') || (!['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'BTC', 'ETH', 'SOL'].includes(sym));
+                await InvestmentAsset.create({
+                    symbol: sym,
+                    name: item.name,
+                    assetType: item.assetType || 'stocks',
+                    exchange: isIndian ? 'NSE' : 'US',
+                    currency: isIndian ? 'INR' : 'USD'
+                });
+            }
+        }
+
+        // Sanitize any existing DB assets where Indian stock currency was wrongly saved as USD
         const assets = await InvestmentAsset.find().sort({ symbol: 1 });
-        res.json(assets);
+        const assetsWithPrices = [];
+        for (const asset of assets) {
+            const sym = asset.symbol.toUpperCase();
+            const isIndian = sym.endsWith('.NS') || sym.endsWith('.BO') || asset.exchange === 'NSE' || asset.exchange === 'BSE' || (!['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'SPY', 'VOO', 'BTC', 'ETH', 'SOL'].includes(sym));
+            if (isIndian && asset.currency !== 'INR') {
+                asset.currency = 'INR';
+                await asset.save();
+            }
+
+            let price = asset.lastPrice || 0;
+            let change = asset.dayChange || 0;
+            let isOffline = false;
+
+            try {
+                const priceData = await getAssetPrice(sym, asset.currency);
+                if (priceData && priceData.price > 0) {
+                    price = priceData.price;
+                    change = priceData.change;
+                    asset.lastPrice = price;
+                    asset.dayChange = change;
+                    asset.lastPriceUpdatedAt = new Date();
+                    await asset.save();
+                } else if (asset.lastPrice && asset.lastPrice > 0) {
+                    isOffline = true;
+                }
+            } catch (err) {
+                if (asset.lastPrice && asset.lastPrice > 0) {
+                    isOffline = true;
+                }
+            }
+
+            assetsWithPrices.push({
+                ...asset.toObject(),
+                currentPrice: price,
+                dayChange: change,
+                lastPriceUpdatedAt: asset.lastPriceUpdatedAt || asset.createdAt,
+                isOffline
+            });
+        }
+
+        res.json(assetsWithPrices);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const refreshPrices = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const result = await recordAndSyncAllPrices();
+        const assets = await InvestmentAsset.find().sort({ symbol: 1 });
+        res.json({
+            message: 'Live market prices refreshed successfully',
+            updatedCount: result.updatedCount,
+            offlineFallbackCount: result.offlineFallbackCount,
+            timestamp: result.timestamp,
+            assets
+        });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -205,19 +280,37 @@ export const getAssets = async (req: Request, res: Response): Promise<void> => {
 export const createAsset = async (req: Request, res: Response): Promise<void> => {
     try {
         const { symbol, name, assetType, exchange, currency } = req.body;
-        let asset = await InvestmentAsset.findOne({ symbol: symbol.toUpperCase() });
+        const sym = symbol.toUpperCase();
+        let asset = await InvestmentAsset.findOne({ symbol: sym });
         
         if (!asset) {
+            const isIndian = sym.endsWith('.NS') || sym.endsWith('.BO') || exchange === 'NSE' || exchange === 'BSE' || (!['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOOGL', 'AMZN', 'META', 'SPY', 'VOO', 'BTC', 'ETH', 'SOL'].includes(sym));
             asset = new InvestmentAsset({
-                symbol: symbol.toUpperCase(),
+                symbol: sym,
                 name,
                 assetType,
-                exchange,
-                currency: currency || 'USD'
+                exchange: exchange || (isIndian ? 'NSE' : 'US'),
+                currency: currency ? currency.toUpperCase() : (isIndian ? 'INR' : 'USD')
             });
             await asset.save();
         }
         res.status(201).json(asset);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const deleteAsset = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const asset = await InvestmentAsset.findById(id);
+        if (asset) {
+            await InvestmentTransaction.deleteMany({ assetId: id });
+            await Dividend.deleteMany({ assetId: id });
+            await Watchlist.deleteMany({ symbol: asset.symbol });
+            await InvestmentAsset.findByIdAndDelete(id);
+        }
+        res.json({ message: 'Asset deleted successfully' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -333,6 +426,20 @@ export const addToWatchlist = async (req: Request, res: Response): Promise<void>
             assetType: assetType || 'stocks'
         });
         await item.save();
+
+        // Also ensure an InvestmentAsset exists so it appears in transaction and dividend selectors
+        let asset = await InvestmentAsset.findOne({ symbol: symbol.toUpperCase() });
+        if (!asset) {
+            asset = new InvestmentAsset({
+                symbol: symbol.toUpperCase(),
+                name,
+                assetType: assetType || 'stocks',
+                exchange: 'NSE',
+                currency: 'INR'
+            });
+            await asset.save();
+        }
+
         res.status(201).json(item);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -427,6 +534,43 @@ export const getAlerts = async (req: Request, res: Response): Promise<void> => {
         }
 
         res.json(alerts);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getPriceBySymbol = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { symbol } = req.params;
+        if (!symbol) {
+            res.status(400).json({ error: 'Symbol is required' });
+            return;
+        }
+        const sym = symbol.toUpperCase();
+        const asset = await InvestmentAsset.findOne({
+            $or: [{ symbol: sym }, { symbol: `${sym}.NS` }, { symbol: `${sym}.BO` }]
+        });
+        const priceData = await getAssetPrice(sym, asset?.currency);
+        res.json(priceData);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getExchangeRates = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const rates = await getLiveExchangeRates();
+        res.json(rates);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const searchStockSymbols = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { q } = req.query;
+        const results = await searchSymbols(String(q || ''));
+        res.json(results);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

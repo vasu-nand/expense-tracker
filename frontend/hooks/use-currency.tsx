@@ -39,6 +39,7 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     const [currency, setCurrencyState] = useState<CurrencyType>('INR')
     const [mounted, setMounted] = useState(false)
+    const [liveRates, setLiveRates] = useState<Record<CurrencyType, number>>(rates)
 
     useEffect(() => {
         const stored = localStorage.getItem('display-currency') as CurrencyType
@@ -46,6 +47,24 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
             setCurrencyState(stored)
         }
         setMounted(true)
+
+        fetch('http://localhost:5000/api/portfolio/exchange-rates')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.INR) {
+                    const usdInInr = Number(data.INR)
+                    const eurInUsd = Number(data.EUR || 0.92)
+                    const cadInUsd = Number(data.CAD || 1.38)
+                    
+                    setLiveRates({
+                        INR: 1.0,
+                        USD: 1 / usdInInr,
+                        EUR: (1 / usdInInr) * eurInUsd,
+                        CAD: (1 / usdInInr) * cadInUsd
+                    })
+                }
+            })
+            .catch(() => {})
     }, [])
 
     const setCurrency = (newCurrency: CurrencyType) => {
@@ -54,12 +73,12 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     }
 
     const convert = (amount: number): number => {
-        const rate = rates[currency] || 1.0
+        const rate = liveRates[currency] || rates[currency] || 1.0
         return (amount || 0) * rate
     }
 
     const convertToBase = (amount: number): number => {
-        const rate = rates[currency] || 1.0
+        const rate = liveRates[currency] || rates[currency] || 1.0
         return (amount || 0) / rate
     }
 
