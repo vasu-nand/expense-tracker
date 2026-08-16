@@ -10,18 +10,19 @@ export const runDatabaseMigration = async () => {
     try {
         console.log('Running database workspace migration check...');
         
-        // 0. Drop obsolete indexes if they exist to prevent duplicate key errors (month_1)
+        // 0. Drop obsolete indexes if they exist to prevent duplicate key errors (e.g., month_1_accountId_1)
         try {
             const collection = MonthlySummary.collection;
             const indexes = await collection.indexes();
-            const hasObsoleteMonthIndex = indexes.some(idx => idx.name === 'month_1');
-            if (hasObsoleteMonthIndex) {
-                console.log('Dropping obsolete single-month unique index "month_1" from monthlysummaries...');
-                await collection.dropIndex('month_1');
-                console.log('Obsolete index "month_1" dropped successfully.');
+            for (const idx of indexes) {
+                if (idx.name && idx.name !== '_id_' && (idx.name.includes('accountId') || idx.name === 'month_1')) {
+                    console.log(`Dropping obsolete index "${idx.name}" from monthlysummaries...`);
+                    await collection.dropIndex(idx.name);
+                    console.log(`Obsolete index "${idx.name}" dropped successfully.`);
+                }
             }
         } catch (idxError) {
-            console.warn('Warning: Could not drop obsolete index (it might not exist):', idxError);
+            console.warn('Warning: Could not drop obsolete index on monthlysummaries:', idxError);
         }
         
         // 1. Locate or initialize the Primary Bank Account
@@ -64,11 +65,13 @@ export const runDatabaseMigration = async () => {
         }
 
         // 4. Migrate any unassigned MonthlySummaries
-        const unassignedSummaries = await MonthlySummary.countDocuments({ bankAccountId: { $exists: false } });
+        const unassignedSummaries = await MonthlySummary.countDocuments({ 
+            $or: [{ bankAccountId: { $exists: false } }, { bankAccountId: null }] 
+        });
         if (unassignedSummaries > 0) {
             console.log(`Migrating ${unassignedSummaries} legacy monthly summaries to primary account...`);
             await MonthlySummary.updateMany(
-                { bankAccountId: { $exists: false } }, 
+                { $or: [{ bankAccountId: { $exists: false } }, { bankAccountId: null }] }, 
                 { $set: { bankAccountId: primaryAccountId } }
             );
         }

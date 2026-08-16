@@ -90,6 +90,7 @@ export function TopSpendingChart({ data }: TopSpendingChartProps) {
                         tickLine={false}
                     />
                     <Tooltip
+                        wrapperStyle={{ zIndex: 1000 }}
                         content={<CustomTopSpendingTooltip />}
                         cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }}
                     />

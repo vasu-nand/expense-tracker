@@ -66,5 +66,6 @@ ExpenseSchema.index({ bankAccountId: 1, category: 1 });
 ExpenseSchema.index({ bankAccountId: 1, amount: 1 });
 ExpenseSchema.index({ bankAccountId: 1, type: 1 });
 ExpenseSchema.index({ bankAccountId: 1, uploadedAt: -1 });
+ExpenseSchema.index({ sourceType: 1, sourceId: 1 });
 
 export default mongoose.model<IExpense>('Expense', ExpenseSchema);

@@ -115,11 +115,11 @@ export function CategoryPieChart({ data, incomeData = {} }: CategoryPieChartProp
                                     )
                                 })}
                             </Pie>
-                            <Tooltip content={<CustomPieTooltip />} />
+                            <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomPieTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Center Text inside Donut */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
                         <span className={cn("font-semibold tracking-wider text-muted-foreground uppercase", isModal ? "text-xs" : "text-[10px]")}>
                             Total
                         </span>

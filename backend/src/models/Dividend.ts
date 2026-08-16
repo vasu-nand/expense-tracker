@@ -20,4 +20,8 @@ const DividendSchema = new Schema<IDividend>({
     createdAt: { type: Date, default: Date.now }
 });
 
+DividendSchema.index({ assetId: 1, date: -1 });
+DividendSchema.index({ date: 1 });
+DividendSchema.index({ bankAccountId: 1 });
+
 export default model<IDividend>('Dividend', DividendSchema);

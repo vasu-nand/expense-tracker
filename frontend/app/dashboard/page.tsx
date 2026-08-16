@@ -9,6 +9,7 @@ const CategoryPieChart = dynamic(() => import('@/components/charts/category-pie-
 const TopSpendingChart = dynamic(() => import('@/components/charts/top-spending-chart').then(mod => mod.TopSpendingChart), { ssr: false })
 const ExpenseHeatmap = dynamic(() => import('@/components/charts/expense-heatmap').then(mod => mod.ExpenseHeatmap), { ssr: false })
 const MonthComparisonChart = dynamic(() => import('@/components/charts/month-comparison-chart').then(mod => mod.MonthComparisonChart), { ssr: false })
+const DashboardPortfolioWidget = dynamic(() => import('@/components/dashboard/dashboard-portfolio-widget').then(mod => mod.DashboardPortfolioWidget), { ssr: false })
 import { useDashboard } from '@/hooks/useDashboard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DayExpensesDialog } from '@/components/dashboard/day-expenses-dialog'
@@ -18,9 +19,8 @@ import { getLocalMonth, cn } from '@/lib/utils'
 import { MonthPicker } from '@/components/ui/month-picker'
 import { useCurrency } from '@/hooks/use-currency'
 import { DashboardEmptyState } from '@/components/dashboard/dashboard-empty-state'
+import { api } from '@/services/api'
 const AddExpenseDialog = dynamic(() => import('@/components/expenses/add-expense-dialog').then(mod => mod.AddExpenseDialog), { ssr: false })
-
-
 
 export default function DashboardPage() {
     const [filterType, setFilterType] = useState<'single' | 'range'>('single')
@@ -28,12 +28,21 @@ export default function DashboardPage() {
     const [month, setMonth] = useState(getLocalMonth())
     const [startMonth, setStartMonth] = useState(getLocalMonth())
     const [endMonth, setEndMonth] = useState(getLocalMonth())
+    const [portfolioData, setPortfolioData] = useState<any>(null)
+    const [portfolioLoading, setPortfolioLoading] = useState(true)
 
     const { convert } = useCurrency()
 
     const activeQueryMonth = filterType === 'single' ? month : `${startMonth}:${endMonth}`
     const { data, loading, error } = useDashboard(activeQueryMonth)
     const [selectedDay, setSelectedDay] = useState<number | null>(null)
+
+    useEffect(() => {
+        api.get('/portfolio/summary')
+            .then(res => setPortfolioData(res.data))
+            .catch(err => console.warn('Could not load portfolio summary for dashboard:', err))
+            .finally(() => setPortfolioLoading(false))
+    }, [])
 
     const isMultipleMonthsRange = filterType === 'range' && startMonth !== endMonth
 
@@ -164,7 +173,9 @@ export default function DashboardPage() {
                 </div>
             ) : (
                 <>
-                    <DashboardStats data={data} />
+                    <DashboardStats data={data} portfolioNetWorth={portfolioData?.summary?.currentValue} />
+
+                    <DashboardPortfolioWidget summaryData={portfolioData} loading={portfolioLoading} />
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <DailyTrendChart data={data?.dailyTrend || []} />

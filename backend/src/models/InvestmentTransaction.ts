@@ -28,4 +28,8 @@ const InvestmentTransactionSchema = new Schema<IInvestmentTransaction>({
     createdAt: { type: Date, default: Date.now }
 });
 
+InvestmentTransactionSchema.index({ assetId: 1, dateTime: 1 });
+InvestmentTransactionSchema.index({ dateTime: 1 });
+InvestmentTransactionSchema.index({ bankAccountId: 1 });
+
 export default model<IInvestmentTransaction>('InvestmentTransaction', InvestmentTransactionSchema);

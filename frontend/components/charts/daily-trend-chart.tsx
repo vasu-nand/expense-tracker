@@ -144,7 +144,7 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                 axisLine={false}
                                 tickLine={false}
                             />
-                            <Tooltip content={<CustomTrendTooltip />} />
+                            <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomTrendTooltip />} />
                             <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                             {(viewMode === 'all' || viewMode === 'income') && (
                                 <Line
@@ -266,7 +266,7 @@ export function DailyTrendChart({ data }: DailyTrendChartProps) {
                                         axisLine={false}
                                         tickLine={false}
                                     />
-                                    <Tooltip content={<CustomTrendTooltip />} />
+                                    <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomTrendTooltip />} />
                                     <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                     {(viewMode === 'all' || viewMode === 'income') && (
                                         <Line

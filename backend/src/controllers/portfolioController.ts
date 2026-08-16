@@ -17,10 +17,12 @@ import { migrateExistingPortfolioTransactions } from '../services/portfolioMigra
 // Get comprehensive wealth & portfolio summary
 export const getPortfolioSummary = async (req: Request, res: Response): Promise<void> => {
     try {
-        const assets = await InvestmentAsset.find();
-        const transactions = await InvestmentTransaction.find().sort({ dateTime: 1 });
-        const dividends = await Dividend.find();
-        const bankAccounts = await BankAccount.find();
+        const [assets, transactions, dividends, bankAccounts] = await Promise.all([
+            InvestmentAsset.find().lean(),
+            InvestmentTransaction.find().sort({ dateTime: 1 }).lean(),
+            Dividend.find().lean(),
+            BankAccount.find().lean()
+        ]);
 
         // 1. Calculate positions/holdings dynamically
         const holdingsMap: Record<string, {
@@ -334,7 +336,8 @@ export const getTransactions = async (req: Request, res: Response): Promise<void
         const transactions = await InvestmentTransaction.find()
             .populate('assetId')
             .populate('bankAccountId')
-            .sort({ dateTime: -1 });
+            .sort({ dateTime: -1 })
+            .lean();
         res.json(transactions);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -418,7 +421,7 @@ export const updateTransaction = async (req: Request, res: Response): Promise<vo
 // Dividend CRUD
 export const getDividends = async (req: Request, res: Response): Promise<void> => {
     try {
-        const dividends = await Dividend.find().populate('assetId').sort({ date: -1 });
+        const dividends = await Dividend.find().populate('assetId').sort({ date: -1 }).lean();
         res.json(dividends);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -566,6 +569,7 @@ export const removeFromWatchlist = async (req: Request, res: Response): Promise<
 };
 
 // Goals CRUD
+
 export const getGoals = async (req: Request, res: Response): Promise<void> => {
     try {
         const goals = await WealthGoal.find().sort({ deadline: 1 });

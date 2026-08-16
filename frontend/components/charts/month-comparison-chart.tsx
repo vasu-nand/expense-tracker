@@ -145,11 +145,11 @@ export function MonthComparisonChart({ data }: MonthComparisonChartProps) {
                                     <Cell key={`cell-${index}`} fill={entry.fill} className="transition-opacity duration-300 hover:opacity-85" />
                                 ))}
                             </Pie>
-                            <Tooltip content={<CustomMonthCompTooltip />} />
+                            <Tooltip wrapperStyle={{ zIndex: 1000 }} content={<CustomMonthCompTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Center Net Savings */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
                         <span className={cn("font-semibold tracking-wider text-muted-foreground uppercase", isModal ? "text-xs" : "text-[9px]")}>
                             Net Savings
                         </span>

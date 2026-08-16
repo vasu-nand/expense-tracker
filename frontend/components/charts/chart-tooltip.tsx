@@ -30,17 +30,18 @@ export function ChartTooltip({
     if (!active || !payload || !payload.length) return null
 
     const firstEntry = payload[0]
-    const headerText = title || label || firstEntry?.name || firstEntry?.payload?.name || firstEntry?.payload?.category || firstEntry?.payload?.fullName
+    const rawHeader = title || (typeof label === 'string' && isNaN(Number(label)) ? label : null) || firstEntry?.payload?.fullName || firstEntry?.payload?.category || firstEntry?.payload?.name || (typeof firstEntry?.name === 'string' && isNaN(Number(firstEntry.name)) ? firstEntry.name : null)
+    const headerText = rawHeader
 
     return (
         <div className={cn(
-            "bg-card/95 dark:bg-zinc-950/90 backdrop-blur-3xl dark:backdrop-blur-[40px] border border-border/90 dark:border-zinc-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.8)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.95)] rounded-2xl p-3.5 min-w-[190px] max-w-xs text-xs space-y-2 ring-1 ring-black/5 dark:ring-white/15 animate-in fade-in zoom-in-95 duration-150 z-50 pointer-events-none",
+            "bg-card dark:bg-zinc-950 border border-border/90 dark:border-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.6)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.95)] rounded-2xl p-3.5 min-w-[190px] max-w-xs text-xs space-y-2 ring-1 ring-black/5 dark:ring-white/15 animate-in fade-in zoom-in-95 duration-150 z-[9999] pointer-events-none relative",
             className
         )}>
             {/* Tooltip Header */}
             {headerText && (
                 <div className="flex items-center justify-between border-b border-border/60 dark:border-zinc-800 pb-1.5 gap-2">
-                    <span className="font-black text-foreground dark:text-zinc-50 tracking-wide text-xs truncate capitalize">
+                    <span className="font-black text-foreground dark:text-zinc-50 tracking-wide text-xs truncate max-w-[180px] capitalize">
                         {headerText}
                     </span>
                     {firstEntry?.payload?.assetType && (
@@ -58,7 +59,7 @@ export function ChartTooltip({
                     const absVal = Math.abs(rawVal)
                     const prefix = rawVal < 0 ? '-' : ''
                     const itemName = payload.length === 1 
-                        ? (entry.payload?.label || 'Value') 
+                        ? (entry.payload?.fullName || entry.payload?.category || entry.payload?.name || (typeof entry.name === 'string' && isNaN(Number(entry.name)) ? entry.name : 'Value')) 
                         : (entry.name || entry.dataKey || 'Series')
 
                     let color = entry.color || entry.stroke || entry.fill || entry.payload?.color || entry.payload?.fill || '#6366f1'

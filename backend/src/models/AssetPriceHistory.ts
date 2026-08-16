@@ -18,4 +18,7 @@ const AssetPriceHistorySchema = new Schema<IAssetPriceHistory>({
     timestamp: { type: Date, default: Date.now, index: true }
 });
 
+AssetPriceHistorySchema.index({ symbol: 1, timestamp: -1 });
+AssetPriceHistorySchema.index({ assetId: 1, timestamp: -1 });
+
 export default model<IAssetPriceHistory>('AssetPriceHistory', AssetPriceHistorySchema);
