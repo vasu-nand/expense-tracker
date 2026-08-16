@@ -22,6 +22,7 @@ import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
 import { TradingViewLink } from '@/components/portfolio/tradingview-link'
+import { DeleteConfirmationModal } from '@/components/ui/delete-confirmation-modal'
 
 export default function WatchlistPage() {
     const { format } = useCurrency()
@@ -58,21 +59,40 @@ export default function WatchlistPage() {
         fetchData()
     }, [])
 
-    const handleRemoveWatchlist = async (id: string) => {
-        try {
-            await api.delete(`/portfolio/watchlist/${id}`)
-            fetchData()
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to remove item from watchlist')
-        }
-    }
+    // Delete Confirmation Modal State
+    const [deleteModalState, setDeleteModalState] = useState<{
+        isOpen: boolean
+        id?: string
+        name?: string
+        type?: 'watchlist' | 'alert'
+    }>({ isOpen: false })
+    const [deleting, setDeleting] = useState(false)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
-    const handleDeleteAlert = async (id: string) => {
+    const confirmDeleteWatchlistOrAlert = async () => {
+        if (!deleteModalState.id || !deleteModalState.type) return
+        const targetId = deleteModalState.id
+        const targetType = deleteModalState.type
+
         try {
-            await api.delete(`/portfolio/alerts/${id}`)
-            fetchData()
+            setDeleting(true)
+            setDeletingId(targetId)
+            setDeleteModalState({ isOpen: false })
+
+            // Wait 300ms for smooth exit animation
+            await new Promise(r => setTimeout(r, 300))
+
+            if (targetType === 'watchlist') {
+                await api.delete(`/portfolio/watchlist/${targetId}`)
+            } else if (targetType === 'alert') {
+                await api.delete(`/portfolio/alerts/${targetId}`)
+            }
+            await fetchData()
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to delete price alert')
+            alert(err.response?.data?.error || 'Failed to delete record')
+        } finally {
+            setDeleting(false)
+            setDeletingId(null)
         }
     }
 
@@ -128,8 +148,17 @@ export default function WatchlistPage() {
                                 <tbody className="divide-y divide-border/40">
                                     {watchlist.map((item: any) => {
                                         const isUp = (item.dayChange || 0) >= 0
+                                        const isDeleting = deletingId === item._id
                                         return (
-                                            <tr key={item._id} className="hover:bg-muted/30 transition-colors">
+                                            <tr
+                                                key={item._id}
+                                                className={cn(
+                                                    "transition-all duration-300 ease-out",
+                                                    isDeleting
+                                                        ? "opacity-0 scale-95 -translate-x-8 bg-rose-500/20 pointer-events-none"
+                                                        : "hover:bg-muted/30"
+                                                )}
+                                            >
                                                 <td className="p-3.5 font-bold text-foreground">
                                                     <div className="flex flex-col">
                                                         <div className="flex items-center gap-1.5">
@@ -171,11 +200,16 @@ export default function WatchlistPage() {
                                                         <Bell className="h-3.5 w-3.5" />
                                                         <span className="hidden sm:inline">Set Alert</span>
                                                     </Button>
-                                                    <Button
+                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
-                                                        onClick={() => handleRemoveWatchlist(item._id)}
-                                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg"
+                                                        onClick={() => setDeleteModalState({
+                                                            isOpen: true,
+                                                            id: item._id,
+                                                            name: `${item.symbol} - ${item.name}`,
+                                                            type: 'watchlist'
+                                                        })}
+                                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg hover:scale-110 active:scale-95 transition-all"
                                                         title="Remove from watchlist"
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />
@@ -259,8 +293,13 @@ export default function WatchlistPage() {
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
-                                                        onClick={() => handleDeleteAlert(alertItem._id)}
-                                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg"
+                                                        onClick={() => setDeleteModalState({
+                                                            isOpen: true,
+                                                            id: alertItem._id,
+                                                            name: `Price Alert for ${alertItem.symbol} (${alertItem.condition === 'above' ? '>' : '<'} ${format(alertItem.targetPrice)})`,
+                                                            type: 'alert'
+                                                        })}
+                                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg hover:scale-110 active:scale-95 transition-all"
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
@@ -274,6 +313,16 @@ export default function WatchlistPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => setDeleteModalState({ isOpen: false })}
+                onConfirm={confirmDeleteWatchlistOrAlert}
+                title={`Delete ${deleteModalState.type === 'watchlist' ? 'Watchlist Ticker' : 'Price Alert'}`}
+                itemName={deleteModalState.name}
+                loading={deleting}
+            />
 
             <AddWatchlistDialog
                 isOpen={isAddWatchlistOpen}

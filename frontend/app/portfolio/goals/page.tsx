@@ -22,6 +22,7 @@ import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
 
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
+import { DeleteConfirmationModal } from '@/components/ui/delete-confirmation-modal'
 
 export default function WealthGoalsPage() {
     const { format } = useCurrency()
@@ -51,13 +52,29 @@ export default function WealthGoalsPage() {
         fetchGoals()
     }, [])
 
-    const handleDeleteGoal = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this wealth goal?')) return
+    // Delete Modal State
+    const [deleteModalState, setDeleteModalState] = useState<{ isOpen: boolean; id?: string; name?: string }>({ isOpen: false })
+    const [deleting, setDeleting] = useState(false)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+
+    const confirmDeleteGoal = async () => {
+        if (!deleteModalState.id) return
+        const targetId = deleteModalState.id
         try {
-            await api.delete(`/portfolio/goals/${id}`)
-            fetchGoals()
+            setDeleting(true)
+            setDeletingId(targetId)
+            setDeleteModalState({ isOpen: false })
+
+            // Wait 300ms for smooth exit animation
+            await new Promise(r => setTimeout(r, 300))
+
+            await api.delete(`/portfolio/goals/${targetId}`)
+            await fetchGoals()
         } catch (err: any) {
             alert(err.response?.data?.error || 'Failed to delete goal')
+        } finally {
+            setDeleting(false)
+            setDeletingId(null)
         }
     }
 
@@ -162,13 +179,22 @@ export default function WealthGoalsPage() {
                         {goals.map((goal) => {
                             const percent = goal.targetAmount > 0 ? Math.min(100, (goal.currentProgress / goal.targetAmount) * 100) : 0
                             const isCompleted = percent >= 100
+                            const isDeleting = deletingId === goal._id
                             
                             const deadlineDate = new Date(goal.deadline)
                             const now = new Date()
                             const diffDays = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 3600 * 24))
 
                             return (
-                                <Card key={goal._id} className="border border-border/80 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                                <Card
+                                    key={goal._id}
+                                    className={cn(
+                                        "border border-border/80 rounded-2xl shadow-sm transition-all duration-300 ease-out flex flex-col justify-between",
+                                        isDeleting
+                                            ? "opacity-0 scale-95 -translate-y-4 bg-rose-500/10 border-rose-500/30 pointer-events-none"
+                                            : "hover:shadow-md"
+                                    )}
+                                >
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between">
                                             <div className="space-y-1">
@@ -197,11 +223,11 @@ export default function WealthGoalsPage() {
                                                 >
                                                     <Edit className="h-3.5 w-3.5" />
                                                 </Button>
-                                                <Button
+                                                 <Button
                                                     size="sm"
                                                     variant="ghost"
-                                                    onClick={() => handleDeleteGoal(goal._id)}
-                                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-500 rounded-lg"
+                                                    onClick={() => setDeleteModalState({ isOpen: true, id: goal._id, name: goal.name })}
+                                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-rose-500 rounded-lg hover:scale-110 active:scale-95 transition-all"
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>
@@ -271,6 +297,17 @@ export default function WealthGoalsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => setDeleteModalState({ isOpen: false })}
+                onConfirm={confirmDeleteGoal}
+                title="Delete Wealth Goal"
+                description="Are you sure you want to delete this financial milestone? Progress and milestone data will be permanently removed."
+                itemName={deleteModalState.name}
+                loading={deleting}
+            />
 
             <AddGoalDialog
                 isOpen={isAddGoalOpen}

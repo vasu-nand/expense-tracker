@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils'
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
 import { BottomSelect } from '@/components/ui/bottom-select'
 import { TradingViewLink } from '@/components/portfolio/tradingview-link'
+import { DeleteConfirmationModal } from '@/components/ui/delete-confirmation-modal'
 
 export default function PortfolioTransactionsPage() {
     const { format } = useCurrency()
@@ -111,33 +112,42 @@ export default function PortfolioTransactionsPage() {
         fetchAllData()
     }, [])
 
-    const handleDeleteTx = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this transaction record?')) return
-        try {
-            await api.delete(`/portfolio/transactions/${id}`)
-            fetchDataSilently()
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to delete transaction')
-        }
-    }
+    // Delete confirmation state
+    const [deleteModalState, setDeleteModalState] = useState<{
+        isOpen: boolean
+        id?: string
+        name?: string
+        type?: 'transaction' | 'dividend' | 'asset'
+    }>({ isOpen: false })
+    const [deleting, setDeleting] = useState(false)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
-    const handleDeleteDividend = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this dividend entry?')) return
-        try {
-            await api.delete(`/portfolio/dividends/${id}`)
-            fetchDataSilently()
-        } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to delete dividend entry')
-        }
-    }
+    const confirmDeleteAction = async () => {
+        if (!deleteModalState.id || !deleteModalState.type) return
+        const targetId = deleteModalState.id
+        const targetType = deleteModalState.type
 
-    const handleDeleteAsset = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this asset from your registered catalog? Associated records will also be removed.')) return
         try {
-            await api.delete(`/portfolio/assets/${id}`)
-            fetchDataSilently()
+            setDeleting(true)
+            setDeletingId(targetId)
+            setDeleteModalState({ isOpen: false })
+
+            // Wait 300ms for smooth exit animation
+            await new Promise(r => setTimeout(r, 300))
+
+            if (targetType === 'transaction') {
+                await api.delete(`/portfolio/transactions/${targetId}`)
+            } else if (targetType === 'dividend') {
+                await api.delete(`/portfolio/dividends/${targetId}`)
+            } else if (targetType === 'asset') {
+                await api.delete(`/portfolio/assets/${targetId}`)
+            }
+            await fetchDataSilently()
         } catch (err: any) {
-            alert(err.response?.data?.error || 'Failed to delete asset')
+            alert(err.response?.data?.error || 'Failed to delete record')
+        } finally {
+            setDeleting(false)
+            setDeletingId(null)
         }
     }
 
@@ -374,8 +384,17 @@ export default function PortfolioTransactionsPage() {
                                 <tbody className="divide-y divide-border/40 font-medium">
                                     {filteredTransactions.map((tx) => {
                                         const totalAmt = (tx.price * tx.quantity) + (tx.type === 'buy' ? (tx.fees + tx.tax) : -(tx.fees + tx.tax))
+                                        const isDeleting = deletingId === tx._id
                                         return (
-                                            <tr key={tx._id} className="hover:bg-muted/30 transition-colors">
+                                            <tr
+                                                key={tx._id}
+                                                className={cn(
+                                                    "transition-all duration-300 ease-out",
+                                                    isDeleting
+                                                        ? "opacity-0 scale-95 -translate-x-8 bg-rose-500/20 pointer-events-none"
+                                                        : "hover:bg-muted/30"
+                                                )}
+                                            >
                                                 <td className="p-3 pl-6">
                                                     <span className={cn(
                                                         "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider",
@@ -412,9 +431,14 @@ export default function PortfolioTransactionsPage() {
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleDeleteTx(tx._id)}
-                                                        className="p-1 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                                                     <button
+                                                        onClick={() => setDeleteModalState({
+                                                            isOpen: true,
+                                                            id: tx._id,
+                                                            name: `${tx.type.toUpperCase()} ${tx.assetId?.symbol || 'Trade'} (${tx.quantity} Shares)`,
+                                                            type: 'transaction'
+                                                        })}
+                                                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-all hover:scale-110 active:scale-95"
                                                         title="Delete record"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -452,8 +476,17 @@ export default function PortfolioTransactionsPage() {
                                 <tbody className="divide-y divide-border/40 font-medium">
                                     {filteredDividends.map((div) => {
                                         const netAmt = div.amount - (div.tax || 0)
+                                        const isDeleting = deletingId === div._id
                                         return (
-                                            <tr key={div._id} className="hover:bg-muted/30 transition-colors">
+                                            <tr
+                                                key={div._id}
+                                                className={cn(
+                                                    "transition-all duration-300 ease-out",
+                                                    isDeleting
+                                                        ? "opacity-0 scale-95 -translate-x-8 bg-rose-500/20 pointer-events-none"
+                                                        : "hover:bg-muted/30"
+                                                )}
+                                            >
                                                 <td className="p-3 pl-6">
                                                     <div className="font-bold text-foreground flex items-center gap-1.5">
                                                         <span>{div.assetId?.symbol || 'UNASSIGNED'}</span>
@@ -479,8 +512,13 @@ export default function PortfolioTransactionsPage() {
                                                         <Pencil className="h-4 w-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDeleteDividend(div._id)}
-                                                        className="p-1 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                                                        onClick={() => setDeleteModalState({
+                                                            isOpen: true,
+                                                            id: div._id,
+                                                            name: `Dividend Payout for ${div.assetId?.symbol || 'Asset'}`,
+                                                            type: 'dividend'
+                                                        })}
+                                                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-all hover:scale-110 active:scale-95"
                                                         title="Delete entry"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -515,46 +553,72 @@ export default function PortfolioTransactionsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/40 font-medium">
-                                    {filteredAssets.map((asset) => (
-                                        <tr key={asset._id} className="hover:bg-muted/30 transition-colors">
-                                            <td className="p-3 pl-6">
-                                                <div className="font-bold text-foreground font-mono flex items-center gap-1.5">
-                                                    <span>{asset.symbol}</span>
-                                                    <TradingViewLink symbol={asset.symbol} exchange={asset.exchange} />
-                                                </div>
-                                                <div className="text-[10px] text-muted-foreground truncate max-w-[200px]">{asset.name}</div>
-                                            </td>
-                                            <td className="p-3">
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
-                                                    {(asset.assetType || 'stocks').replace('_', ' ')}
-                                                </span>
-                                            </td>
-                                            <td className="p-3 font-semibold text-muted-foreground">{asset.exchange || 'NSE'}</td>
-                                            <td className="p-3 font-mono font-bold text-foreground">{asset.currency || 'INR'}</td>
-                                            <td className="p-3 pr-6 text-right flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => setIsAddTxOpen(true)}
-                                                    className="px-2.5 py-1 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-[11px] font-extrabold transition-colors"
-                                                    title="Record buy/sell transaction for this asset"
-                                                >
-                                                    Record Trade
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteAsset(asset._id)}
-                                                    className="p-1 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
-                                                    title="Delete asset"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                    {filteredAssets.map((asset) => {
+                                        const isDeleting = deletingId === asset._id
+                                        return (
+                                            <tr
+                                                key={asset._id}
+                                                className={cn(
+                                                    "transition-all duration-300 ease-out",
+                                                    isDeleting
+                                                        ? "opacity-0 scale-95 -translate-x-8 bg-rose-500/20 pointer-events-none"
+                                                        : "hover:bg-muted/30"
+                                                )}
+                                            >
+                                                <td className="p-3 pl-6">
+                                                    <div className="font-bold text-foreground font-mono flex items-center gap-1.5">
+                                                        <span>{asset.symbol}</span>
+                                                        <TradingViewLink symbol={asset.symbol} exchange={asset.exchange} />
+                                                    </div>
+                                                    <div className="text-[10px] text-muted-foreground truncate max-w-[200px]">{asset.name}</div>
+                                                </td>
+                                                <td className="p-3">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
+                                                        {(asset.assetType || 'stocks').replace('_', ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="p-3 font-semibold text-muted-foreground">{asset.exchange || 'NSE'}</td>
+                                                <td className="p-3 font-mono font-bold text-foreground">{asset.currency || 'INR'}</td>
+                                                <td className="p-3 pr-6 text-right flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => setIsAddTxOpen(true)}
+                                                        className="px-2.5 py-1 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-[11px] font-extrabold transition-colors"
+                                                        title="Record buy/sell transaction for this asset"
+                                                    >
+                                                        Record Trade
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteModalState({
+                                                            isOpen: true,
+                                                            id: asset._id,
+                                                            name: `${asset.symbol} - ${asset.name}`,
+                                                            type: 'asset'
+                                                        })}
+                                                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-all hover:scale-110 active:scale-95"
+                                                        title="Delete asset"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
                                 </tbody>
                             </table>
                         )
                     )}
                 </CardContent>
             </Card>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => setDeleteModalState({ isOpen: false })}
+                onConfirm={confirmDeleteAction}
+                title={`Delete ${deleteModalState.type === 'transaction' ? 'Transaction' : deleteModalState.type === 'dividend' ? 'Dividend Payout' : 'Asset'}`}
+                itemName={deleteModalState.name}
+                loading={deleting}
+            />
 
             {/* Dialog Modals */}
             <AddTransactionDialog

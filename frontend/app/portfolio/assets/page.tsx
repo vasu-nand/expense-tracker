@@ -22,6 +22,7 @@ import { AddTransactionDialog } from '@/components/portfolio/add-transaction-dia
 import { AddDividendDialog } from '@/components/portfolio/add-dividend-dialog'
 import { PortfolioEmptyState } from '@/components/portfolio/portfolio-empty-state'
 import { TradingViewLink } from '@/components/portfolio/tradingview-link'
+import { DeleteConfirmationModal } from '@/components/ui/delete-confirmation-modal'
 import { api } from '@/services/api'
 import { useCurrency } from '@/hooks/use-currency'
 import { cn } from '@/lib/utils'
@@ -85,13 +86,29 @@ export default function PortfolioAssetsPage() {
         }
     }, [])
 
-    const handleDeleteAsset = async (id: string, name: string) => {
-        if (!confirm(`Are you sure you want to delete "${name}" from your asset directory? Associated records will also be removed.`)) return
+    // Delete Modal state
+    const [deleteModalState, setDeleteModalState] = useState<{ isOpen: boolean; id?: string; name?: string }>({ isOpen: false })
+    const [deleting, setDeleting] = useState(false)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
+
+    const confirmDeleteAsset = async () => {
+        if (!deleteModalState.id) return
+        const targetId = deleteModalState.id
         try {
-            await api.delete(`/portfolio/assets/${id}`)
-            fetchAssets()
+            setDeleting(true)
+            setDeletingId(targetId)
+            setDeleteModalState({ isOpen: false })
+
+            // Wait 300ms for smooth exit animation
+            await new Promise(r => setTimeout(r, 300))
+
+            await api.delete(`/portfolio/assets/${targetId}`)
+            await fetchAssets()
         } catch (err: any) {
             alert(err.response?.data?.error || 'Failed to delete asset')
+        } finally {
+            setDeleting(false)
+            setDeletingId(null)
         }
     }
 
@@ -250,8 +267,17 @@ export default function PortfolioAssetsPage() {
                             <tbody className="divide-y divide-border/40 font-medium">
                                 {filteredAssets.map((asset) => {
                                     const isPositive = (asset.dayChange || 0) >= 0
+                                    const isDeleting = deletingId === asset._id
                                     return (
-                                        <tr key={asset._id} className="hover:bg-muted/30 transition-colors">
+                                        <tr
+                                            key={asset._id}
+                                            className={cn(
+                                                "transition-all duration-300 ease-out",
+                                                isDeleting
+                                                    ? "opacity-0 scale-95 -translate-x-8 bg-rose-500/20 pointer-events-none"
+                                                    : "hover:bg-muted/30"
+                                            )}
+                                        >
                                             <td className="p-3.5 pl-6">
                                                 <div className="font-extrabold text-foreground font-mono text-xs flex items-center gap-1.5">
                                                     <span>{asset.symbol}</span>
@@ -318,8 +344,8 @@ export default function PortfolioAssetsPage() {
                                                         <Coins className="h-3 w-3" /> Dividend
                                                     </Button>
                                                     <button
-                                                        onClick={() => handleDeleteAsset(asset._id, asset.name)}
-                                                        className="p-1 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                                                        onClick={() => setDeleteModalState({ isOpen: true, id: asset._id, name: `${asset.symbol} - ${asset.name}` })}
+                                                        className="p-1.5 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-all hover:scale-110 active:scale-95"
                                                         title="Delete asset from catalog"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
@@ -334,6 +360,17 @@ export default function PortfolioAssetsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => setDeleteModalState({ isOpen: false })}
+                onConfirm={confirmDeleteAsset}
+                title="Delete Registered Asset"
+                description="Are you sure you want to delete this asset from your master catalog? Associated buy/sell trade records will also be removed."
+                itemName={deleteModalState.name}
+                loading={deleting}
+            />
 
             {/* Modals */}
             <AddAssetDialog
