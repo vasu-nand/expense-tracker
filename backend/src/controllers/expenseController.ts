@@ -62,10 +62,12 @@ export const uploadExpenses = async (req: Request, res: Response) => {
             }
         }
 
-        for (const comb of uniqueCombinations) {
-            const [m, accId] = comb.split('_');
-            await expenseService.generateMonthlySummary(m, accId);
-        }
+        await Promise.all(
+            Array.from(uniqueCombinations).map(comb => {
+                const [m, accId] = comb.split('_');
+                return expenseService.generateMonthlySummary(m, accId);
+            })
+        );
 
         res.status(201).json({
             message: `${expenses.length} expenses uploaded successfully`,

@@ -9,6 +9,8 @@ export interface IExpense extends Document {
     uploadedAt: Date;
     month: string;
     type: 'expense' | 'income';
+    sourceType?: 'investment_buy' | 'investment_sell' | 'dividend';
+    sourceId?: mongoose.Types.ObjectId;
 }
 
 const ExpenseSchema: Schema = new Schema({
@@ -45,6 +47,13 @@ const ExpenseSchema: Schema = new Schema({
         required: true,
         default: 'expense'
     },
+    sourceType: {
+        type: String,
+        enum: ['investment_buy', 'investment_sell', 'dividend']
+    },
+    sourceId: {
+        type: Schema.Types.ObjectId
+    },
     uploadedAt: {
         type: Date,
         default: Date.now
@@ -57,5 +66,6 @@ ExpenseSchema.index({ bankAccountId: 1, category: 1 });
 ExpenseSchema.index({ bankAccountId: 1, amount: 1 });
 ExpenseSchema.index({ bankAccountId: 1, type: 1 });
 ExpenseSchema.index({ bankAccountId: 1, uploadedAt: -1 });
+ExpenseSchema.index({ sourceType: 1, sourceId: 1 });
 
 export default mongoose.model<IExpense>('Expense', ExpenseSchema);

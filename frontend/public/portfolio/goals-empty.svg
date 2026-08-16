@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-glow-goals" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.05" />
+    </linearGradient>
+
+    <linearGradient id="indigo-goals" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+
+    <linearGradient id="gold-goals" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <linearGradient id="emerald-goals" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <filter id="shadow-goals" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25" />
+    </filter>
+
+    <style>
+      @keyframes float-target {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(2deg); }
+      }
+      @keyframes rotate-ring {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes star-sparkle {
+        0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+        50% { transform: scale(1.25) rotate(45deg); opacity: 1; }
+      }
+      .anim-target { animation: float-target 4.5s ease-in-out infinite; transform-origin: center; }
+      .anim-spin { animation: rotate-ring 20s linear infinite; transform-origin: 200px 145px; }
+      .anim-star { animation: star-sparkle 3s ease-in-out infinite; transform-origin: center; }
+    </style>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="200" cy="145" r="115" fill="url(#bg-glow-goals)" />
+
+  <!-- Animated Outer Goal Ring -->
+  <circle cx="200" cy="145" r="95" stroke="#6366f1" stroke-width="2" stroke-dasharray="12 8" fill="none" opacity="0.4" className="anim-spin" />
+
+  <!-- Main Target & Trophy Container -->
+  <g className="anim-target" filter="url(#shadow-goals)">
+    <!-- Base Card -->
+    <rect x="115" y="65" width="170" height="160" rx="20" fill="#181825" stroke="#313244" stroke-width="2" />
+    
+    <!-- Target Concentric Rings -->
+    <circle cx="200" cy="130" r="45" fill="#2a2b3d" stroke="#6366f1" stroke-width="2" />
+    <circle cx="200" cy="130" r="32" fill="#1e1e2e" stroke="#10b981" stroke-width="2" />
+    <circle cx="200" cy="130" r="18" fill="url(#gold-goals)" />
+    
+    <!-- Bullseye Arrow -->
+    <path d="M 235 95 L 205 125 M 205 125 H 215 M 205 125 V 115" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Goal Progress Pill Container -->
+    <rect x="135" y="190" width="130" height="14" rx="7" fill="#2a2b3d" />
+    <rect x="135" y="190" width="90" height="14" rx="7" fill="url(#indigo-goals)" />
+  </g>
+
+  <!-- Side Floating Trophy -->
+  <g className="anim-star" transform="translate(85, 95)" filter="url(#shadow-goals)">
+    <circle cx="22" cy="22" r="20" fill="url(#gold-goals)" />
+    <!-- Trophy Icon -->
+    <path d="M 14 14 H 30 V 20 C 30 24 26 27 22 27 C 18 27 14 24 14 20 Z M 22 27 V 31 M 17 31 H 27" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </g>
+
+  <!-- Side Floating Star -->
+  <g className="anim-star" transform="translate(285, 165)" filter="url(#shadow-goals)">
+    <circle cx="18" cy="18" r="16" fill="url(#emerald-goals)" />
+    <path d="M 18 10 L 20 15 L 25 15 L 21 18 L 23 23 L 18 20 L 13 23 L 15 18 L 11 15 L 16 15 Z" fill="#ffffff" />
+  </g>
+</svg>

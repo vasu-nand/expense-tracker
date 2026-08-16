@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { api } from '@/services/api'
 
 export type CurrencyType = 'INR' | 'USD' | 'CAD' | 'EUR'
 
@@ -11,13 +12,16 @@ interface CurrencyContextType {
     convertToBase: (amount: number) => number
     format: (amount: number, options?: { minimumFractionDigits?: number; maximumFractionDigits?: number }) => string
     symbol: string
+    rates: Record<CurrencyType, number>
+    lastUpdated?: string
 }
 
-const rates: Record<CurrencyType, number> = {
+// Default fallback rates relative to 1.0 INR base
+const fallbackRates: Record<CurrencyType, number> = {
     INR: 1.0,
-    USD: 0.010598, // Matches 12,000 INR -> 127.176 USD
-    CAD: 0.01452,
-    EUR: 0.00984
+    USD: 0.0115, // 1 USD ~ 86.85 INR
+    CAD: 0.0159,
+    EUR: 0.0106
 }
 
 const symbols: Record<CurrencyType, string> = {
@@ -39,6 +43,8 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     const [currency, setCurrencyState] = useState<CurrencyType>('INR')
     const [mounted, setMounted] = useState(false)
+    const [liveRates, setLiveRates] = useState<Record<CurrencyType, number>>(fallbackRates)
+    const [lastUpdated, setLastUpdated] = useState<string | undefined>()
 
     useEffect(() => {
         const stored = localStorage.getItem('display-currency') as CurrencyType
@@ -46,6 +52,31 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
             setCurrencyState(stored)
         }
         setMounted(true)
+
+        // Fetch daily exchange rates stored in MongoDB via API
+        api.get('/portfolio/exchange-rates')
+            .then(res => {
+                const data = res.data
+                if (data && data.INR) {
+                    const usdInInr = Number(data.INR || 86.85)
+                    const eurInUsd = Number(data.EUR || 0.92)
+                    const cadInUsd = Number(data.CAD || 1.38)
+                    
+                    // Multpliers relative to 1 INR base
+                    setLiveRates({
+                        INR: 1.0,
+                        USD: 1 / usdInInr,
+                        EUR: (1 / usdInInr) * eurInUsd,
+                        CAD: (1 / usdInInr) * cadInUsd
+                    })
+                    if (data.lastUpdated) {
+                        setLastUpdated(data.lastUpdated)
+                    }
+                }
+            })
+            .catch((err) => {
+                console.warn('Using fallback currency exchange rates:', err)
+            })
     }, [])
 
     const setCurrency = (newCurrency: CurrencyType) => {
@@ -54,12 +85,12 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     }
 
     const convert = (amount: number): number => {
-        const rate = rates[currency] || 1.0
+        const rate = liveRates[currency] || fallbackRates[currency] || 1.0
         return (amount || 0) * rate
     }
 
     const convertToBase = (amount: number): number => {
-        const rate = rates[currency] || 1.0
+        const rate = liveRates[currency] || fallbackRates[currency] || 1.0
         return (amount || 0) / rate
     }
 
@@ -68,7 +99,6 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         const symbolStr = symbols[currency]
         const localeStr = locales[currency]
         
-        // If not mounted yet (SSR phase), render standard INR as fallback
         if (!mounted) {
             return `₹${(amount || 0).toLocaleString('en-IN', {
                 minimumFractionDigits: options?.minimumFractionDigits ?? 2,
@@ -90,7 +120,9 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
         convert,
         convertToBase,
         format,
-        symbol: symbols[currency]
+        symbol: symbols[currency],
+        rates: liveRates,
+        lastUpdated
     }
 
     return (

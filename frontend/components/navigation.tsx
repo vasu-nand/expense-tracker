@@ -39,6 +39,7 @@ import { CreateAccountDialog } from './navigation/create-account-dialog'
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/expenses', label: 'Expenses', icon: Table },
+    { href: '/portfolio', label: 'Portfolio', icon: PiggyBank },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     { href: '/comparison', label: 'Comparison', icon: GitCompare },
     { href: '/settings', label: 'Settings', icon: Settings },
@@ -61,6 +62,7 @@ export function Navigation() {
     const { selectedAccount, accounts, switchAccount, createAccount } = useAccount()
     const [switcherOpen, setSwitcherOpen] = useState(false)
     const switcherRef = useRef<HTMLDivElement>(null)
+    const [analyticsHovered, setAnalyticsHovered] = useState(false)
     const [dataHovered, setDataHovered] = useState(false)
     
     // Create Account Dialog State
@@ -253,15 +255,21 @@ export function Navigation() {
 
                         {/* Desktop Menu Links */}
                         <div className="hidden lg:flex items-center space-x-1">
-                            {navItems.map((item) => {
+                            {/* Primary Direct Links */}
+                            {[
+                                { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                                { href: '/expenses', label: 'Expenses', icon: Table },
+                                { href: '/portfolio', label: 'Portfolio', icon: PiggyBank },
+                            ].map((item) => {
                                 const Icon = item.icon
+                                const isItemActive = pathname === item.href || (item.href === '/portfolio' && pathname?.startsWith('/portfolio'))
                                 return (
                                     <Link
                                         key={item.href}
                                         href={item.href}
                                         className={cn(
                                             "flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-200",
-                                            pathname === item.href
+                                            isItemActive
                                                 ? "bg-custom-btn-gradient text-white shadow-sm"
                                                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                         )}
@@ -271,6 +279,55 @@ export function Navigation() {
                                     </Link>
                                 )
                             })}
+
+                            {/* Hoverable "Analytics" Dropdown Menu */}
+                            <div 
+                                className="relative group py-1.5"
+                                onMouseEnter={() => setAnalyticsHovered(true)}
+                                onMouseLeave={() => setAnalyticsHovered(false)}
+                            >
+                                <button
+                                    className={cn(
+                                        "flex items-center space-x-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-200",
+                                        (pathname === '/analytics' || pathname === '/comparison')
+                                            ? "bg-custom-btn-gradient text-white shadow-sm"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    )}
+                                >
+                                    <BarChart3 className="h-3.5 w-3.5" />
+                                    <span>Analytics</span>
+                                    <ChevronDown className={cn("h-3 w-3 shrink-0 transition-transform duration-200", analyticsHovered && "rotate-180")} />
+                                </button>
+
+                                {analyticsHovered && (
+                                    <div className="absolute left-0 mt-2 w-36 rounded-xl bg-white dark:bg-zinc-900 border border-border/95 shadow-[0_15px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_30px_rgba(0,0,0,0.5)] p-1.5 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                                        <Link
+                                            href="/analytics"
+                                            className={cn(
+                                                "flex items-center space-x-2 p-2 rounded-lg text-xs font-semibold transition-all w-full",
+                                                pathname === '/analytics'
+                                                    ? "bg-custom-btn-gradient text-white shadow-sm"
+                                                    : "text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-foreground"
+                                            )}
+                                        >
+                                            <BarChart3 className="h-3.5 w-3.5" />
+                                            <span>Overview</span>
+                                        </Link>
+                                        <Link
+                                            href="/comparison"
+                                            className={cn(
+                                                "flex items-center space-x-2 p-2 rounded-lg text-xs font-semibold transition-all w-full mt-0.5",
+                                                pathname === '/comparison'
+                                                    ? "bg-custom-btn-gradient text-white shadow-sm"
+                                                    : "text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/80 hover:text-foreground"
+                                            )}
+                                        >
+                                            <GitCompare className="h-3.5 w-3.5" />
+                                            <span>Comparison</span>
+                                        </Link>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Hoverable "Data" Dropdown Menu */}
                             <div 
@@ -282,7 +339,7 @@ export function Navigation() {
                                     className={cn(
                                         "flex items-center space-x-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-200",
                                         (pathname === '/upload' || pathname === '/export')
-                                            ? "bg-muted text-foreground"
+                                            ? "bg-custom-btn-gradient text-white shadow-sm"
                                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                     )}
                                 >
@@ -320,6 +377,20 @@ export function Navigation() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Settings placed LAST after Data */}
+                            <Link
+                                href="/settings"
+                                className={cn(
+                                    "flex items-center space-x-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all duration-200",
+                                    pathname === '/settings'
+                                        ? "bg-custom-btn-gradient text-white shadow-sm"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                <Settings className="h-3.5 w-3.5" />
+                                <span>Settings</span>
+                            </Link>
                         </div>
                     </div>
 
@@ -369,16 +440,24 @@ export function Navigation() {
                     </div>
                     
                     <div className="flex items-center space-x-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            className="relative rounded-full"
-                        >
-                            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                            <span className="sr-only">Toggle theme</span>
-                        </Button>
+                        {/* Premium Smooth Theme Switcher */}
+                        {mounted && (
+                            <button
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                className="relative flex items-center justify-center h-9 w-9 rounded-full bg-muted/40 hover:bg-muted/80 border border-border/80 text-foreground transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm overflow-hidden"
+                                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+                            >
+                                <Sun className={cn(
+                                    "h-4 w-4 text-amber-500 transition-all duration-500 transform",
+                                    theme === 'dark' ? "rotate-90 scale-0 opacity-0 absolute" : "rotate-0 scale-100 opacity-100"
+                                )} />
+                                <Moon className={cn(
+                                    "h-4 w-4 text-indigo-400 transition-all duration-500 transform",
+                                    theme === 'dark' ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0 absolute"
+                                )} />
+                                <span className="sr-only">Toggle theme</span>
+                            </button>
+                        )}
 
                         {/* Mobile Menu Button */}
                         <Button
