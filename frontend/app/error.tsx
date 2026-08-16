@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertTriangle, RefreshCcw, Home } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 import Link from 'next/link'
+import { RefreshCcw, Home } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function ErrorBoundary({
     error,
@@ -13,21 +14,26 @@ export default function ErrorBoundary({
     reset: () => void
 }) {
     useEffect(() => {
-        // Log the error to an analytics or reporting service
         console.error('Unhandled dashboard crash:', error)
     }, [error])
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-4 animate-in fade-in duration-500">
-            <div className="relative mb-6">
-                <div className="absolute inset-0 bg-rose-500/10 rounded-full blur-2xl animate-pulse" />
-                <div className="relative h-24 w-24 rounded-2xl bg-card border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-xl">
-                    <AlertTriangle className="h-12 w-12" />
-                </div>
+        <div className="flex flex-col items-center justify-center min-h-[75vh] text-center p-4 sm:p-6 animate-in fade-in duration-500">
+            <div className="relative w-full max-w-sm h-64 mb-6 flex items-center justify-center">
+                <Image 
+                    src="/common/error.svg" 
+                    alt="500 App Error" 
+                    width={360} 
+                    height={270}
+                    priority
+                    className="w-auto h-full max-h-64 drop-shadow-xl"
+                />
             </div>
 
-            <h1 className="text-4xl font-extrabold text-custom-gradient tracking-tight mb-2">Something Went Wrong</h1>
-            <p className="text-muted-foreground max-w-md mb-8 text-sm">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-custom-gradient tracking-tight mb-2">
+                Something Went Wrong
+            </h1>
+            <p className="text-muted-foreground max-w-md mb-8 text-xs sm:text-sm leading-relaxed">
                 An unexpected crash occurred while processing the financial dashboard state. You can try reloading or return home.
             </p>
 

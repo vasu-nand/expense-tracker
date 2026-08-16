@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 320" fill="none" width="100%" height="100%">
+  <defs>
+    <!-- Crimson Glow Gradients -->
+    <radialGradient id="err-radial-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.30" />
+      <stop offset="60%" stop-color="#e11d48" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#881337" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="err-vault-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e2e" />
+      <stop offset="50%" stop-color="#181825" />
+      <stop offset="100%" stop-color="#11111b" />
+    </linearGradient>
+
+    <linearGradient id="err-shield-banner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="50%" stop-color="#e11d48" />
+      <stop offset="100%" stop-color="#be123c" />
+    </linearGradient>
+
+    <linearGradient id="err-amber-warning" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <linearGradient id="err-blue-badge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="err-deep-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+
+    <style>
+      @keyframes float-error-card {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-14px) rotate(-1.5deg); }
+      }
+      @keyframes float-crash-badge {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-18px) scale(1.08); }
+      }
+      @keyframes crimson-pulse {
+        0%, 100% { opacity: 0.45; transform: scale(1); }
+        50% { opacity: 0.85; transform: scale(1.08); }
+      }
+      @keyframes flash-exclamation-mark {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.55; transform: scale(0.92); }
+      }
+      @keyframes rotate-dashed-err-cw {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes rotate-dashed-err-ccw {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(-360deg); }
+      }
+      @keyframes float-spark {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-12px) rotate(15deg); }
+      }
+
+      .animated-err-card { animation: float-error-card 5.2s ease-in-out infinite; transform-origin: center; }
+      .animated-crash-badge { animation: float-crash-badge 3.8s ease-in-out infinite; transform-origin: center; }
+      .animated-err-glow { animation: crimson-pulse 3.8s ease-in-out infinite; transform-origin: center; }
+      .animated-exclamation { animation: flash-exclamation-mark 2s ease-in-out infinite; transform-origin: center; }
+      .animated-err-ring-outer { animation: rotate-dashed-err-cw 30s linear infinite; transform-origin: 220px 160px; }
+      .animated-err-ring-inner { animation: rotate-dashed-err-ccw 22s linear infinite; transform-origin: 220px 160px; }
+      .animated-spark { animation: float-spark 3.5s ease-in-out infinite 0.3s; transform-origin: center; }
+    </style>
+  </defs>
+
+  <!-- Crimson Core Glow -->
+  <circle cx="220" cy="160" r="140" fill="url(#err-radial-glow)" className="animated-err-glow" />
+
+  <!-- Dual Counter-Rotating Warning Rings -->
+  <g className="animated-err-ring-outer">
+    <circle cx="220" cy="160" r="125" stroke="#f43f5e" stroke-opacity="0.4" stroke-width="2" fill="none" stroke-dasharray="14 10" />
+  </g>
+  <g className="animated-err-ring-inner">
+    <circle cx="220" cy="160" r="95" stroke="#f59e0b" stroke-opacity="0.3" stroke-width="1.5" fill="none" stroke-dasharray="8 6" />
+  </g>
+
+  <!-- Circuit Background Grid -->
+  <g opacity="0.14">
+    <line x1="50" y1="240" x2="390" y2="240" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="4 4" />
+    <line x1="50" y1="190" x2="390" y2="190" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="4 4" />
+    <line x1="50" y1="140" x2="390" y2="140" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- Central Diagnostics Vault Card -->
+  <g className="animated-err-card" filter="url(#err-deep-shadow)">
+    <!-- Base Shadow Card -->
+    <rect x="122" y="97" width="196" height="136" rx="24" fill="#0f0f17" opacity="0.6" />
+
+    <!-- Main Card Body -->
+    <rect x="115" y="90" width="210" height="142" rx="24" fill="url(#err-vault-grad)" stroke="#313244" stroke-width="2.5" />
+    
+    <!-- Top Header Banner -->
+    <path d="M 115 114 C 115 100.7 125.7 90 139 90 L 301 90 C 314.3 90 325 100.7 325 114 L 325 128 L 115 128 Z" fill="url(#err-shield-banner)" />
+
+    <!-- Header Dots -->
+    <circle cx="137" cy="109" r="4.5" fill="#ffffff" opacity="0.9" />
+    <circle cx="151" cy="109" r="4.5" fill="#ffffff" opacity="0.6" />
+    <circle cx="165" cy="109" r="4.5" fill="#ffffff" opacity="0.4" />
+    
+    <!-- Status Pill -->
+    <rect x="235" y="101" width="72" height="16" rx="8" fill="#ffffff" opacity="0.2" />
+    <text x="271" y="112.5" font-family="system-ui, sans-serif" font-weight="900" font-size="8.5" fill="#ffffff" text-anchor="middle">SYSTEM CRASH</text>
+
+    <!-- Glowing 3D Warning Triangle -->
+    <g transform="translate(220, 175)">
+      <!-- Triangle Base -->
+      <polygon points="0,-28 28,20 -28,20" fill="url(#err-amber-warning)" stroke="#fde047" stroke-width="2.5" stroke-linejoin="round" />
+      
+      <!-- Flashing Exclamation -->
+      <g className="animated-exclamation">
+        <line x1="0" y1="-14" x2="0" y2="4" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+        <circle cx="0" cy="12" r="2.5" fill="#ffffff" />
+      </g>
+    </g>
+
+    <!-- Error Log Lines -->
+    <rect x="135" y="145" width="48" height="6" rx="3" fill="#f43f5e" opacity="0.8" />
+    <rect x="135" y="157" width="32" height="6" rx="3" fill="#f43f5e" opacity="0.5" />
+
+    <rect x="257" y="145" width="48" height="6" rx="3" fill="#f43f5e" opacity="0.8" />
+    <rect x="273" y="157" width="32" height="6" rx="3" fill="#f43f5e" opacity="0.5" />
+  </g>
+
+  <!-- Top-Left Orbiting "500 CRASH" Badge -->
+  <g className="animated-crash-badge" transform="translate(58, 68)" filter="url(#err-deep-shadow)">
+    <rect x="0" y="0" width="78" height="38" rx="14" fill="url(#err-shield-banner)" stroke="#fda4af" stroke-width="1.5" />
+    <text x="39" y="18" font-family="system-ui, sans-serif" font-weight="900" font-size="11" fill="#ffffff" text-anchor="middle">500 ERROR</text>
+    <text x="39" y="30" font-family="system-ui, sans-serif" font-weight="700" font-size="8.5" fill="#fecdd3" text-anchor="middle">AUTO RECOVERY</text>
+  </g>
+
+  <!-- Right Floating Lightning Spark Badge -->
+  <g className="animated-spark" transform="translate(330, 150)" filter="url(#err-deep-shadow)">
+    <circle cx="22" cy="22" r="22" fill="url(#err-blue-badge)" stroke="#93c5fd" stroke-width="1.5" />
+    <!-- Lightning bolt -->
+    <path d="M 23 10 L 14 23 H 22 L 20 34 L 30 19 H 22 Z" fill="#ffffff" />
+  </g>
+
+  <!-- Sparkles -->
+  <g transform="translate(85, 210)">
+    <path d="M 10 0 L 13 6 L 19 8 L 13 10 L 10 16 L 7 10 L 1 8 L 7 6 Z" fill="#f43f5e" />
+  </g>
+</svg>

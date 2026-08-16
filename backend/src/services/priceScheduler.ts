@@ -79,7 +79,7 @@ export function startPriceScheduler(): void {
         recordAndSyncAllPrices().catch(err => console.error('[PriceScheduler] Interval sync failed:', err));
     }, FIFTEEN_MINUTES_MS);
 
-    console.log('✅ [PriceScheduler] 15-minute automated price recording service initialized.');
+    console.log('[PriceScheduler] 15-minute automated price recording service initialized.');
 }
 
 /**
