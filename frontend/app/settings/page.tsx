@@ -64,12 +64,14 @@ export default function SettingsPage() {
 
     const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
     const [designerMode, setDesignerMode] = useState<'light' | 'dark'>('light')
-    const [portfolioBannerEnabled, setPortfolioBannerEnabled] = useState<boolean>(() => {
+    const [portfolioBannerEnabled, setPortfolioBannerEnabled] = useState<boolean>(true)
+
+    useEffect(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('hide-empty-portfolio-banner') !== 'true'
+            const hidden = localStorage.getItem('hide-empty-portfolio-banner') === 'true'
+            setPortfolioBannerEnabled(!hidden)
         }
-        return true
-    })
+    }, [])
 
     // Tab Scroll & Navigation state
     const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -772,7 +774,24 @@ export default function SettingsPage() {
                                 </CardHeader>
                                 <CardContent className="pt-2">
                                     <Button
-                                        onClick={() => window.open('http://localhost:5000/api/export/backup', '_blank')}
+                                        onClick={async () => {
+                                            try {
+                                                const response = await api.get('/export/backup', { responseType: 'blob' })
+                                                const blobData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data, null, 2)
+                                                const blob = new Blob([blobData], { type: 'application/json' })
+                                                const url = window.URL.createObjectURL(blob)
+                                                const a = document.createElement('a')
+                                                a.href = url
+                                                a.download = `expense_tracker_backup_${new Date().toISOString().slice(0, 10)}.json`
+                                                document.body.appendChild(a)
+                                                a.click()
+                                                window.URL.revokeObjectURL(url)
+                                                document.body.removeChild(a)
+                                            } catch (err) {
+                                                console.error('Backup download error:', err)
+                                                alert('Failed to download JSON backup. Please check server connection.')
+                                            }
+                                        }}
                                         className="w-full rounded-xl text-xs font-bold gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-xs"
                                     >
                                         <Database className="h-4 w-4" /> Download JSON Backup

@@ -92,12 +92,13 @@ export function DashboardPortfolioWidget({ summaryData, loading }: DashboardPort
     const activeChartData = chartView === 'shares' ? sharesData : allocationData
     const topHoldings = holdings.slice(0, 4)
 
-    const [bannerHidden, setBannerHidden] = React.useState<boolean>(() => {
+    const [bannerHidden, setBannerHidden] = React.useState<boolean>(false)
+
+    React.useEffect(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('hide-empty-portfolio-banner') === 'true'
+            setBannerHidden(localStorage.getItem('hide-empty-portfolio-banner') === 'true')
         }
-        return false
-    })
+    }, [])
 
     const handleDismissBanner = () => {
         setBannerHidden(true)

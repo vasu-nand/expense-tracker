@@ -318,12 +318,53 @@ export default function ExportPage() {
         }
     }
 
-    const handleExportCSV = (type: string) => {
-        window.open(`http://localhost:5000/api/export/csv?type=${type}`, '_blank')
+    const handleExportCSV = async (type: string) => {
+        try {
+            setExporting(true)
+            const response = await api.get(`/export/csv?type=${type}`, {
+                responseType: 'blob'
+            })
+            const blob = new Blob([response.data], { type: 'text/csv' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `${type}_export_${new Date().toISOString().slice(0, 10)}.csv`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+        } catch (err) {
+            console.error('CSV export error:', err)
+            alert('Failed to download CSV export. Please check server connection.')
+        } finally {
+            setExporting(false)
+        }
     }
 
-    const handleExportBackup = () => {
-        window.open('http://localhost:5000/api/export/backup', '_blank')
+    const handleExportBackup = async () => {
+        try {
+            setExporting(true)
+            const response = await api.get('/export/backup', {
+                responseType: 'blob'
+            })
+            const blobData = typeof response.data === 'string' 
+                ? response.data 
+                : JSON.stringify(response.data, null, 2)
+            const blob = new Blob([blobData], { type: 'application/json' })
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `expense_tracker_backup_${new Date().toISOString().slice(0, 10)}.json`
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+            document.body.removeChild(a)
+        } catch (err) {
+            console.error('Backup export error:', err)
+            alert('Failed to download JSON backup. Please check server connection.')
+        } finally {
+            setExporting(false)
+        }
     }
 
     return (
