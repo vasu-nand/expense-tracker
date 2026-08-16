@@ -324,8 +324,7 @@ export default function ExportPage() {
             const response = await api.get(`/export/csv?type=${type}`, {
                 responseType: 'blob'
             })
-            const blob = new Blob([response.data], { type: 'text/csv' })
-            const url = window.URL.createObjectURL(blob)
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }))
             const a = document.createElement('a')
             a.href = url
             a.download = `${type}_export_${new Date().toISOString().slice(0, 10)}.csv`
@@ -347,11 +346,7 @@ export default function ExportPage() {
             const response = await api.get('/export/backup', {
                 responseType: 'blob'
             })
-            const blobData = typeof response.data === 'string' 
-                ? response.data 
-                : JSON.stringify(response.data, null, 2)
-            const blob = new Blob([blobData], { type: 'application/json' })
-            const url = window.URL.createObjectURL(blob)
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/json' }))
             const a = document.createElement('a')
             a.href = url
             a.download = `expense_tracker_backup_${new Date().toISOString().slice(0, 10)}.json`

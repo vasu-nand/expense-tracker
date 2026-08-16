@@ -404,24 +404,43 @@ export const exportCSV = async (req: Request, res: Response): Promise<void> => {
 
         if (type === 'expenses') {
             const items = await Expense.find().sort({ month: -1, day: -1 }).lean();
-            csvContent = 'day,amount,reason,category,month,type,bankAccountId\n' +
-                items.map(i => `${i.day},${i.amount},"${(i.reason || '').replace(/"/g, '""')}",${i.category},${i.month},${i.type},${i.bankAccountId}`).join('\n');
+            csvContent = 'date,month,day,amount,reason,category,type,bankAccountId\n' +
+                items.map(i => {
+                    const fullDate = i.month && i.day ? `${i.month}-${String(i.day).padStart(2, '0')}` : '';
+                    return `${fullDate},${i.month || ''},${i.day || ''},${i.amount || 0},"${(i.reason || '').replace(/"/g, '""')}",${i.category || ''},${i.type || 'expense'},${i.bankAccountId || ''}`;
+                }).join('\n');
         } else if (type === 'transactions') {
             const items = await InvestmentTransaction.find().populate('assetId').sort({ dateTime: -1 }).lean();
-            csvContent = 'symbol,type,quantity,price,fees,tax,dateTime,notes,bankAccountId\n' +
-                items.map(i => `${(i.assetId as any)?.symbol || ''},${i.type},${i.quantity},${i.price},${i.fees},${i.tax},${new Date(i.dateTime).toISOString()},"${(i.notes || '').replace(/"/g, '""')}",${i.bankAccountId || ''}`).join('\n');
+            csvContent = 'date,month,dateTime,symbol,assetName,type,quantity,price,fees,tax,totalAmount,notes,bankAccountId\n' +
+                items.map(i => {
+                    const dt = i.dateTime ? new Date(i.dateTime) : new Date();
+                    const dateStr = dt.toISOString().slice(0, 10);
+                    const monthStr = dt.toISOString().slice(0, 7);
+                    const assetSymbol = (i.assetId as any)?.symbol || '';
+                    const assetName = (i.assetId as any)?.name || '';
+                    const totalAmt = (i.price * i.quantity) + (i.type === 'buy' ? (i.fees + i.tax) : -(i.fees + i.tax));
+                    return `${dateStr},${monthStr},${dt.toISOString()},${assetSymbol},"${assetName.replace(/"/g, '""')}",${i.type},${i.quantity},${i.price},${i.fees},${i.tax},${totalAmt},"${(i.notes || '').replace(/"/g, '""')}",${i.bankAccountId || ''}`;
+                }).join('\n');
         } else if (type === 'dividends') {
             const items = await Dividend.find().populate('assetId').sort({ date: -1 }).lean();
-            csvContent = 'symbol,amount,tax,date,bankAccountId\n' +
-                items.map(i => `${(i.assetId as any)?.symbol || ''},${i.amount},${i.tax},${new Date(i.date).toISOString()},${i.bankAccountId || ''}`).join('\n');
+            csvContent = 'date,month,symbol,assetName,grossAmount,tax,netAmount,bankAccountId\n' +
+                items.map(i => {
+                    const dt = i.date ? new Date(i.date) : new Date();
+                    const dateStr = dt.toISOString().slice(0, 10);
+                    const monthStr = dt.toISOString().slice(0, 7);
+                    const assetSymbol = (i.assetId as any)?.symbol || '';
+                    const assetName = (i.assetId as any)?.name || '';
+                    const netAmt = (i.amount || 0) - (i.tax || 0);
+                    return `${dateStr},${monthStr},${assetSymbol},"${assetName.replace(/"/g, '""')}",${i.amount || 0},${i.tax || 0},${netAmt},${i.bankAccountId || ''}`;
+                }).join('\n');
         } else if (type === 'assets') {
             const items = await InvestmentAsset.find().sort({ symbol: 1 }).lean();
             csvContent = 'symbol,name,assetType,exchange,currency,lastPrice\n' +
-                items.map(i => `${i.symbol},"${(i.name || '').replace(/"/g, '""')}",${i.assetType},${i.exchange},${i.currency},${i.lastPrice || 0}`).join('\n');
+                items.map(i => `${i.symbol},"${(i.name || '').replace(/"/g, '""')}",${i.assetType || ''},${i.exchange || ''},${i.currency || 'INR'},${i.lastPrice || 0}`).join('\n');
         } else if (type === 'bank_accounts') {
             const items = await BankAccount.find().lean();
             csvContent = 'name,bankName,accountNumber,color,icon,isPrimary\n' +
-                items.map(i => `"${i.name}",${i.bankName},${i.accountNumber},${i.color || ''},${i.icon || ''},${i.isPrimary || false}`).join('\n');
+                items.map(i => `"${(i.name || '').replace(/"/g, '""')}","${(i.bankName || '').replace(/"/g, '""')}",${i.accountNumber || ''},${i.color || ''},${i.icon || ''},${i.isPrimary || false}`).join('\n');
         }
 
         res.setHeader('Content-Type', 'text/csv');
